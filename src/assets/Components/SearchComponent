@@ -1,0 +1,46 @@
+import React, { useState } from "react";
+
+const SearchComponent = ({ cardData, onSearchResult }) => {
+  const [searchField, setSearchField] = useState("title");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const performSearch = () => {
+    // Filter the cards based on the search field and term
+    const filteredCardData = cardData.filter((card) =>
+      card[searchField].toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Call the parent component's callback to update results and reset pagination
+    onSearchResult(filteredCardData);
+  };
+
+  const resetSearch = () => {
+    // Reset search term
+    setSearchTerm("");
+
+    // Reset to all original data
+    onSearchResult(cardData);
+  };
+
+  return (
+    <div className="search-container">
+      <select
+        value={searchField}
+        onChange={(e) => setSearchField(e.target.value)}
+      >
+        <option value="title">Título</option>
+        <option value="content">Contenido</option>
+      </select>
+      <input
+        type="text"
+        placeholder="Buscar..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      <button onClick={performSearch}>Buscar</button>
+      <button onClick={resetSearch}>Restablecer</button>
+    </div>
+  );
+};
+
+export default SearchComponent;
