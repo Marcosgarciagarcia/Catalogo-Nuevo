@@ -342,7 +342,7 @@ class CatalogoManager:
         
         ttk.Button(top_frame, text="🔍 Buscar", command=self.buscar_autores).pack(side='left', padx=5)
         ttk.Button(top_frame, text="➕ Nuevo Autor", command=self.crear_nuevo_autor).pack(side='left', padx=5)
-        ttk.Button(top_frame, text="🔄 Recargar", command=self.cargar_autores).pack(side='left', padx=5)
+        ttk.Button(top_frame, text="🔄 Recargar", command=self.buscar_autores).pack(side='left', padx=5)
         
         # Frame para lista de autores
         list_frame = ttk.LabelFrame(main_frame, text="Lista de Autores", padding=10)
@@ -376,6 +376,9 @@ class CatalogoManager:
         
         ttk.Button(button_frame, text="✏️ Editar", command=self.editar_autor_seleccionado).pack(side='left', padx=5)
         ttk.Button(button_frame, text="🗑️ Eliminar", command=self.eliminar_autor).pack(side='left', padx=5)
+        
+        # Cargar listado inicial
+        self.root.after(100, self.buscar_autores)
     
     def create_editoriales_tab(self):
         """Pestaña de gestión de editoriales"""
@@ -396,7 +399,7 @@ class CatalogoManager:
         
         ttk.Button(top_frame, text="🔍 Buscar", command=self.buscar_editoriales).pack(side='left', padx=5)
         ttk.Button(top_frame, text="➕ Nueva Editorial", command=self.crear_nueva_editorial).pack(side='left', padx=5)
-        ttk.Button(top_frame, text="🔄 Recargar", command=self.cargar_editoriales).pack(side='left', padx=5)
+        ttk.Button(top_frame, text="🔄 Recargar", command=self.buscar_editoriales).pack(side='left', padx=5)
         
         # Frame para lista de editoriales
         list_frame = ttk.LabelFrame(main_frame, text="Lista de Editoriales", padding=10)
@@ -430,6 +433,9 @@ class CatalogoManager:
         
         ttk.Button(button_frame, text="✏️ Editar", command=self.editar_editorial_seleccionada).pack(side='left', padx=5)
         ttk.Button(button_frame, text="🗑️ Eliminar", command=self.eliminar_editorial).pack(side='left', padx=5)
+        
+        # Cargar listado inicial
+        self.root.after(100, self.buscar_editoriales)
     
     # ==================== FUNCIONES DE BASE DE DATOS ====================
     
