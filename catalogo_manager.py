@@ -47,12 +47,22 @@ class CatalogoManager:
         self.notebook.add(self.tab_edicion, text='✏️ Editar/Crear')
         self.create_edicion_tab()
         
-        # Pestaña 3: Sincronización
+        # Pestaña 3: Gestión de Autores
+        self.tab_autores = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_autores, text='👤 Autores')
+        self.create_autores_tab()
+        
+        # Pestaña 4: Gestión de Editoriales
+        self.tab_editoriales = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_editoriales, text='🏢 Editoriales')
+        self.create_editoriales_tab()
+        
+        # Pestaña 5: Sincronización
         self.tab_sync = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_sync, text='🔄 Sincronización')
         self.create_sync_tab()
         
-        # Pestaña 4: Estadísticas
+        # Pestaña 6: Estadísticas
         self.tab_stats = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_stats, text='📊 Estadísticas')
         self.create_stats_tab()
@@ -282,6 +292,114 @@ class CatalogoManager:
         # Botón para actualizar estadísticas
         ttk.Button(stats_frame, text="🔄 Actualizar Estadísticas", 
                   command=self.actualizar_estadisticas).pack(pady=10)
+    
+    def create_autores_tab(self):
+        """Pestaña de gestión de autores"""
+        
+        # Frame principal
+        main_frame = ttk.Frame(self.tab_autores, padding=10)
+        main_frame.pack(fill='both', expand=True)
+        
+        # Frame superior: Búsqueda y botones
+        top_frame = ttk.Frame(main_frame)
+        top_frame.pack(fill='x', pady=(0, 10))
+        
+        ttk.Label(top_frame, text="Buscar autor:").pack(side='left', padx=5)
+        self.autor_search_var = tk.StringVar()
+        autor_search_entry = ttk.Entry(top_frame, textvariable=self.autor_search_var, width=30)
+        autor_search_entry.pack(side='left', padx=5)
+        autor_search_entry.bind('<KeyRelease>', lambda e: self.buscar_autores())
+        
+        ttk.Button(top_frame, text="🔍 Buscar", command=self.buscar_autores).pack(side='left', padx=5)
+        ttk.Button(top_frame, text="➕ Nuevo Autor", command=self.crear_nuevo_autor).pack(side='left', padx=5)
+        ttk.Button(top_frame, text="🔄 Recargar", command=self.cargar_autores).pack(side='left', padx=5)
+        
+        # Frame para lista de autores
+        list_frame = ttk.LabelFrame(main_frame, text="Lista de Autores", padding=10)
+        list_frame.pack(fill='both', expand=True)
+        
+        # Treeview para autores
+        columns = ('ID', 'Nombre', 'Libros')
+        self.autores_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
+        
+        self.autores_tree.heading('ID', text='ID')
+        self.autores_tree.heading('Nombre', text='Nombre del Autor')
+        self.autores_tree.heading('Libros', text='Nº Libros')
+        
+        self.autores_tree.column('ID', width=60, anchor='center')
+        self.autores_tree.column('Nombre', width=300)
+        self.autores_tree.column('Libros', width=100, anchor='center')
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.autores_tree.yview)
+        self.autores_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.autores_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Bind doble click para editar
+        self.autores_tree.bind('<Double-1>', lambda e: self.editar_autor_seleccionado())
+        
+        # Frame inferior: Botones de acción
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+        
+        ttk.Button(button_frame, text="✏️ Editar", command=self.editar_autor_seleccionado).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="🗑️ Eliminar", command=self.eliminar_autor).pack(side='left', padx=5)
+    
+    def create_editoriales_tab(self):
+        """Pestaña de gestión de editoriales"""
+        
+        # Frame principal
+        main_frame = ttk.Frame(self.tab_editoriales, padding=10)
+        main_frame.pack(fill='both', expand=True)
+        
+        # Frame superior: Búsqueda y botones
+        top_frame = ttk.Frame(main_frame)
+        top_frame.pack(fill='x', pady=(0, 10))
+        
+        ttk.Label(top_frame, text="Buscar editorial:").pack(side='left', padx=5)
+        self.editorial_search_var = tk.StringVar()
+        editorial_search_entry = ttk.Entry(top_frame, textvariable=self.editorial_search_var, width=30)
+        editorial_search_entry.pack(side='left', padx=5)
+        editorial_search_entry.bind('<KeyRelease>', lambda e: self.buscar_editoriales())
+        
+        ttk.Button(top_frame, text="🔍 Buscar", command=self.buscar_editoriales).pack(side='left', padx=5)
+        ttk.Button(top_frame, text="➕ Nueva Editorial", command=self.crear_nueva_editorial).pack(side='left', padx=5)
+        ttk.Button(top_frame, text="🔄 Recargar", command=self.cargar_editoriales).pack(side='left', padx=5)
+        
+        # Frame para lista de editoriales
+        list_frame = ttk.LabelFrame(main_frame, text="Lista de Editoriales", padding=10)
+        list_frame.pack(fill='both', expand=True)
+        
+        # Treeview para editoriales
+        columns = ('ID', 'Nombre', 'Libros')
+        self.editoriales_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
+        
+        self.editoriales_tree.heading('ID', text='ID')
+        self.editoriales_tree.heading('Nombre', text='Nombre de la Editorial')
+        self.editoriales_tree.heading('Libros', text='Nº Libros')
+        
+        self.editoriales_tree.column('ID', width=60, anchor='center')
+        self.editoriales_tree.column('Nombre', width=300)
+        self.editoriales_tree.column('Libros', width=100, anchor='center')
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.editoriales_tree.yview)
+        self.editoriales_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.editoriales_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Bind doble click para editar
+        self.editoriales_tree.bind('<Double-1>', lambda e: self.editar_editorial_seleccionada())
+        
+        # Frame inferior: Botones de acción
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+        
+        ttk.Button(button_frame, text="✏️ Editar", command=self.editar_editorial_seleccionada).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="🗑️ Eliminar", command=self.eliminar_editorial).pack(side='left', padx=5)
     
     # ==================== FUNCIONES DE BASE DE DATOS ====================
     
@@ -1081,6 +1199,350 @@ class CatalogoManager:
         self.sync_log.config(state='normal')
         self.sync_log.delete('1.0', tk.END)
         self.sync_log.config(state='disabled')
+    
+    # ==================== GESTIÓN DE AUTORES ====================
+    
+    def buscar_autores(self):
+        """Buscar autores por nombre"""
+        search_term = self.autor_search_var.get().strip()
+        source = self.source_var.get()
+        
+        self.autores_tree.delete(*self.autores_tree.get_children())
+        
+        if search_term:
+            sql = """
+                SELECT a.id, a.nombreAutor, COUNT(t.id) as num_libros
+                FROM core_autores a
+                LEFT JOIN core_titulos t ON a.id = t.codiAutor_id
+                WHERE a.nombreAutor LIKE ?
+                GROUP BY a.id, a.nombreAutor
+                ORDER BY a.nombreAutor
+            """
+            params = (f'%{search_term}%',)
+        else:
+            sql = """
+                SELECT a.id, a.nombreAutor, COUNT(t.id) as num_libros
+                FROM core_autores a
+                LEFT JOIN core_titulos t ON a.id = t.codiAutor_id
+                GROUP BY a.id, a.nombreAutor
+                ORDER BY a.nombreAutor
+            """
+            params = ()
+        
+        if source == 'local':
+            rows = self.query_local(sql, params)
+        else:
+            rows = self.query_turso(sql, list(params) if params else [])
+        
+        if rows:
+            for row in rows:
+                if not isinstance(row, dict):
+                    row = dict(row)
+                self.autores_tree.insert('', 'end', values=(
+                    row['id'],
+                    row['nombreAutor'],
+                    row['num_libros']
+                ))
+            self.status_bar.config(text=f"Se encontraron {len(rows)} autores")
+    
+    def crear_nuevo_autor(self):
+        """Crear nuevo autor"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Nuevo Autor")
+        dialog.geometry("400x150")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        ttk.Label(dialog, text="Nombre del Autor:").pack(pady=10)
+        nombre_var = tk.StringVar()
+        nombre_entry = ttk.Entry(dialog, textvariable=nombre_var, width=40)
+        nombre_entry.pack(pady=5)
+        nombre_entry.focus()
+        
+        def guardar():
+            nombre = nombre_var.get().strip()
+            if not nombre:
+                messagebox.showwarning("Advertencia", "El nombre del autor es obligatorio")
+                return
+            
+            source = self.source_var.get()
+            sql = "INSERT INTO core_autores (nombreAutor, created, updated) VALUES (?, datetime('now'), datetime('now'))"
+            
+            if source == 'local':
+                result = self.query_local(sql, (nombre,))
+            else:
+                result = self.query_turso(sql, [nombre])
+            
+            if result:
+                messagebox.showinfo("Éxito", f"Autor '{nombre}' creado correctamente")
+                dialog.destroy()
+                self.buscar_autores()
+                self.cargar_autores()
+            else:
+                messagebox.showerror("Error", "No se pudo crear el autor")
+        
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=20)
+        ttk.Button(button_frame, text="Guardar", command=guardar).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancelar", command=dialog.destroy).pack(side='left', padx=5)
+    
+    def editar_autor_seleccionado(self):
+        """Editar autor seleccionado"""
+        selection = self.autores_tree.selection()
+        if not selection:
+            messagebox.showwarning("Advertencia", "Selecciona un autor para editar")
+            return
+        
+        item = self.autores_tree.item(selection[0])
+        autor_id = item['values'][0]
+        nombre_actual = item['values'][1]
+        
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Editar Autor")
+        dialog.geometry("400x150")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        ttk.Label(dialog, text="Nombre del Autor:").pack(pady=10)
+        nombre_var = tk.StringVar(value=nombre_actual)
+        nombre_entry = ttk.Entry(dialog, textvariable=nombre_var, width=40)
+        nombre_entry.pack(pady=5)
+        nombre_entry.focus()
+        nombre_entry.select_range(0, tk.END)
+        
+        def guardar():
+            nombre = nombre_var.get().strip()
+            if not nombre:
+                messagebox.showwarning("Advertencia", "El nombre del autor es obligatorio")
+                return
+            
+            source = self.source_var.get()
+            sql = "UPDATE core_autores SET nombreAutor = ?, updated = datetime('now') WHERE id = ?"
+            
+            if source == 'local':
+                result = self.query_local(sql, (nombre, autor_id))
+            else:
+                result = self.query_turso(sql, [nombre, autor_id])
+            
+            if result:
+                messagebox.showinfo("Éxito", f"Autor actualizado correctamente")
+                dialog.destroy()
+                self.buscar_autores()
+                self.cargar_autores()
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar el autor")
+        
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=20)
+        ttk.Button(button_frame, text="Guardar", command=guardar).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancelar", command=dialog.destroy).pack(side='left', padx=5)
+    
+    def eliminar_autor(self):
+        """Eliminar autor seleccionado"""
+        selection = self.autores_tree.selection()
+        if not selection:
+            messagebox.showwarning("Advertencia", "Selecciona un autor para eliminar")
+            return
+        
+        item = self.autores_tree.item(selection[0])
+        autor_id = item['values'][0]
+        nombre = item['values'][1]
+        num_libros = item['values'][2]
+        
+        if num_libros > 0:
+            messagebox.showwarning("Advertencia", 
+                f"No se puede eliminar el autor '{nombre}' porque tiene {num_libros} libro(s) asociado(s)")
+            return
+        
+        if not messagebox.askyesno("Confirmar", f"¿Estás seguro de eliminar el autor '{nombre}'?"):
+            return
+        
+        source = self.source_var.get()
+        sql = "DELETE FROM core_autores WHERE id = ?"
+        
+        if source == 'local':
+            result = self.query_local(sql, (autor_id,))
+        else:
+            result = self.query_turso(sql, [autor_id])
+        
+        if result:
+            messagebox.showinfo("Éxito", "Autor eliminado correctamente")
+            self.buscar_autores()
+            self.cargar_autores()
+        else:
+            messagebox.showerror("Error", "No se pudo eliminar el autor")
+    
+    # ==================== GESTIÓN DE EDITORIALES ====================
+    
+    def buscar_editoriales(self):
+        """Buscar editoriales por nombre"""
+        search_term = self.editorial_search_var.get().strip()
+        source = self.source_var.get()
+        
+        self.editoriales_tree.delete(*self.editoriales_tree.get_children())
+        
+        if search_term:
+            sql = """
+                SELECT e.id, e.descriEditorial, COUNT(t.id) as num_libros
+                FROM core_editoriales e
+                LEFT JOIN core_titulos t ON e.id = t.codiEditorial_id
+                WHERE e.descriEditorial LIKE ?
+                GROUP BY e.id, e.descriEditorial
+                ORDER BY e.descriEditorial
+            """
+            params = (f'%{search_term}%',)
+        else:
+            sql = """
+                SELECT e.id, e.descriEditorial, COUNT(t.id) as num_libros
+                FROM core_editoriales e
+                LEFT JOIN core_titulos t ON e.id = t.codiEditorial_id
+                GROUP BY e.id, e.descriEditorial
+                ORDER BY e.descriEditorial
+            """
+            params = ()
+        
+        if source == 'local':
+            rows = self.query_local(sql, params)
+        else:
+            rows = self.query_turso(sql, list(params) if params else [])
+        
+        if rows:
+            for row in rows:
+                if not isinstance(row, dict):
+                    row = dict(row)
+                self.editoriales_tree.insert('', 'end', values=(
+                    row['id'],
+                    row['descriEditorial'],
+                    row['num_libros']
+                ))
+            self.status_bar.config(text=f"Se encontraron {len(rows)} editoriales")
+    
+    def crear_nueva_editorial(self):
+        """Crear nueva editorial"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Nueva Editorial")
+        dialog.geometry("400x150")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        ttk.Label(dialog, text="Nombre de la Editorial:").pack(pady=10)
+        nombre_var = tk.StringVar()
+        nombre_entry = ttk.Entry(dialog, textvariable=nombre_var, width=40)
+        nombre_entry.pack(pady=5)
+        nombre_entry.focus()
+        
+        def guardar():
+            nombre = nombre_var.get().strip()
+            if not nombre:
+                messagebox.showwarning("Advertencia", "El nombre de la editorial es obligatorio")
+                return
+            
+            source = self.source_var.get()
+            sql = "INSERT INTO core_editoriales (descriEditorial, created, updated) VALUES (?, datetime('now'), datetime('now'))"
+            
+            if source == 'local':
+                result = self.query_local(sql, (nombre,))
+            else:
+                result = self.query_turso(sql, [nombre])
+            
+            if result:
+                messagebox.showinfo("Éxito", f"Editorial '{nombre}' creada correctamente")
+                dialog.destroy()
+                self.buscar_editoriales()
+                self.cargar_editoriales()
+            else:
+                messagebox.showerror("Error", "No se pudo crear la editorial")
+        
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=20)
+        ttk.Button(button_frame, text="Guardar", command=guardar).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancelar", command=dialog.destroy).pack(side='left', padx=5)
+    
+    def editar_editorial_seleccionada(self):
+        """Editar editorial seleccionada"""
+        selection = self.editoriales_tree.selection()
+        if not selection:
+            messagebox.showwarning("Advertencia", "Selecciona una editorial para editar")
+            return
+        
+        item = self.editoriales_tree.item(selection[0])
+        editorial_id = item['values'][0]
+        nombre_actual = item['values'][1]
+        
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Editar Editorial")
+        dialog.geometry("400x150")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        ttk.Label(dialog, text="Nombre de la Editorial:").pack(pady=10)
+        nombre_var = tk.StringVar(value=nombre_actual)
+        nombre_entry = ttk.Entry(dialog, textvariable=nombre_var, width=40)
+        nombre_entry.pack(pady=5)
+        nombre_entry.focus()
+        nombre_entry.select_range(0, tk.END)
+        
+        def guardar():
+            nombre = nombre_var.get().strip()
+            if not nombre:
+                messagebox.showwarning("Advertencia", "El nombre de la editorial es obligatorio")
+                return
+            
+            source = self.source_var.get()
+            sql = "UPDATE core_editoriales SET descriEditorial = ?, updated = datetime('now') WHERE id = ?"
+            
+            if source == 'local':
+                result = self.query_local(sql, (nombre, editorial_id))
+            else:
+                result = self.query_turso(sql, [nombre, editorial_id])
+            
+            if result:
+                messagebox.showinfo("Éxito", f"Editorial actualizada correctamente")
+                dialog.destroy()
+                self.buscar_editoriales()
+                self.cargar_editoriales()
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar la editorial")
+        
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=20)
+        ttk.Button(button_frame, text="Guardar", command=guardar).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancelar", command=dialog.destroy).pack(side='left', padx=5)
+    
+    def eliminar_editorial(self):
+        """Eliminar editorial seleccionada"""
+        selection = self.editoriales_tree.selection()
+        if not selection:
+            messagebox.showwarning("Advertencia", "Selecciona una editorial para eliminar")
+            return
+        
+        item = self.editoriales_tree.item(selection[0])
+        editorial_id = item['values'][0]
+        nombre = item['values'][1]
+        num_libros = item['values'][2]
+        
+        if num_libros > 0:
+            messagebox.showwarning("Advertencia", 
+                f"No se puede eliminar la editorial '{nombre}' porque tiene {num_libros} libro(s) asociado(s)")
+            return
+        
+        if not messagebox.askyesno("Confirmar", f"¿Estás seguro de eliminar la editorial '{nombre}'?"):
+            return
+        
+        source = self.source_var.get()
+        sql = "DELETE FROM core_editoriales WHERE id = ?"
+        
+        if source == 'local':
+            result = self.query_local(sql, (editorial_id,))
+        else:
+            result = self.query_turso(sql, [editorial_id])
+        
+        if result:
+            messagebox.showinfo("Éxito", "Editorial eliminada correctamente")
+            self.buscar_editoriales()
+            self.cargar_editoriales()
+        else:
+            messagebox.showerror("Error", "No se pudo eliminar la editorial")
 
 # ==================== MAIN ====================
 
