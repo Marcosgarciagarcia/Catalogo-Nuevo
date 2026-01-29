@@ -5,27 +5,19 @@ function BookImage({ src, alt }) {
   const [imageSrc, setImageSrc] = useState('/placeholder.jpg');
 
   useEffect(() => {
-    // Manejar ambas estructuras de portada
-    const cloudinaryBaseUrl = 'https://res.cloudinary.com/casateca/image/upload/v1/libros/';
+    // Si no hay src o es null, usar placeholder
+    if (!src) {
+      setImageSrc('/placeholder.jpg');
+      return;
+    }
 
-    // Determinar la URL de la imagen
-    const normalizedSrc = typeof src === 'object'
-      ? src.url  // Si es objeto con estructura nueva
-      : src.startsWith('http')
-        ? src    // Si ya es URL completa
-        : src.startsWith('/')
-          ? src  // Si ya es ruta absoluta
-          : `${cloudinaryBaseUrl}${src}`;  // Si es nombre de archivo
-
-    // Log EXHAUSTIVO de rutas
-    console.log('Ruta original:', src);
-    console.log('Ruta de imagen:', normalizedSrc);
+    // El campo portada_cloudinary ya viene con la URL completa de Cloudinary
+    const normalizedSrc = src;
 
     const img = new Image();
     img.src = normalizedSrc;
 
     img.onload = () => {
-      console.log('Imagen cargada con éxito:', normalizedSrc);
       setImageSrc(normalizedSrc);
     };
 
@@ -66,27 +58,13 @@ BookImage.propTypes = {
 };
 
 function BookList({ libros = [] }) {
-  useEffect(() => {
-    console.log('Libros recibidos:', libros);
-
-    const imageRoutes = libros.map(libro => ({
-      EAN: libro.EAN,
-      portada: libro.portada,
-      cloudinaryUrl: typeof libro.portada === 'object'
-        ? libro.portada.url
-        : `https://res.cloudinary.com/casateca/image/upload/v1/libros/${libro.portada}`
-    }));
-
-    console.log('Rutas de imágenes en Cloudinary:', imageRoutes);
-  }, [libros]);
-
   return (
     <div className="card-container">
       {libros.map((libro) => (
-        <div key={libro.EAN} className='card'>
+        <div key={libro.EAN || libro.id} className='card'>
           <div className='text-container'>
             <div className='author-container'>
-              <p className='author'>{libro.nombreAutor}</p>
+              <p className='author'>{libro.nombreAutor || 'Autor desconocido'}</p>
             </div>
             <div className='title-container'>
               <p className='title'>{libro.titulo}</p>
@@ -94,7 +72,7 @@ function BookList({ libros = [] }) {
           </div>
           <div className='image-container'>
             <BookImage
-              src={libro.portada}
+              src={libro.portada_cloudinary}
               alt={libro.titulo}
             />
           </div>

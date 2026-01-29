@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import titulos from './assets/data/Titulo_Autor.json';
+import { useState, useEffect } from 'react';
+import { getAllBooks, searchBooks, filterBooksByLetter } from './services/tursoService';
 import BookList from './components/BookList';
 import Pagination from './components/Pagination';
 import './App.css'
@@ -9,32 +9,43 @@ function App() {
   const [filtrarPor, setFiltrarPor] = useState('titulo');
   const [busqueda, setBusqueda] = useState('');
   const [paginaActual, setPaginaActual] = useState(1);
-  /*   const librosPorPagina = 12; */
+  const [libros, setLibros] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const librosPorPagina = 10;
 
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
-  const librosFiltrados = useMemo(() => {
-    let resultado = titulos;
+  // Cargar libros desde Turso
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        let resultado;
+        
+        if (busqueda) {
+          // Buscar por término
+          resultado = await searchBooks(busqueda, filtrarPor);
+        } else if (filtroLetra) {
+          // Filtrar por letra
+          resultado = await filterBooksByLetter(filtroLetra, filtrarPor);
+        } else {
+          // Cargar todos los libros
+          resultado = await getAllBooks();
+        }
+        
+        setLibros(resultado);
+      } catch (err) {
+        console.error('Error cargando libros:', err);
+        setError('Error al cargar los libros. Por favor, intenta de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (busqueda) {
-      const busquedaMinusc = busqueda.toLowerCase();
-      resultado = resultado.filter(libro =>
-        libro[filtrarPor === 'titulo' ? 'titulo' : 'nombreAutor']
-          .toLowerCase()
-          .includes(busquedaMinusc)
-      );
-    }
-
-    if (filtroLetra) {
-      resultado = resultado.filter(libro =>
-        libro[filtrarPor === 'titulo' ? 'titulo' : 'nombreAutor']
-          .toUpperCase()
-          .startsWith(filtroLetra)
-      );
-    }
-
-    return resultado;
+    fetchBooks();
   }, [filtroLetra, filtrarPor, busqueda]);
 
   const cambiarTipoDeFiltro = () => {
@@ -52,7 +63,7 @@ function App() {
 
   return (
     <div>
-      <h2>Catálogo de libros de casa</h2>
+      <h2>Catálogo de libros de casa</h2>
       <div className="filtro-container">
         <div className="opciones-busqueda">
           <button onClick={cambiarTipoDeFiltro}>
@@ -92,27 +103,43 @@ function App() {
         </div>
       </div>
 
-      <div className="resultados-info">
-        <p>
-          {librosFiltrados.length} libro(s) encontrado(s)
-          {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
-          {busqueda ? ` que contienen "${busqueda}"` : ''}
-        </p>
-      </div>
+      {loading && (
+        <div className="loading">
+          <p>Cargando libros desde Turso...</p>
+        </div>
+      )}
 
-      <BookList
-        libros={librosFiltrados.slice(
-          (paginaActual - 1) * librosPorPagina,
-          paginaActual * librosPorPagina
-        )}
-      />
+      {error && (
+        <div className="error">
+          <p>{error}</p>
+        </div>
+      )}
 
-      <Pagination
-        totalLibros={librosFiltrados.length}
-        librosPorPagina={librosPorPagina}
-        paginaActual={paginaActual}
-        setPaginaActual={setPaginaActual}
-      />
+      {!loading && !error && (
+        <>
+          <div className="resultados-info">
+            <p>
+              {libros.length} libro(s) encontrado(s)
+              {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
+              {busqueda ? ` que contienen "${busqueda}"` : ''}
+            </p>
+          </div>
+
+          <BookList
+            libros={libros.slice(
+              (paginaActual - 1) * librosPorPagina,
+              paginaActual * librosPorPagina
+            )}
+          />
+
+          <Pagination
+            totalLibros={libros.length}
+            librosPorPagina={librosPorPagina}
+            paginaActual={paginaActual}
+            setPaginaActual={setPaginaActual}
+          />
+        </>
+      )}
     </div>
   )
 }
