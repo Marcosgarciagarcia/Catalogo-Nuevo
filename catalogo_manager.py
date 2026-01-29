@@ -671,7 +671,8 @@ class CatalogoManager:
         if libro.get('observaciones'):
             self.observaciones_text.insert('1.0', libro['observaciones'])
         
-        # Cargar autor
+        # Cargar autor (limpiar primero)
+        self.autor_var.set('')
         autor_id = libro.get('codiAutor_id')
         if autor_id:
             for nombre, id_autor in self.autores_cache.items():
@@ -679,7 +680,8 @@ class CatalogoManager:
                     self.autor_var.set(nombre)
                     break
         
-        # Cargar editorial
+        # Cargar editorial (limpiar primero)
+        self.editorial_var.set('')
         editorial_id = libro.get('codiEditorial_id')
         if editorial_id:
             for nombre, id_editorial in self.editoriales_cache.items():
