@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 import threading
 import os
+import webbrowser
 
 class CatalogoManager:
     def __init__(self, root):
@@ -1319,11 +1320,15 @@ class CatalogoManager:
         
         ttk.Label(form_frame, text="Enlace Wiki 1:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
         wiki1_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=wiki1_var, width=40).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Entry(form_frame, textvariable=wiki1_var, width=35).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(form_frame, text="🔗 Abrir", width=8,
+                  command=lambda: webbrowser.open(wiki1_var.get()) if wiki1_var.get() else None).grid(row=1, column=2, padx=5, pady=5)
         
         ttk.Label(form_frame, text="Enlace Wiki 2:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
         wiki2_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=wiki2_var, width=40).grid(row=2, column=1, padx=5, pady=5)
+        ttk.Entry(form_frame, textvariable=wiki2_var, width=35).grid(row=2, column=1, padx=5, pady=5)
+        ttk.Button(form_frame, text="🔗 Abrir", width=8,
+                  command=lambda: webbrowser.open(wiki2_var.get()) if wiki2_var.get() else None).grid(row=2, column=2, padx=5, pady=5)
         
         def guardar():
             nombre = nombre_var.get().strip()
@@ -1397,11 +1402,15 @@ class CatalogoManager:
         
         ttk.Label(form_frame, text="Enlace Wiki 1:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
         wiki1_var = tk.StringVar(value=autor.get('enlaceWiki', ''))
-        ttk.Entry(form_frame, textvariable=wiki1_var, width=40).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Entry(form_frame, textvariable=wiki1_var, width=35).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(form_frame, text="🔗 Abrir", width=8,
+                  command=lambda: webbrowser.open(wiki1_var.get()) if wiki1_var.get() else None).grid(row=1, column=2, padx=5, pady=5)
         
         ttk.Label(form_frame, text="Enlace Wiki 2:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
         wiki2_var = tk.StringVar(value=autor.get('enlaceWiki2', ''))
-        ttk.Entry(form_frame, textvariable=wiki2_var, width=40).grid(row=2, column=1, padx=5, pady=5)
+        ttk.Entry(form_frame, textvariable=wiki2_var, width=35).grid(row=2, column=1, padx=5, pady=5)
+        ttk.Button(form_frame, text="🔗 Abrir", width=8,
+                  command=lambda: webbrowser.open(wiki2_var.get()) if wiki2_var.get() else None).grid(row=2, column=2, padx=5, pady=5)
         
         def guardar():
             nombre = nombre_var.get().strip()
