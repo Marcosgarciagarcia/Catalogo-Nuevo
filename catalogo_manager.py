@@ -192,8 +192,14 @@ class CatalogoManager:
         self.editorial_combo.grid(row=row, column=1, sticky='w', padx=5, pady=5)
         row += 1
         
-        # Año Publicación
-        ttk.Label(form_frame, text="Año Publicación:").grid(row=row, column=0, sticky='e', padx=5, pady=5)
+        # Número de Edición
+        ttk.Label(form_frame, text="Nº Edición:").grid(row=row, column=0, sticky='e', padx=5, pady=5)
+        self.num_edicion_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=self.num_edicion_var, width=50).grid(row=row, column=1, sticky='w', padx=5, pady=5)
+        row += 1
+        
+        # Año Edición
+        ttk.Label(form_frame, text="Año Edición:").grid(row=row, column=0, sticky='e', padx=5, pady=5)
         self.ano_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.ano_var, width=50).grid(row=row, column=1, sticky='w', padx=5, pady=5)
         row += 1
@@ -204,10 +210,28 @@ class CatalogoManager:
         ttk.Entry(form_frame, textvariable=self.paginas_var, width=50).grid(row=row, column=1, sticky='w', padx=5, pady=5)
         row += 1
         
+        # Número de Ejemplares
+        ttk.Label(form_frame, text="Nº Ejemplares:").grid(row=row, column=0, sticky='e', padx=5, pady=5)
+        self.num_ejemplares_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=self.num_ejemplares_var, width=50).grid(row=row, column=1, sticky='w', padx=5, pady=5)
+        row += 1
+        
         # ISBN
         ttk.Label(form_frame, text="ISBN:").grid(row=row, column=0, sticky='e', padx=5, pady=5)
         self.isbn_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.isbn_var, width=50).grid(row=row, column=1, sticky='w', padx=5, pady=5)
+        row += 1
+        
+        # Colección
+        ttk.Label(form_frame, text="Colección:").grid(row=row, column=0, sticky='e', padx=5, pady=5)
+        self.coleccion_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=self.coleccion_var, width=50).grid(row=row, column=1, sticky='w', padx=5, pady=5)
+        row += 1
+        
+        # Serie
+        ttk.Label(form_frame, text="Serie:").grid(row=row, column=0, sticky='e', padx=5, pady=5)
+        self.serie_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=self.serie_var, width=50).grid(row=row, column=1, sticky='w', padx=5, pady=5)
         row += 1
         
         # Portada Cloudinary
@@ -218,8 +242,14 @@ class CatalogoManager:
         
         # Sinopsis
         ttk.Label(form_frame, text="Sinopsis:").grid(row=row, column=0, sticky='ne', padx=5, pady=5)
-        self.sinopsis_text = scrolledtext.ScrolledText(form_frame, width=50, height=8)
+        self.sinopsis_text = scrolledtext.ScrolledText(form_frame, width=50, height=6)
         self.sinopsis_text.grid(row=row, column=1, sticky='w', padx=5, pady=5)
+        row += 1
+        
+        # Observaciones
+        ttk.Label(form_frame, text="Observaciones:").grid(row=row, column=0, sticky='ne', padx=5, pady=5)
+        self.observaciones_text = scrolledtext.ScrolledText(form_frame, width=50, height=4)
+        self.observaciones_text.grid(row=row, column=1, sticky='w', padx=5, pady=5)
         row += 1
         
         # Botones de acción
@@ -613,17 +643,26 @@ class CatalogoManager:
         
         self.id_var.set(libro.get('id', ''))
         self.ean_var.set(libro.get('EAN', ''))
-        self.titulo_var.set(libro.get('Titulo', ''))
-        self.titulo_orig_var.set(libro.get('TituloOriginal', ''))
-        self.ano_var.set(libro.get('AnoPublicacion', ''))
-        self.paginas_var.set(libro.get('NumPaginas', ''))
-        self.isbn_var.set(libro.get('ISBN', ''))
+        self.titulo_var.set(libro.get('titulo', ''))
+        self.titulo_orig_var.set(libro.get('tituloOriginal', ''))
+        self.num_edicion_var.set(libro.get('numeroEdicion', ''))
+        self.ano_var.set(libro.get('anyoEdicion', ''))
+        self.paginas_var.set(libro.get('numeroPaginas', ''))
+        self.num_ejemplares_var.set(libro.get('numeroEjemplares', ''))
+        self.isbn_var.set(libro.get('EAN', ''))
+        self.coleccion_var.set(libro.get('coleccion', ''))
+        self.serie_var.set(libro.get('serie', ''))
         self.cloudinary_var.set(libro.get('portada_cloudinary', ''))
         
         # Cargar sinopsis
         self.sinopsis_text.delete('1.0', tk.END)
-        if libro.get('Sinopsis'):
-            self.sinopsis_text.insert('1.0', libro['Sinopsis'])
+        if libro.get('sinopsis'):
+            self.sinopsis_text.insert('1.0', libro['sinopsis'])
+        
+        # Cargar observaciones
+        self.observaciones_text.delete('1.0', tk.END)
+        if libro.get('observaciones'):
+            self.observaciones_text.insert('1.0', libro['observaciones'])
         
         # Cargar autor
         autor_id = libro.get('codiAutor_id')
@@ -655,11 +694,16 @@ class CatalogoManager:
         self.titulo_orig_var.set('')
         self.autor_var.set('')
         self.editorial_var.set('')
+        self.num_edicion_var.set('')
         self.ano_var.set('')
         self.paginas_var.set('')
+        self.num_ejemplares_var.set('')
         self.isbn_var.set('')
+        self.coleccion_var.set('')
+        self.serie_var.set('')
         self.cloudinary_var.set('')
         self.sinopsis_text.delete('1.0', tk.END)
+        self.observaciones_text.delete('1.0', tk.END)
     
     def guardar_libro(self, destino):
         """Guardar libro en local, turso o ambos"""
@@ -675,16 +719,19 @@ class CatalogoManager:
         # Preparar datos
         datos = {
             'EAN': self.ean_var.get() or None,
-            'Titulo': self.titulo_var.get(),
-            'TituloOriginal': self.titulo_orig_var.get() or None,
+            'titulo': self.titulo_var.get(),
+            'tituloOriginal': self.titulo_orig_var.get() or None,
+            'numeroEdicion': int(self.num_edicion_var.get()) if self.num_edicion_var.get() else 1,
+            'anyoEdicion': self.ano_var.get() or None,
+            'numeroPaginas': int(self.paginas_var.get()) if self.paginas_var.get() else 0,
+            'numeroEjemplares': int(self.num_ejemplares_var.get()) if self.num_ejemplares_var.get() else 1,
             'codiAutor_id': autor_id,
             'codiEditorial_id': editorial_id,
-            'AnoPublicacion': self.ano_var.get() or None,
-            'NumPaginas': int(self.paginas_var.get()) if self.paginas_var.get() else None,
-            'ISBN': self.isbn_var.get() or None,
+            'coleccion': self.coleccion_var.get() or None,
+            'serie': self.serie_var.get() or None,
             'portada_cloudinary': self.cloudinary_var.get() or None,
-            'Sinopsis': self.sinopsis_text.get('1.0', tk.END).strip() or None,
-            'updated': datetime.now().isoformat()
+            'sinopsis': self.sinopsis_text.get('1.0', tk.END).strip() or None,
+            'observaciones': self.observaciones_text.get('1.0', tk.END).strip() or None
         }
         
         libro_id = self.id_var.get()
@@ -710,19 +757,19 @@ class CatalogoManager:
         """Actualizar libro en BD local"""
         sql = """
             UPDATE core_titulos SET
-                EAN = ?, Titulo = ?, TituloOriginal = ?,
-                codiAutor_id = ?, codiEditorial_id = ?,
-                AnoPublicacion = ?, NumPaginas = ?,
-                ISBN = ?, portada_cloudinary = ?,
-                Sinopsis = ?, updated = ?
+                EAN = ?, titulo = ?, tituloOriginal = ?,
+                numeroEdicion = ?, anyoEdicion = ?, numeroPaginas = ?,
+                numeroEjemplares = ?, codiAutor_id = ?, codiEditorial_id = ?,
+                coleccion = ?, serie = ?, portada_cloudinary = ?,
+                sinopsis = ?, observaciones = ?, updated = datetime('now')
             WHERE id = ?
         """
         params = (
-            datos['EAN'], datos['Titulo'], datos['TituloOriginal'],
-            datos['codiAutor_id'], datos['codiEditorial_id'],
-            datos['AnoPublicacion'], datos['NumPaginas'],
-            datos['ISBN'], datos['portada_cloudinary'],
-            datos['Sinopsis'], datos['updated'], libro_id
+            datos['EAN'], datos['titulo'], datos['tituloOriginal'],
+            datos['numeroEdicion'], datos['anyoEdicion'], datos['numeroPaginas'],
+            datos['numeroEjemplares'], datos['codiAutor_id'], datos['codiEditorial_id'],
+            datos['coleccion'], datos['serie'], datos['portada_cloudinary'],
+            datos['sinopsis'], datos['observaciones'], libro_id
         )
         self.query_local(sql, params)
     
@@ -730,19 +777,19 @@ class CatalogoManager:
         """Actualizar libro en Turso"""
         sql = """
             UPDATE core_titulos SET
-                EAN = ?, Titulo = ?, TituloOriginal = ?,
-                codiAutor_id = ?, codiEditorial_id = ?,
-                AnoPublicacion = ?, NumPaginas = ?,
-                ISBN = ?, portada_cloudinary = ?,
-                Sinopsis = ?, updated = ?
+                EAN = ?, titulo = ?, tituloOriginal = ?,
+                numeroEdicion = ?, anyoEdicion = ?, numeroPaginas = ?,
+                numeroEjemplares = ?, codiAutor_id = ?, codiEditorial_id = ?,
+                coleccion = ?, serie = ?, portada_cloudinary = ?,
+                sinopsis = ?, observaciones = ?, updated = datetime('now')
             WHERE id = ?
         """
         params = [
-            datos['EAN'], datos['Titulo'], datos['TituloOriginal'],
-            datos['codiAutor_id'], datos['codiEditorial_id'],
-            datos['AnoPublicacion'], datos['NumPaginas'],
-            datos['ISBN'], datos['portada_cloudinary'],
-            datos['Sinopsis'], datos['updated'], int(libro_id)
+            datos['EAN'], datos['titulo'], datos['tituloOriginal'],
+            datos['numeroEdicion'], datos['anyoEdicion'], datos['numeroPaginas'],
+            datos['numeroEjemplares'], datos['codiAutor_id'], datos['codiEditorial_id'],
+            datos['coleccion'], datos['serie'], datos['portada_cloudinary'],
+            datos['sinopsis'], datos['observaciones'], int(libro_id)
         ]
         self.query_turso(sql, params)
     
@@ -750,17 +797,18 @@ class CatalogoManager:
         """Crear libro en BD local"""
         sql = """
             INSERT INTO core_titulos (
-                EAN, Titulo, TituloOriginal, codiAutor_id, codiEditorial_id,
-                AnoPublicacion, NumPaginas, ISBN, portada_cloudinary,
-                Sinopsis, created, updated
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                EAN, titulo, tituloOriginal, numeroEdicion, anyoEdicion,
+                numeroPaginas, numeroEjemplares, codiAutor_id, codiEditorial_id,
+                coleccion, serie, portada_cloudinary, sinopsis, observaciones,
+                created, updated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         """
         params = (
-            datos['EAN'], datos['Titulo'], datos['TituloOriginal'],
-            datos['codiAutor_id'], datos['codiEditorial_id'],
-            datos['AnoPublicacion'], datos['NumPaginas'],
-            datos['ISBN'], datos['portada_cloudinary'],
-            datos['Sinopsis'], datos['created'], datos['updated']
+            datos['EAN'], datos['titulo'], datos['tituloOriginal'],
+            datos['numeroEdicion'], datos['anyoEdicion'], datos['numeroPaginas'],
+            datos['numeroEjemplares'], datos['codiAutor_id'], datos['codiEditorial_id'],
+            datos['coleccion'], datos['serie'], datos['portada_cloudinary'],
+            datos['sinopsis'], datos['observaciones']
         )
         self.query_local(sql, params)
     
@@ -768,17 +816,18 @@ class CatalogoManager:
         """Crear libro en Turso"""
         sql = """
             INSERT INTO core_titulos (
-                EAN, Titulo, TituloOriginal, codiAutor_id, codiEditorial_id,
-                AnoPublicacion, NumPaginas, ISBN, portada_cloudinary,
-                Sinopsis, created, updated
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                EAN, titulo, tituloOriginal, numeroEdicion, anyoEdicion,
+                numeroPaginas, numeroEjemplares, codiAutor_id, codiEditorial_id,
+                coleccion, serie, portada_cloudinary, sinopsis, observaciones,
+                created, updated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         """
         params = [
-            datos['EAN'], datos['Titulo'], datos['TituloOriginal'],
-            datos['codiAutor_id'], datos['codiEditorial_id'],
-            datos['AnoPublicacion'], datos['NumPaginas'],
-            datos['ISBN'], datos['portada_cloudinary'],
-            datos['Sinopsis'], datos['created'], datos['updated']
+            datos['EAN'], datos['titulo'], datos['tituloOriginal'],
+            datos['numeroEdicion'], datos['anyoEdicion'], datos['numeroPaginas'],
+            datos['numeroEjemplares'], datos['codiAutor_id'], datos['codiEditorial_id'],
+            datos['coleccion'], datos['serie'], datos['portada_cloudinary'],
+            datos['sinopsis'], datos['observaciones']
         ]
         self.query_turso(sql, params)
     
@@ -1249,15 +1298,26 @@ class CatalogoManager:
         """Crear nuevo autor"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Nuevo Autor")
-        dialog.geometry("400x150")
+        dialog.geometry("500x300")
         dialog.transient(self.root)
         dialog.grab_set()
         
-        ttk.Label(dialog, text="Nombre del Autor:").pack(pady=10)
+        form_frame = ttk.Frame(dialog, padding=20)
+        form_frame.pack(fill='both', expand=True)
+        
+        ttk.Label(form_frame, text="Nombre del Autor:*").grid(row=0, column=0, sticky='e', padx=5, pady=5)
         nombre_var = tk.StringVar()
-        nombre_entry = ttk.Entry(dialog, textvariable=nombre_var, width=40)
-        nombre_entry.pack(pady=5)
+        nombre_entry = ttk.Entry(form_frame, textvariable=nombre_var, width=40)
+        nombre_entry.grid(row=0, column=1, padx=5, pady=5)
         nombre_entry.focus()
+        
+        ttk.Label(form_frame, text="Enlace Wiki 1:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
+        wiki1_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=wiki1_var, width=40).grid(row=1, column=1, padx=5, pady=5)
+        
+        ttk.Label(form_frame, text="Enlace Wiki 2:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
+        wiki2_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=wiki2_var, width=40).grid(row=2, column=1, padx=5, pady=5)
         
         def guardar():
             nombre = nombre_var.get().strip()
@@ -1265,13 +1325,16 @@ class CatalogoManager:
                 messagebox.showwarning("Advertencia", "El nombre del autor es obligatorio")
                 return
             
+            wiki1 = wiki1_var.get().strip()
+            wiki2 = wiki2_var.get().strip()
+            
             source = self.source_var.get()
-            sql = "INSERT INTO core_autores (nombreAutor, created, updated) VALUES (?, datetime('now'), datetime('now'))"
+            sql = "INSERT INTO core_autores (nombreAutor, enlaceWiki, enlaceWiki2, created, updated) VALUES (?, ?, ?, datetime('now'), datetime('now'))"
             
             if source == 'local':
-                result = self.query_local(sql, (nombre,))
+                result = self.query_local(sql, (nombre, wiki1, wiki2))
             else:
-                result = self.query_turso(sql, [nombre])
+                result = self.query_turso(sql, [nombre, wiki1, wiki2])
             
             if result:
                 messagebox.showinfo("Éxito", f"Autor '{nombre}' creado correctamente")
@@ -1281,8 +1344,8 @@ class CatalogoManager:
             else:
                 messagebox.showerror("Error", "No se pudo crear el autor")
         
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=20)
+        button_frame = ttk.Frame(form_frame)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=20)
         ttk.Button(button_frame, text="Guardar", command=guardar).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Cancelar", command=dialog.destroy).pack(side='left', padx=5)
     
@@ -1295,20 +1358,44 @@ class CatalogoManager:
         
         item = self.autores_tree.item(selection[0])
         autor_id = item['values'][0]
-        nombre_actual = item['values'][1]
+        
+        # Obtener datos completos del autor
+        source = self.source_var.get()
+        sql = "SELECT * FROM core_autores WHERE id = ?"
+        if source == 'local':
+            rows = self.query_local(sql, (autor_id,))
+        else:
+            rows = self.query_turso(sql, [autor_id])
+        
+        if not rows:
+            messagebox.showerror("Error", "No se pudo cargar el autor")
+            return
+        
+        autor = dict(rows[0]) if not isinstance(rows[0], dict) else rows[0]
         
         dialog = tk.Toplevel(self.root)
         dialog.title("Editar Autor")
-        dialog.geometry("400x150")
+        dialog.geometry("500x300")
         dialog.transient(self.root)
         dialog.grab_set()
         
-        ttk.Label(dialog, text="Nombre del Autor:").pack(pady=10)
-        nombre_var = tk.StringVar(value=nombre_actual)
-        nombre_entry = ttk.Entry(dialog, textvariable=nombre_var, width=40)
-        nombre_entry.pack(pady=5)
+        form_frame = ttk.Frame(dialog, padding=20)
+        form_frame.pack(fill='both', expand=True)
+        
+        ttk.Label(form_frame, text="Nombre del Autor:*").grid(row=0, column=0, sticky='e', padx=5, pady=5)
+        nombre_var = tk.StringVar(value=autor.get('nombreAutor', ''))
+        nombre_entry = ttk.Entry(form_frame, textvariable=nombre_var, width=40)
+        nombre_entry.grid(row=0, column=1, padx=5, pady=5)
         nombre_entry.focus()
         nombre_entry.select_range(0, tk.END)
+        
+        ttk.Label(form_frame, text="Enlace Wiki 1:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
+        wiki1_var = tk.StringVar(value=autor.get('enlaceWiki', ''))
+        ttk.Entry(form_frame, textvariable=wiki1_var, width=40).grid(row=1, column=1, padx=5, pady=5)
+        
+        ttk.Label(form_frame, text="Enlace Wiki 2:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
+        wiki2_var = tk.StringVar(value=autor.get('enlaceWiki2', ''))
+        ttk.Entry(form_frame, textvariable=wiki2_var, width=40).grid(row=2, column=1, padx=5, pady=5)
         
         def guardar():
             nombre = nombre_var.get().strip()
@@ -1316,13 +1403,16 @@ class CatalogoManager:
                 messagebox.showwarning("Advertencia", "El nombre del autor es obligatorio")
                 return
             
+            wiki1 = wiki1_var.get().strip()
+            wiki2 = wiki2_var.get().strip()
+            
             source = self.source_var.get()
-            sql = "UPDATE core_autores SET nombreAutor = ?, updated = datetime('now') WHERE id = ?"
+            sql = "UPDATE core_autores SET nombreAutor = ?, enlaceWiki = ?, enlaceWiki2 = ?, updated = datetime('now') WHERE id = ?"
             
             if source == 'local':
-                result = self.query_local(sql, (nombre, autor_id))
+                result = self.query_local(sql, (nombre, wiki1, wiki2, autor_id))
             else:
-                result = self.query_turso(sql, [nombre, autor_id])
+                result = self.query_turso(sql, [nombre, wiki1, wiki2, autor_id])
             
             if result:
                 messagebox.showinfo("Éxito", f"Autor actualizado correctamente")
@@ -1332,8 +1422,8 @@ class CatalogoManager:
             else:
                 messagebox.showerror("Error", "No se pudo actualizar el autor")
         
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=20)
+        button_frame = ttk.Frame(form_frame)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=20)
         ttk.Button(button_frame, text="Guardar", command=guardar).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Cancelar", command=dialog.destroy).pack(side='left', padx=5)
     
