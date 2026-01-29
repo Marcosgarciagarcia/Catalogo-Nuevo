@@ -489,6 +489,8 @@ class CatalogoManager:
     
     def cargar_libro_en_formulario(self, libro):
         """Cargar datos del libro en el formulario"""
+        if not isinstance(libro, dict):
+            libro = dict(libro)
         self.current_libro = libro
         
         self.id_var.set(libro.get('id', ''))
