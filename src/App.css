@@ -3,11 +3,11 @@ h2 {
   margin-bottom: 20px;
 }
 .card-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 15px;
   padding: 20px;
+  justify-items: center;
 }
 
 .card {
@@ -135,20 +135,18 @@ h2 {
 /* Tablets y pantallas medianas (2 libros por fila) */
 @media (max-width: 768px) {
   .card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
+    row-gap: 15px;
+    column-gap: 15px;
     padding: 15px;
   }
 
   .card {
-    width: calc(50% - 8px);
-    max-width: calc(50% - 8px);
+    max-width: 100%;
     height: auto;
     min-height: 350px;
     margin: 0;
-    flex-shrink: 0;
   }
 
   .text-container {
@@ -178,20 +176,18 @@ h2 {
 /* Móviles pequeños (2 libros por fila, más compactos) */
 @media (max-width: 480px) {
   .card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+    row-gap: 12px;
+    column-gap: 12px;
     padding: 12px;
   }
 
   .card {
-    width: calc(50% - 6px);
-    max-width: calc(50% - 6px);
+    max-width: 100%;
     padding: 8px;
     min-height: 300px;
     margin: 0;
-    flex-shrink: 0;
   }
 
   .text-container {
@@ -226,20 +222,18 @@ h2 {
 /* Móviles muy pequeños */
 @media (max-width: 360px) {
   .card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+    row-gap: 10px;
+    column-gap: 10px;
     padding: 10px;
   }
 
   .card {
-    width: calc(50% - 5px);
-    max-width: calc(50% - 5px);
+    max-width: 100%;
     min-height: 280px;
     padding: 6px;
     margin: 0;
-    flex-shrink: 0;
   }
 
   .image-container {
