@@ -898,14 +898,19 @@ class CatalogoManager:
         autores_synced = 0
         
         for autor in local_autores:
-            turso_autor = self.query_turso("SELECT id FROM core_autores WHERE id = ?", [autor['id']])
-            if not turso_autor:
-                created = autor['created'] or datetime.now().isoformat()
-                updated = autor['updated'] or datetime.now().isoformat()
-                sql = "INSERT INTO core_autores (id, nombreAutor, created, updated) VALUES (?, ?, ?, ?)"
-                self.query_turso(sql, [autor['id'], autor['nombreAutor'], created, updated])
-                self.log(f"  ➕ Autor creado: {autor['nombreAutor']}")
-                autores_synced += 1
+            try:
+                turso_autor = self.query_turso("SELECT id FROM core_autores WHERE id = ?", [autor['id']])
+                if not turso_autor:
+                    created = autor['created'] or datetime.now().isoformat()
+                    updated = autor['updated'] or datetime.now().isoformat()
+                    sql = "INSERT INTO core_autores (id, nombreAutor, enlaceWiki, enlaceWiki2, created, updated) VALUES (?, ?, ?, ?, ?, ?)"
+                    result = self.query_turso(sql, [autor['id'], autor['nombreAutor'], autor.get('enlaceWiki'), autor.get('enlaceWiki2'), created, updated])
+                    if result is not None:
+                        self.log(f"  ➕ Autor creado: {autor['nombreAutor']}")
+                        autores_synced += 1
+            except Exception as e:
+                self.log(f"  ⚠️ Error con autor {autor.get('nombreAutor', 'desconocido')}: {str(e)}")
+                continue
         
         if autores_synced > 0:
             self.log(f"✅ {autores_synced} autores sincronizados")
@@ -916,14 +921,19 @@ class CatalogoManager:
         editoriales_synced = 0
         
         for editorial in local_editoriales:
-            turso_editorial = self.query_turso("SELECT id FROM core_editoriales WHERE id = ?", [editorial['id']])
-            if not turso_editorial:
-                created = editorial['created'] or datetime.now().isoformat()
-                updated = editorial['updated'] or datetime.now().isoformat()
-                sql = "INSERT INTO core_editoriales (id, descriEditorial, created, updated) VALUES (?, ?, ?, ?)"
-                self.query_turso(sql, [editorial['id'], editorial['descriEditorial'], created, updated])
-                self.log(f"  ➕ Editorial creada: {editorial['descriEditorial']}")
-                editoriales_synced += 1
+            try:
+                turso_editorial = self.query_turso("SELECT id FROM core_editoriales WHERE id = ?", [editorial['id']])
+                if not turso_editorial:
+                    created = editorial['created'] or datetime.now().isoformat()
+                    updated = editorial['updated'] or datetime.now().isoformat()
+                    sql = "INSERT INTO core_editoriales (id, descriEditorial, created, updated) VALUES (?, ?, ?, ?)"
+                    result = self.query_turso(sql, [editorial['id'], editorial['descriEditorial'], created, updated])
+                    if result is not None:
+                        self.log(f"  ➕ Editorial creada: {editorial['descriEditorial']}")
+                        editoriales_synced += 1
+            except Exception as e:
+                self.log(f"  ⚠️ Error con editorial {editorial.get('descriEditorial', 'desconocida')}: {str(e)}")
+                continue
         
         if editoriales_synced > 0:
             self.log(f"✅ {editoriales_synced} editoriales sincronizadas")
@@ -944,67 +954,71 @@ class CatalogoManager:
         skipped = 0
         
         for book in local_books:
-            # Verificar si existe en Turso
-            turso_book = self.query_turso("SELECT id, updated FROM core_titulos WHERE id = ?", [book['id']])
-            
-            if not turso_book:
-                # No existe, crear con TODOS los campos
-                created = book['created'] or datetime.now().isoformat()
-                updated = book['updated'] or datetime.now().isoformat()
+            try:
+                # Verificar si existe en Turso
+                turso_book = self.query_turso("SELECT id, updated FROM core_titulos WHERE id = ?", [book['id']])
                 
-                sql = """
-                    INSERT INTO core_titulos (
-                        id, EAN, titulo, numeroEdicion, anyoEdicion, numeroPaginas,
-                        tituloOriginal, portada, numeroEjemplares, created, updated,
-                        codiAutor_id, codiGenero_id, codiSoporte_id, codiUbicacion_id,
-                        coleccion, contraportada, codiEstante_id, serie, codiEditorial_id,
-                        sinopsis, observaciones, portada_cloudinary
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """
-                params = [
-                    book['id'], book['EAN'], book['titulo'],
-                    book['numeroEdicion'] or 1,  # Default 1 si es NULL
-                    book['anyoEdicion'], book['numeroPaginas'],
-                    book['tituloOriginal'], book['portada'], book['numeroEjemplares'],
-                    created, updated,
-                    book['codiAutor_id'], book['codiGenero_id'], book['codiSoporte_id'],
-                    book['codiUbicacion_id'], book['coleccion'], book['contraportada'],
-                    book['codiEstante_id'], book['serie'], book['codiEditorial_id'],
-                    book['sinopsis'], book['observaciones'], book['portada_cloudinary']
-                ]
-                result = self.query_turso(sql, params)
-                if result is not None:
-                    self.log(f"  ➕ Creado: {book['titulo']}")
-                    created_count += 1
-            else:
-                # Comparar fechas de actualización
-                local_updated = book['updated'] or ''
-                turso_updated = turso_book[0].get('updated', '') or ''
-                
-                if local_updated > turso_updated:
-                    # Actualizar si local es más reciente
+                if not turso_book:
+                    # No existe, crear con TODOS los campos
+                    created = book['created'] or datetime.now().isoformat()
+                    updated = book['updated'] or datetime.now().isoformat()
+                    
                     sql = """
-                        UPDATE core_titulos SET
-                            EAN = ?, titulo = ?, tituloOriginal = ?,
-                            codiAutor_id = ?, codiEditorial_id = ?,
-                            anyoEdicion = ?, numeroPaginas = ?,
-                            portada_cloudinary = ?,
-                            sinopsis = ?, updated = ?
-                        WHERE id = ?
+                        INSERT INTO core_titulos (
+                            id, EAN, titulo, numeroEdicion, anyoEdicion, numeroPaginas,
+                            tituloOriginal, portada, numeroEjemplares, created, updated,
+                            codiAutor_id, codiGenero_id, codiSoporte_id, codiUbicacion_id,
+                            coleccion, contraportada, codiEstante_id, serie, codiEditorial_id,
+                            sinopsis, observaciones, portada_cloudinary
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """
                     params = [
-                        book['EAN'], book['titulo'], book['tituloOriginal'],
-                        book['codiAutor_id'], book['codiEditorial_id'],
+                        book['id'], book['EAN'], book['titulo'],
+                        book['numeroEdicion'] or 1,  # Default 1 si es NULL
                         book['anyoEdicion'], book['numeroPaginas'],
-                        book['portada_cloudinary'],
-                        book['sinopsis'], book['updated'], book['id']
+                        book['tituloOriginal'], book['portada'], book['numeroEjemplares'],
+                        created, updated,
+                        book['codiAutor_id'], book['codiGenero_id'], book['codiSoporte_id'],
+                        book['codiUbicacion_id'], book['coleccion'], book['contraportada'],
+                        book['codiEstante_id'], book['serie'], book['codiEditorial_id'],
+                        book['sinopsis'], book['observaciones'], book['portada_cloudinary']
                     ]
                     result = self.query_turso(sql, params)
                     if result is not None:
-                        self.log(f"  🔄 Actualizado: {book['titulo']}")
-                        updated_count += 1
+                        self.log(f"  ➕ Creado: {book['titulo']}")
+                        created_count += 1
                 else:
-                    skipped += 1
+                    # Comparar fechas de actualización
+                    local_updated = book['updated'] or ''
+                    turso_updated = turso_book[0].get('updated', '') or ''
+                    
+                    if local_updated > turso_updated:
+                        # Actualizar si local es más reciente
+                        sql = """
+                            UPDATE core_titulos SET
+                                EAN = ?, titulo = ?, tituloOriginal = ?,
+                                codiAutor_id = ?, codiEditorial_id = ?,
+                                anyoEdicion = ?, numeroPaginas = ?,
+                                portada_cloudinary = ?,
+                                sinopsis = ?, updated = ?
+                            WHERE id = ?
+                        """
+                        params = [
+                            book['EAN'], book['titulo'], book['tituloOriginal'],
+                            book['codiAutor_id'], book['codiEditorial_id'],
+                            book['anyoEdicion'], book['numeroPaginas'],
+                            book['portada_cloudinary'],
+                            book['sinopsis'], book['updated'], book['id']
+                        ]
+                        result = self.query_turso(sql, params)
+                        if result is not None:
+                            self.log(f"  🔄 Actualizado: {book['titulo']}")
+                            updated_count += 1
+                    else:
+                        skipped += 1
+            except Exception as e:
+                self.log(f"  ⚠️ Error con libro {book.get('titulo', 'desconocido')}: {str(e)}")
+                continue
         
         self.log(f"\n✅ Sincronización completada:")
         self.log(f"   ➕ {created_count} libros creados")
