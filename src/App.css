@@ -15,7 +15,7 @@ h2 {
   width: 100%;
   height: 450px;
   /*  border: 2px solid #ddd; */
-  border: 3px solid red;
+  border: 2px solid blue;
   border-radius: 7px;
   padding: 10px;
   display: flex;
