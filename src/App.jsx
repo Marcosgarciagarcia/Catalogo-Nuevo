@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllBooks, searchBooks, filterBooksByLetter } from './services/tursoService';
+import { getAllBooks, searchBooks, filterBooksByLetter } from './services/apiService';
 import BookList from './components/BookList';
 import Pagination from './components/Pagination';
 import './App.css'
@@ -23,20 +23,21 @@ function App() {
         setLoading(true);
         setError(null);
         
-        let resultado;
+        let response;
         
         if (busqueda) {
           // Buscar por término
-          resultado = await searchBooks(busqueda, filtrarPor);
+          response = await searchBooks(busqueda, filtrarPor);
         } else if (filtroLetra) {
           // Filtrar por letra
-          resultado = await filterBooksByLetter(filtroLetra, filtrarPor);
+          response = await filterBooksByLetter(filtroLetra, filtrarPor);
         } else {
           // Cargar todos los libros
-          resultado = await getAllBooks();
+          response = await getAllBooks();
         }
         
-        setLibros(resultado);
+        // La API devuelve { data: [...], total: N }
+        setLibros(response.data || response);
       } catch (err) {
         console.error('Error cargando libros:', err);
         setError('Error al cargar los libros. Por favor, intenta de nuevo.');
