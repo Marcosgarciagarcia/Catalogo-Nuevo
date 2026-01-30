@@ -57,7 +57,7 @@ BookImage.propTypes = {
   alt: PropTypes.string.isRequired
 };
 
-function BookList({ libros = [] }) {
+function BookList({ libros = [], onBookClick }) {
   return (
     <div className="card-container">
       {libros.map((libro) => (
@@ -70,7 +70,12 @@ function BookList({ libros = [] }) {
               <p className='title'>{libro.titulo}</p>
             </div>
           </div>
-          <div className='image-container'>
+          <div 
+            className='image-container'
+            onClick={() => onBookClick && onBookClick(libro)}
+            style={{ cursor: 'pointer' }}
+            title="Click para ver detalles"
+          >
             <BookImage
               src={libro.portada_cloudinary}
               alt={libro.titulo}
@@ -96,7 +101,8 @@ BookList.propTypes = {
         })
       ]).isRequired
     })
-  )
+  ),
+  onBookClick: PropTypes.func
 };
 
 BookList.defaultProps = {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAllBooks, searchBooks, filterBooksByLetter } from './services/apiService';
 import BookList from './components/BookList';
 import Pagination from './components/Pagination';
+import BookDetailModal from './components/BookDetailModal';
 import './App.css'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
   const librosPorPagina = 10;
 
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
@@ -131,6 +133,7 @@ function App() {
               (paginaActual - 1) * librosPorPagina,
               paginaActual * librosPorPagina
             )}
+            onBookClick={setSelectedBook}
           />
 
           <Pagination
@@ -140,6 +143,13 @@ function App() {
             setPaginaActual={setPaginaActual}
           />
         </>
+      )}
+
+      {selectedBook && (
+        <BookDetailModal
+          libro={selectedBook}
+          onClose={() => setSelectedBook(null)}
+        />
       )}
     </div>
   )
