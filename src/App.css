@@ -3,16 +3,16 @@ h2 {
   margin-bottom: 20px;
 }
 .card-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 15px;
   padding: 20px;
+  justify-items: center;
 }
 
 .card {
-  width: 250px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 250px;
   height: 450px;
   /*  border: 2px solid #ddd; */
   border: 2px solid blue;
@@ -25,7 +25,6 @@ h2 {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   /* background-color: rgb(192, 192, 92); */
   background-color: rgb(188, 216, 253);
-  flex-shrink: 0;
 }
 
 .text-container {
@@ -136,14 +135,13 @@ h2 {
 /* Tablets y pantallas medianas (2 libros por fila) */
 @media (max-width: 768px) {
   .card-container {
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     padding: 10px;
   }
 
   .card {
-    width: calc(50% - 10px) !important;
-    max-width: calc(50% - 10px);
-    min-width: 140px;
+    max-width: 100%;
     height: auto;
     min-height: 350px;
   }
@@ -174,14 +172,13 @@ h2 {
 /* Móviles pequeños (2 libros por fila, más compactos) */
 @media (max-width: 480px) {
   .card-container {
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     padding: 8px;
   }
 
   .card {
-    width: calc(50% - 8px) !important;
-    max-width: calc(50% - 8px);
-    min-width: 130px;
+    max-width: 100%;
     padding: 8px;
     min-height: 320px;
   }
@@ -216,14 +213,13 @@ h2 {
 /* Móviles muy pequeños */
 @media (max-width: 360px) {
   .card-container {
+    grid-template-columns: repeat(2, 1fr);
     gap: 6px;
     padding: 6px;
   }
 
   .card {
-    width: calc(50% - 6px) !important;
-    max-width: calc(50% - 6px);
-    min-width: 120px;
+    max-width: 100%;
     min-height: 300px;
     padding: 6px;
   }
