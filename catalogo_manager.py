@@ -1282,8 +1282,9 @@ class CatalogoManager:
                     
                     if local_updated and turso_updated and local_updated > turso_updated:
                         # Local más reciente, actualizar Turso
-                        params = [local_rec.get(f) for f in fields[1:-1]]  # Sin id y created
-                        params.append(local_rec.get('updated'))
+                        # Excluir id (pos 0) y created (penúltima pos)
+                        update_fields = [f for f in fields if f not in ['id', 'created']]
+                        params = [local_rec.get(f) for f in update_fields]
                         params.append(record_id)
                         if self.query_turso(update_sql, params) is not None:
                             updated_turso += 1
@@ -1309,8 +1310,10 @@ class CatalogoManager:
                     
                     if turso_updated and local_updated and turso_updated > local_updated:
                         # Turso más reciente, actualizar local
-                        params = tuple(turso_rec.get(f) for f in fields[1:-1])  # Sin id y created
-                        params = params + (turso_rec.get('updated'), record_id)
+                        # Excluir id y created
+                        update_fields = [f for f in fields if f not in ['id', 'created']]
+                        params = tuple(turso_rec.get(f) for f in update_fields)
+                        params = params + (record_id,)
                         if self.query_local(update_sql, params):
                             updated_local += 1
             except Exception as e:
