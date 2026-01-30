@@ -176,7 +176,9 @@ h2 {
 /* Móviles pequeños (2 libros por fila, más compactos) */
 @media (max-width: 480px) {
   .card-container {
-    grid-template-columns: repeat(2, 1fr);
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-auto-flow: row;
     gap: 12px;
     row-gap: 12px;
     column-gap: 12px;
@@ -184,10 +186,12 @@ h2 {
   }
 
   .card {
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
     padding: 8px;
     min-height: 300px;
     margin: 0;
+    box-sizing: border-box;
   }
 
   .text-container {
@@ -222,7 +226,9 @@ h2 {
 /* Móviles muy pequeños */
 @media (max-width: 360px) {
   .card-container {
-    grid-template-columns: repeat(2, 1fr);
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-auto-flow: row;
     gap: 10px;
     row-gap: 10px;
     column-gap: 10px;
@@ -230,10 +236,12 @@ h2 {
   }
 
   .card {
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
     min-height: 280px;
     padding: 6px;
     margin: 0;
+    box-sizing: border-box;
   }
 
   .image-container {
