@@ -648,3 +648,309 @@ if editorial_id:
 ---
 
 **Fin del Historial - 29 de Enero de 2026, 20:23**
+
+---
+
+# Sesión del 30 de Enero de 2026
+
+## Fase 6: Implementación de Modal de Detalles y Optimización Responsive (14:00 - 20:13)
+
+### Contexto
+El usuario solicitó añadir una funcionalidad de modal para mostrar información extendida de los libros y optimizar el layout responsive, especialmente para móviles.
+
+---
+
+## Problema #1: Modal de Detalles de Libro
+
+### Solicitud del Usuario (14:00)
+> "Quiero que cuando haga doble click (o pulse sobre) la imagen, se despliegue una pantalla con información extendida del libro: título original, editorial, año edición y sinopsis (este último campo con scroll si es necesario)"
+
+### Solución Implementada
+
+#### 1. **Nuevo Componente:** `src/components/BookDetailModal.jsx`
+**Características:**
+- Modal overlay con backdrop oscuro
+- Información completa del libro:
+  - Título
+  - Título original (si existe)
+  - Autor
+  - Editorial
+  - Año de edición
+  - ISBN/EAN
+  - Sinopsis con scroll automático
+- Botón de cierre (X)
+- Click fuera del modal para cerrar
+- Animaciones CSS suaves
+
+#### 2. **Nuevo Archivo:** `src/components/BookDetailModal.css`
+**Estilos implementados:**
+- Backdrop semi-transparente
+- Modal centrado con max-width 600px
+- Sinopsis con max-height y scroll personalizado
+- Responsive para móviles
+- Transiciones suaves
+
+#### 3. **Modificado:** `src/components/BookList.jsx`
+- Añadido `onClick` handler en `image-container`
+- Cursor pointer para indicar clickeabilidad
+- PropTypes actualizado con `onBookClick`
+
+#### 4. **Modificado:** `src/App.jsx`
+- Importado `BookDetailModal`
+- Estado `selectedBook` para gestionar libro seleccionado
+- Handler `onBookClick` pasado a `BookList`
+- Renderizado condicional del modal
+
+**Commits:**
+- `7f1ee55` - "Feature: Añadir modal de detalles del libro"
+
+---
+
+## Problema #2: Layout Móvil - Un Solo Libro por Fila
+
+### Solicitud del Usuario (14:03)
+> "En la versión de móvil, aparece sólo un libro por línea. ¿Es posible cambiar el tamaño cuando visualizemos en móvil para que aparezcan dos o tres libros por línea?"
+
+### Intentos de Solución
+
+#### Intento 1: Media Queries con CSS Grid (14:07)
+**Cambios aplicados:**
+```css
+@media (max-width: 768px) {
+  .card-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  .card {
+    width: calc(50% - 10px) !important;
+  }
+}
+```
+
+**Resultado:** No funcionó - seguía mostrando 1 libro por fila
+**Commit:** `bb590e7` - "Responsive: Optimizar layout móvil para mostrar 2 libros por fila"
+
+#### Intento 2: Forzar con !important (14:09)
+**Cambios aplicados:**
+- Añadido `!important` a width
+- Añadido `max-width` explícito
+- Añadido `flex-shrink: 0`
+
+**Resultado:** No funcionó en móvil
+**Commit:** `9af21b1` - "Fix: Forzar layout de 2 columnas en móviles con !important"
+
+#### Intento 3: Cambio a Flexbox (14:14)
+**Cambios aplicados:**
+- Reemplazado Grid por Flexbox
+- `justify-content: space-between`
+- `width: calc(50% - gap)`
+
+**Resultado:** Rompió el desktop, no funcionó en móvil
+**Commit:** `f9773c2` - "Fix: Volver a Flexbox para compatibilidad con Firefox mobile"
+**Revertido:** `d106cb1` - Usuario reportó que no funcionaba en ningún navegador
+
+#### Intento 4: Grid con !important más agresivo (14:17)
+**Cambios aplicados:**
+```css
+@media (max-width: 480px) {
+  .card-container {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-auto-flow: row;
+  }
+  .card {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+}
+```
+
+**Resultado:** Rompió el desktop
+**Commit:** `c149ff4` - "Fix: Forzar Grid 2 columnas en Firefox mobile con !important"
+**Revertido:** `110ba98` - Desktop no funcionaba bien
+
+---
+
+## Problema #3: Desktop No Llena Ancho de Pantalla
+
+### Diagnóstico del Usuario (20:02)
+> "Veo cuatro libros por fila y no llenan el ancho de la pantalla. Creo que el problema no son las cards sino el espacio que configuras al cargar la página"
+
+### Causa Raíz Identificada (20:09)
+El problema estaba en `src/index.css`:
+```css
+body {
+  display: flex;
+  place-items: center;  /* ← Centraba todo el contenido */
+}
+```
+
+### Solución Final Aplicada
+
+#### 1. **Modificado:** `src/index.css`
+```css
+/* ANTES */
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* DESPUÉS */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  width: 100%;
+}
+```
+
+#### 2. **Modificado:** `src/App.css`
+```css
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  padding: 20px;
+  max-width: 100%;
+  width: 100%;
+}
+
+.card {
+  width: 100%;
+  height: 450px;
+  border: 2px solid blue;
+  box-sizing: border-box;
+}
+```
+
+**Cambios clave:**
+- Eliminado `display: flex` y `place-items: center` del body
+- Añadido `width: 100%` al body
+- Cambiado `auto-fill` a `auto-fit` en grid (expande cards para llenar espacio)
+- Añadido `box-sizing: border-box` a las cards
+
+**Commits:**
+- `06a0a22` - "Fix: Eliminar max-width en cards para llenar pantalla completa"
+- `f81d8a7` - "Fix: Usar auto-fit y box-sizing para llenar pantalla"
+- `ebf1d7c` - "Fix: Eliminar centrado de body para usar ancho completo"
+
+---
+
+## Resultado Final (20:13)
+
+### Confirmación del Usuario
+> "Ok. Ahora está correcto. Ahora se visualiza satisfactoriamente también en firefox tanto en el PC como en el móvil."
+
+### Estado Final del Frontend
+
+**Desktop:**
+- ✅ Llena todo el ancho de la pantalla
+- ✅ Grid responsive con `auto-fit`
+- ✅ Cards se expanden para usar espacio disponible
+- ✅ Funciona en Chrome, Firefox, Opera
+
+**Mobile:**
+- ✅ 2 libros por fila
+- ✅ Espaciado adecuado (15px gap)
+- ✅ Imágenes redimensionadas proporcionalmente
+- ✅ Funciona en Firefox mobile (Samsung S22 Ultra)
+
+**Modal de Detalles:**
+- ✅ Click en imagen abre modal
+- ✅ Información completa del libro
+- ✅ Sinopsis con scroll
+- ✅ Responsive en móviles
+- ✅ Animaciones suaves
+
+---
+
+## Commits de la Sesión del 30 de Enero
+
+| Commit | Hora | Descripción |
+|--------|------|-------------|
+| `7f1ee55` | 14:00 | Feature: Añadir modal de detalles del libro |
+| `bb590e7` | 14:07 | Responsive: Optimizar layout móvil para mostrar 2 libros por fila |
+| `9af21b1` | 14:09 | Fix: Forzar layout de 2 columnas en móviles con !important |
+| `17084cf` | 14:09 | Refactor: Cambiar de Flexbox a CSS Grid para layout móvil |
+| `2b7605f` | 14:14 | UX: Mejorar espaciado y tamaño de imágenes en móvil |
+| `fa37624` | 14:17 | UX: Aumentar gap entre tarjetas en móvil |
+| `f9773c2` | 14:37 | Fix: Volver a Flexbox para compatibilidad con Firefox mobile (REVERTIDO) |
+| `d106cb1` | 14:41 | Revert "Fix: Volver a Flexbox..." |
+| `c149ff4` | 14:44 | Fix: Forzar Grid 2 columnas en Firefox mobile con !important (REVERTIDO) |
+| `110ba98` | 14:44 | Revert "Fix: Forzar Grid 2 columnas..." |
+| `06a0a22` | 20:04 | Fix: Eliminar max-width en cards para llenar pantalla completa |
+| `d034c8d` | 20:07 | Test: Cambiar borde a rojo para verificar actualización de caché |
+| `f81d8a7` | 20:09 | Fix: Usar auto-fit y box-sizing para llenar pantalla |
+| `ebf1d7c` | 20:11 | Fix: Eliminar centrado de body para usar ancho completo |
+
+---
+
+## Lecciones Aprendidas
+
+### 1. Problema de Caché del Navegador
+- Los cambios CSS no se reflejaban inmediatamente
+- Solución: Cambio visible (borde rojo) para verificar actualización
+- Importante: Ctrl+F5 o modo incógnito para testing
+
+### 2. CSS Grid vs Flexbox para Responsive
+- Grid con `auto-fit` es mejor que `auto-fill` para expandir elementos
+- Flexbox puede ser problemático para layouts de 2 columnas exactas
+- `!important` puede romper otros breakpoints
+
+### 3. Identificación de Causa Raíz
+- El problema no estaba en las cards sino en el contenedor padre (body)
+- `place-items: center` en body centraba todo el contenido
+- Importante: Revisar CSS global antes de modificar componentes
+
+### 4. Testing Cross-Browser
+- Firefox mobile puede tener comportamientos diferentes
+- Importante: Probar en múltiples navegadores y dispositivos
+- Modo privado/incógnito útil para evitar caché
+
+---
+
+## Archivos Modificados en la Sesión
+
+### Nuevos Archivos
+- `src/components/BookDetailModal.jsx` - Componente modal
+- `src/components/BookDetailModal.css` - Estilos del modal
+
+### Archivos Modificados
+- `src/App.jsx` - Gestión de estado del modal
+- `src/App.css` - Layout responsive y Grid
+- `src/components/BookList.jsx` - Click handler en imágenes
+- `src/index.css` - Eliminado centrado del body
+
+---
+
+## Estado del Proyecto al Final del 30 de Enero
+
+### Frontend React (`C:\Proyectos\Catalogo`)
+- ✅ Modal de detalles de libro funcional
+- ✅ Layout responsive optimizado (desktop y mobile)
+- ✅ 2 libros por fila en móviles
+- ✅ Llena todo el ancho de pantalla en desktop
+- ✅ Compatible con Chrome, Firefox, Opera (desktop y mobile)
+- ✅ Conectado a Turso Cloud
+- ✅ 2,722 libros cargados
+- ✅ Imágenes desde Cloudinary
+
+### Funcionalidades Completas
+- ✅ Búsqueda por título o autor
+- ✅ Filtrado alfabético A-Z, Ñ
+- ✅ Paginación (10 libros por página)
+- ✅ Modal con información extendida
+- ✅ Responsive design optimizado
+- ✅ Estados de carga y error
+
+### Pendiente (Roadmap)
+- 🔐 Autenticación y autorización
+- ✏️ CRUD completo (crear, editar, eliminar)
+- 🎵🎬 Expansión multimedia (música, video)
+
+---
+
+**Fin de la Sesión - 30 de Enero de 2026, 20:13**
