@@ -895,10 +895,13 @@ class CatalogoManager:
         # Primero sincronizar autores
         self.log("\n👤 Sincronizando autores...")
         local_autores = self.query_local("SELECT * FROM core_autores")
+        self.log(f"   📊 Total autores en local: {len(local_autores) if local_autores else 0}")
         autores_synced = 0
         
-        for autor in local_autores:
+        for idx, autor in enumerate(local_autores, 1):
             try:
+                if idx % 100 == 0:
+                    self.log(f"   🔄 Procesando autor {idx}/{len(local_autores)}...")
                 turso_autor = self.query_turso("SELECT id FROM core_autores WHERE id = ?", [autor['id']])
                 if not turso_autor:
                     created = autor['created'] or datetime.now().isoformat()
@@ -914,14 +917,19 @@ class CatalogoManager:
         
         if autores_synced > 0:
             self.log(f"✅ {autores_synced} autores sincronizados")
+        else:
+            self.log("   ℹ️ No hay autores nuevos para sincronizar")
         
         # Luego sincronizar editoriales
         self.log("\n🏢 Sincronizando editoriales...")
         local_editoriales = self.query_local("SELECT * FROM core_editoriales")
+        self.log(f"   📊 Total editoriales en local: {len(local_editoriales) if local_editoriales else 0}")
         editoriales_synced = 0
         
-        for editorial in local_editoriales:
+        for idx, editorial in enumerate(local_editoriales, 1):
             try:
+                if idx % 100 == 0:
+                    self.log(f"   🔄 Procesando editorial {idx}/{len(local_editoriales)}...")
                 turso_editorial = self.query_turso("SELECT id FROM core_editoriales WHERE id = ?", [editorial['id']])
                 if not turso_editorial:
                     created = editorial['created'] or datetime.now().isoformat()
@@ -937,6 +945,8 @@ class CatalogoManager:
         
         if editoriales_synced > 0:
             self.log(f"✅ {editoriales_synced} editoriales sincronizadas")
+        else:
+            self.log("   ℹ️ No hay editoriales nuevas para sincronizar")
         
         # Finalmente sincronizar libros
         self.log("\n📚 Sincronizando libros...")
@@ -944,6 +954,7 @@ class CatalogoManager:
             SELECT * FROM core_titulos 
             ORDER BY updated DESC
         """)
+        self.log(f"   📊 Total libros en local: {len(local_books) if local_books else 0}")
         
         if not local_books:
             self.log("No hay libros para sincronizar")
@@ -953,8 +964,10 @@ class CatalogoManager:
         updated_count = 0
         skipped = 0
         
-        for book in local_books:
+        for idx, book in enumerate(local_books, 1):
             try:
+                if idx % 50 == 0:
+                    self.log(f"   🔄 Procesando libro {idx}/{len(local_books)}...")
                 # Verificar si existe en Turso
                 turso_book = self.query_turso("SELECT id, updated FROM core_titulos WHERE id = ?", [book['id']])
                 
