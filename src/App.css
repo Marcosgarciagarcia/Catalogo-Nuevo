@@ -128,3 +128,96 @@ h2 {
 .pagination span {
   padding: 5px;
 }
+
+/* Responsive Design para Móviles */
+
+/* Tablets y pantallas medianas (2 libros por fila) */
+@media (max-width: 768px) {
+  .card-container {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .card {
+    width: calc(50% - 10px);
+    min-width: 150px;
+    height: auto;
+    min-height: 350px;
+  }
+
+  .text-container {
+    height: auto;
+    min-height: 80px;
+  }
+
+  .image-container {
+    width: 100%;
+    height: 220px;
+  }
+
+  .author {
+    font-size: 0.8em;
+  }
+
+  .title {
+    font-size: 0.9em;
+  }
+
+  .isbn {
+    font-size: 0.7em;
+  }
+}
+
+/* Móviles pequeños (2 libros por fila, más compactos) */
+@media (max-width: 480px) {
+  .card-container {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .card {
+    width: calc(50% - 8px);
+    min-width: 140px;
+    padding: 8px;
+    min-height: 320px;
+  }
+
+  .text-container {
+    min-height: 70px;
+  }
+
+  .image-container {
+    height: 200px;
+  }
+
+  .author {
+    font-size: 0.75em;
+  }
+
+  .title {
+    font-size: 0.85em;
+  }
+
+  .isbn {
+    font-size: 0.65em;
+    margin-top: 5px;
+  }
+
+  .alfabeto button {
+    padding: 4px 8px;
+    font-size: 0.9em;
+  }
+}
+
+/* Móviles muy pequeños (opción para 3 libros si la pantalla es muy estrecha) */
+@media (max-width: 360px) {
+  .card {
+    width: calc(50% - 6px);
+    min-width: 130px;
+    min-height: 300px;
+  }
+
+  .image-container {
+    height: 180px;
+  }
+}
