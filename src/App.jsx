@@ -132,9 +132,6 @@ function App() {
               Iniciar Sesión
             </button>
           )}
-          <span style={{fontSize: '10px', color: '#999', marginLeft: '10px'}}>
-            Auth: {isAuthenticated ? 'Yes' : 'No'}
-          </span>
         </div>
       </div>
       
