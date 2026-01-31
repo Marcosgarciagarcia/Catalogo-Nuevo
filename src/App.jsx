@@ -70,21 +70,65 @@ function App() {
 
   return (
     <div>
-      <div className="header">
-        <h2>Catálogo de libros de casa</h2>
-        <div className="auth-section">
+      <div className="header" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '20px',
+        backgroundColor: '#f5f5f5',
+        borderBottom: '2px solid #ddd',
+        marginBottom: '20px'
+      }}>
+        <h2 style={{margin: 0, textAlign: 'left'}}>Catálogo de libros de casa</h2>
+        <div className="auth-section" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '15px'
+        }}>
           {isAuthenticated ? (
             <>
-              <span className="user-info">
+              <span className="user-info" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 600,
+                color: '#333'
+              }}>
                 👤 {user?.username}
-                {user?.isAdmin && <span className="admin-badge">Admin</span>}
+                {user?.isAdmin && <span className="admin-badge" style={{
+                  backgroundColor: '#ff9800',
+                  color: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '0.75em',
+                  fontWeight: 700,
+                  marginLeft: '5px'
+                }}>Admin</span>}
               </span>
-              <button onClick={logout} className="auth-button logout-button">
+              <button onClick={logout} className="auth-button logout-button" style={{
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                backgroundColor: '#f44336',
+                color: 'white'
+              }}>
                 Cerrar Sesión
               </button>
             </>
           ) : (
-            <button onClick={() => setShowLogin(true)} className="auth-button login-button">
+            <button onClick={() => setShowLogin(true)} className="auth-button login-button" style={{
+              padding: '8px 16px',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              backgroundColor: '#4CAF50',
+              color: 'white'
+            }}>
               Iniciar Sesión
             </button>
           )}
