@@ -78,6 +78,7 @@
 
 .card {
   width: 100%;
+  max-width: 350px;
   height: 450px;
   /*  border: 2px solid #ddd; */
   border: 2px solid blue;
@@ -91,6 +92,8 @@
   /* background-color: rgb(192, 192, 92); */
   background-color: rgb(188, 216, 253);
   box-sizing: border-box;
+  margin: 0 auto;
+  justify-self: center;
 }
 
 .text-container {
