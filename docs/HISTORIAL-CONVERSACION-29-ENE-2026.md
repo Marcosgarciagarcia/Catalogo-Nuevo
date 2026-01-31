@@ -1410,3 +1410,182 @@ for usuario in turso_usuarios:
 ---
 
 **Fin de la Sesión - 31 de Enero de 2026, 14:33**
+
+---
+
+## Sesión 31 de Enero de 2026 - Tarde (19:15 - 20:26)
+
+### Objetivo Principal
+Corregir problemas de UI/UX en la versión móvil y tablet de la aplicación.
+
+### Problemas Reportados
+1. **Título no visible** - El título "Catálogo de libros de casa" no aparecía en ninguna versión
+2. **Auth-section visible en móvil** - La sección de autenticación seguía siendo visible en dispositivos móviles
+3. **Tarjetas demasiado anchas en móvil** - Las tarjetas ocupaban todo el ancho de la pantalla
+4. **Tarjetas se estiraban en última página** - En PC y tablet, las tarjetas de la última página se hacían más grandes
+5. **Paginación incorrecta en tablet vertical** - Mostraba solo 10 items en lugar de completar la página
+
+---
+
+### Soluciones Implementadas
+
+#### 1. Reestructuración Completa del Header
+**Problema:** El título estaba dentro del header con la auth-section, causando conflictos de renderizado y estilos inline que sobrescribían CSS.
+
+**Solución:**
+- Movido el título fuera del header como elemento independiente `.page-title`
+- Header solo para autenticación, posicionado `absolute` en top-right
+- Eliminados todos los estilos inline y colores de fondo
+- Header solo se renderiza en desktop (`isDesktop && ...`)
+
+**Archivos modificados:**
+- `src/App.jsx` - Estructura JSX reestructurada
+- `src/App.css` - Nuevas clases `.page-title` y `.auth-header`
+
+**Commits:**
+- `266f2f6` - "Refactor: Reestructurar header completamente"
+
+#### 2. Tarjetas con Tamaño Fijo
+**Problema:** El grid CSS con `auto-fit` y `1fr` hacía que las tarjetas se estiraran para llenar el espacio disponible, especialmente en la última página.
+
+**Solución:**
+```css
+.card-container {
+  grid-template-columns: repeat(auto-fit, 300px);
+  justify-content: center;
+}
+
+.card {
+  width: 300px; /* Fijo, no se estira */
+}
+```
+
+**Archivos modificados:**
+- `src/App.css` - Grid con columnas fijas de 300px
+
+**Commits:**
+- `a8fb768` - "Fix: Tarjetas tamaño fijo y paginación responsive"
+
+#### 3. Paginación Responsive con Detección de Orientación
+**Problema:** La tablet vertical mostraba solo 10 items por página cuando debería mostrar más para completar las páginas.
+
+**Solución:** Implementada detección de orientación usando `height > width`:
+```javascript
+const getItemsPerPage = () => {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const isPortrait = height > width;
+  
+  if (isPortrait && width >= 768) return 15; // Tablet vertical
+  if (width >= 1200) return 12; // Tablet horizontal
+  if (width >= 768) return 10;  // Desktop
+  return 15; // Móvil
+};
+```
+
+**Distribución final:**
+| Dispositivo | Orientación | Items/Página |
+|-------------|-------------|--------------|
+| Tablet | Vertical | 15 |
+| Tablet | Horizontal | 12 |
+| Desktop | - | 10 |
+| Móvil | Cualquiera | 15 |
+
+**Archivos modificados:**
+- `src/App.jsx` - Lógica de paginación dinámica
+
+**Commits:**
+- `0602725` - "Fix: Actualizar items por página al redimensionar ventana"
+- `5c27983` - "Fix: Ajustar breakpoint para tablet vertical (15 items)"
+- `d5dfc2e` - "Fix: Detectar orientación portrait/landscape para items por página"
+
+#### 4. Aumento de Altura en Tarjetas Móviles
+**Problema:** Las tarjetas en móvil eran demasiado pequeñas.
+
+**Solución:** Aumentada la altura de las tarjetas en móvil en un 35% y ajustados todos los elementos internos proporcionalmente:
+
+| Breakpoint | Altura Antes | Altura Después | Incremento |
+|------------|--------------|----------------|------------|
+| ≤768px | 350px | 473px | +35% |
+| ≤480px | 300px | 405px | +35% |
+| ≤360px | 280px | 378px | +35% |
+
+**Elementos internos también aumentados:**
+- `text-container`: +35%
+- `image-container`: +35%
+
+**Archivos modificados:**
+- `src/App.css` - Media queries móviles actualizadas
+
+**Commits:**
+- `c3f511c` - "Feature: Aumentar altura de tarjetas en móvil 35%"
+
+---
+
+### Problemas Encontrados Durante el Proceso
+
+#### 1. Caché Agresivo de Vercel
+**Síntoma:** Los cambios CSS no se reflejaban en producción inmediatamente.
+
+**Solución temporal:** 
+- Añadido `"version": 2` a `vercel.json` para forzar rebuild
+- Usuario instruyó a limpiar caché del navegador con Ctrl+Shift+R
+
+#### 2. Estilos Inline Sobrescribiendo CSS
+**Síntoma:** El título no aparecía porque estilos inline tenían mayor especificidad.
+
+**Solución:** Eliminados todos los estilos inline y usadas solo clases CSS con `!important` cuando necesario.
+
+#### 3. Breakpoints Basados Solo en Ancho
+**Síntoma:** Tablet vertical no se detectaba correctamente porque su ancho podía ser >900px.
+
+**Solución:** Cambiada la lógica a detección de orientación usando `height > width`.
+
+---
+
+### Commits de la Sesión
+
+1. `723eb93` - Fix: Título visible y tarjetas más estrechas en móvil
+2. `c87daf7` - Fix: Eliminar estilos inline de auth-section
+3. `b215aa6` - Fix: Asegurar visibilidad del título h2
+4. `f41794a` - Fix: Forzar visibilidad del header con !important y header tag
+5. `9abfb6d` - Fix: Igualar color de fondo auth-section y forzar ocultación en móvil
+6. `5a92f36` - Fix: Auth-section transparente y título correctamente posicionado
+7. `ea4709e` - Force Vercel rebuild - add version to vercel.json
+8. `266f2f6` - Refactor: Reestructurar header completamente
+9. `6672356` - Fix: Limitar ancho máximo de tarjetas a 350px
+10. `882028e` - Revert "Fix: Prevenir estiramiento de tarjetas..."
+11. `a8fb768` - Fix: Tarjetas tamaño fijo y paginación responsive
+12. `0602725` - Fix: Actualizar items por página al redimensionar ventana
+13. `5c27983` - Fix: Ajustar breakpoint para tablet vertical (15 items)
+14. `d5dfc2e` - Fix: Detectar orientación portrait/landscape para items por página
+15. `c3f511c` - Feature: Aumentar altura de tarjetas en móvil 35%
+
+---
+
+### Estado Final
+
+✅ **Completado exitosamente:**
+- Título visible en todas las versiones (PC, tablet, móvil)
+- Auth-section oculta en móvil, visible solo en desktop
+- Tarjetas con ancho fijo (300px) que no se estiran
+- Paginación responsive según orientación del dispositivo
+- Tarjetas móviles 35% más altas con elementos internos ajustados
+
+**Archivos principales modificados:**
+- `src/App.jsx` - Estructura del componente y lógica de paginación
+- `src/App.css` - Estilos responsive y media queries
+- `vercel.json` - Configuración de deployment
+
+---
+
+### Próximos Pasos (Pendientes)
+
+El usuario indicó que continuará mañana. Posibles tareas futuras:
+1. Implementación completa de CRUD para libros (crear, editar, eliminar)
+2. Sincronización de usuarios entre desktop app y Turso
+3. Mejoras adicionales de UI/UX según feedback
+
+---
+
+**Fin de la Sesión - 31 de Enero de 2026, 20:26**
