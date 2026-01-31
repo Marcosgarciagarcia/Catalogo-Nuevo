@@ -14,6 +14,14 @@
   text-align: left;
 }
 
+.header-mobile {
+  justify-content: center;
+}
+
+.header-mobile h2 {
+  text-align: center;
+}
+
 .auth-section {
   display: flex;
   align-items: center;
@@ -213,7 +221,7 @@ h2 {
 
   .card {
     width: 100%;
-    max-width: 350px;
+    max-width: 280px;
     height: auto;
     min-height: 350px;
     margin: 0;
@@ -255,7 +263,7 @@ h2 {
 
   .card {
     width: 100%;
-    max-width: 320px;
+    max-width: 260px;
     padding: 8px;
     min-height: 300px;
     margin: 0;
@@ -302,7 +310,7 @@ h2 {
 
   .card {
     width: 100%;
-    max-width: 300px;
+    max-width: 240px;
     min-height: 280px;
     padding: 6px;
     margin: 0;
