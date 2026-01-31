@@ -19,7 +19,16 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const { user, logout, isAuthenticated } = useAuth();
-  const librosPorPagina = 10;
+
+  // Calcular items por página según ancho de pantalla
+  const getItemsPerPage = () => {
+    const width = window.innerWidth;
+    if (width >= 1200) return 12; // Desktop grande
+    if (width >= 768) return 10;  // Desktop/Tablet horizontal
+    return 15; // Tablet vertical y móvil (más items porque son 1 columna)
+  };
+
+  const [librosPorPagina, setLibrosPorPagina] = useState(getItemsPerPage());
 
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
