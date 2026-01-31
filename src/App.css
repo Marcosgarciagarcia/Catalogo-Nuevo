@@ -201,10 +201,10 @@ h2 {
 
 /* Responsive Design para Móviles */
 
-/* Tablets y pantallas medianas (2 libros por fila) */
+/* Tablets y pantallas medianas (1 libro por fila) */
 @media (max-width: 768px) {
   .card-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 15px;
     row-gap: 15px;
     column-gap: 15px;
@@ -242,10 +242,10 @@ h2 {
   }
 }
 
-/* Móviles pequeños (2 libros por fila, más compactos) */
+/* Móviles pequeños (1 libro por fila, más compacto) */
 @media (max-width: 480px) {
   .card-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 12px;
     row-gap: 12px;
     column-gap: 12px;
@@ -291,7 +291,7 @@ h2 {
 /* Móviles muy pequeños */
 @media (max-width: 360px) {
   .card-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 10px;
     row-gap: 10px;
     column-gap: 10px;
