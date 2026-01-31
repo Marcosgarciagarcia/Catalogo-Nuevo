@@ -36,6 +36,8 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 768);
+      setLibrosPorPagina(getItemsPerPage());
+      setPaginaActual(1);
     };
 
     window.addEventListener('resize', handleResize);
