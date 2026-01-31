@@ -5,7 +5,6 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   // Verificar si hay una sesión activa al cargar
   useEffect(() => {
@@ -98,7 +97,6 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
-    loading,
     login,
     logout,
     getToken,
