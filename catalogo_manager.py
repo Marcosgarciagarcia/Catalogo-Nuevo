@@ -58,7 +58,12 @@ class CatalogoManager:
         self.notebook.add(self.tab_editoriales, text='🏢 Editoriales')
         self.create_editoriales_tab()
         
-        # Pestaña 5: Sincronización
+        # Pestaña 5: Gestión de Usuarios
+        self.tab_usuarios = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_usuarios, text='👥 Usuarios')
+        self.create_usuarios_tab()
+        
+        # Pestaña 6: Sincronización
         self.tab_sync = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_sync, text='🔄 Sincronización')
         self.create_sync_tab()
@@ -904,7 +909,64 @@ class CatalogoManager:
         """Sincronizar de local a Turso"""
         self.log("📤 Sincronizando Local → Turso...")
         
-        # Primero sincronizar autores (solo los modificados recientemente)
+        # Primero sincronizar usuarios
+        self.log("\n👥 Sincronizando usuarios...")
+        local_usuarios = self.query_local("""
+            SELECT * FROM auth_user 
+            WHERE date_joined >= datetime('now', '-1 day') OR date_joined IS NULL
+            ORDER BY date_joined DESC
+        """)
+        self.log(f"   📊 Usuarios modificados recientemente: {len(local_usuarios) if local_usuarios else 0}")
+        usuarios_synced = 0
+        
+        for idx, usuario_row in enumerate(local_usuarios, 1):
+            try:
+                usuario = dict(usuario_row)
+                
+                if idx % 10 == 0:
+                    self.log(f"   🔄 Procesando usuario {idx}/{len(local_usuarios)}...")
+                
+                turso_usuario = self.query_turso("SELECT id FROM auth_user WHERE id = ?", [usuario['id']])
+                if not turso_usuario:
+                    # Insertar nuevo usuario
+                    sql = """INSERT INTO auth_user (
+                        id, password, last_login, is_superuser, username, first_name, 
+                        last_name, email, is_staff, is_active, date_joined
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+                    result = self.query_turso(sql, [
+                        usuario['id'], usuario['password'], usuario.get('last_login'),
+                        usuario['is_superuser'], usuario['username'], usuario.get('first_name', ''),
+                        usuario.get('last_name', ''), usuario.get('email', ''),
+                        usuario['is_staff'], usuario['is_active'], usuario['date_joined']
+                    ])
+                    if result is not None:
+                        self.log(f"  ➕ Usuario creado: {usuario['username']}")
+                        usuarios_synced += 1
+                else:
+                    # Actualizar usuario existente
+                    sql = """UPDATE auth_user SET 
+                        password = ?, last_login = ?, is_superuser = ?, first_name = ?,
+                        last_name = ?, email = ?, is_staff = ?, is_active = ?
+                        WHERE id = ?"""
+                    result = self.query_turso(sql, [
+                        usuario['password'], usuario.get('last_login'), usuario['is_superuser'],
+                        usuario.get('first_name', ''), usuario.get('last_name', ''),
+                        usuario.get('email', ''), usuario['is_staff'], usuario['is_active'],
+                        usuario['id']
+                    ])
+                    if result is not None:
+                        self.log(f"  🔄 Usuario actualizado: {usuario['username']}")
+                        usuarios_synced += 1
+            except Exception as e:
+                self.log(f"  ⚠️ Error con usuario {usuario.get('username', 'desconocido') if isinstance(usuario, dict) else 'desconocido'}: {str(e)}")
+                continue
+        
+        if usuarios_synced > 0:
+            self.log(f"✅ {usuarios_synced} usuarios sincronizados")
+        else:
+            self.log("   ℹ️ No hay usuarios nuevos para sincronizar")
+        
+        # Luego sincronizar autores (solo los modificados recientemente)
         self.log("\n👤 Sincronizando autores...")
         local_autores = self.query_local("""
             SELECT * FROM core_autores 
@@ -1072,6 +1134,48 @@ class CatalogoManager:
     def sync_turso_to_local(self):
         """Sincronizar de Turso a local"""
         self.log("📥 Sincronizando Turso → Local...")
+        
+        # Sincronizar usuarios
+        self.log("\n👥 Sincronizando usuarios...")
+        turso_usuarios = self.query_turso("SELECT * FROM auth_user")
+        usuarios_synced = 0
+        
+        if turso_usuarios:
+            for usuario in turso_usuarios:
+                local_usuario = self.query_local("SELECT id FROM auth_user WHERE id = ?", (usuario['id'],))
+                if not local_usuario:
+                    # Insertar nuevo usuario
+                    sql = """INSERT INTO auth_user (
+                        id, password, last_login, is_superuser, username, first_name,
+                        last_name, email, is_staff, is_active, date_joined
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+                    self.query_local(sql, (
+                        usuario['id'], usuario['password'], usuario.get('last_login'),
+                        usuario['is_superuser'], usuario['username'], usuario.get('first_name', ''),
+                        usuario.get('last_name', ''), usuario.get('email', ''),
+                        usuario['is_staff'], usuario['is_active'], usuario['date_joined']
+                    ))
+                    self.log(f"  ➕ Usuario creado: {usuario['username']}")
+                    usuarios_synced += 1
+                else:
+                    # Actualizar usuario existente
+                    sql = """UPDATE auth_user SET 
+                        password = ?, last_login = ?, is_superuser = ?, first_name = ?,
+                        last_name = ?, email = ?, is_staff = ?, is_active = ?
+                        WHERE id = ?"""
+                    self.query_local(sql, (
+                        usuario['password'], usuario.get('last_login'), usuario['is_superuser'],
+                        usuario.get('first_name', ''), usuario.get('last_name', ''),
+                        usuario.get('email', ''), usuario['is_staff'], usuario['is_active'],
+                        usuario['id']
+                    ))
+                    self.log(f"  🔄 Usuario actualizado: {usuario['username']}")
+                    usuarios_synced += 1
+        
+        if usuarios_synced > 0:
+            self.log(f"✅ {usuarios_synced} usuarios sincronizados")
+        else:
+            self.log("   ℹ️ No hay usuarios nuevos para sincronizar")
         
         # Sincronizar autores
         self.log("\n👤 Sincronizando autores...")
@@ -1990,6 +2094,247 @@ class CatalogoManager:
             self.cargar_editoriales()
         else:
             messagebox.showerror("Error", "No se pudo eliminar la editorial")
+    
+    # ==================== GESTIÓN DE USUARIOS ====================
+    
+    def create_usuarios_tab(self):
+        """Pestaña de gestión de usuarios"""
+        
+        # Frame superior: Búsqueda
+        search_frame = ttk.LabelFrame(self.tab_usuarios, text="Búsqueda de Usuarios", padding=10)
+        search_frame.pack(fill='x', padx=10, pady=5)
+        
+        ttk.Label(search_frame, text="Buscar:").grid(row=0, column=0, padx=5)
+        self.usuario_search_var = tk.StringVar()
+        self.usuario_search_var.trace('w', lambda *args: self.buscar_usuarios())
+        ttk.Entry(search_frame, textvariable=self.usuario_search_var, width=40).grid(row=0, column=1, padx=5)
+        
+        ttk.Button(search_frame, text="🔄 Recargar", command=self.buscar_usuarios).grid(row=0, column=2, padx=5)
+        ttk.Button(search_frame, text="➕ Nuevo Usuario", command=self.crear_nuevo_usuario).grid(row=0, column=3, padx=5)
+        
+        # Frame medio: Lista de usuarios
+        list_frame = ttk.LabelFrame(self.tab_usuarios, text="Usuarios", padding=10)
+        list_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        
+        # Treeview
+        columns = ('ID', 'Username', 'Email', 'Superuser', 'Staff', 'Active', 'Last Login')
+        self.usuarios_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
+        
+        self.usuarios_tree.heading('ID', text='ID')
+        self.usuarios_tree.heading('Username', text='Usuario')
+        self.usuarios_tree.heading('Email', text='Email')
+        self.usuarios_tree.heading('Superuser', text='Admin')
+        self.usuarios_tree.heading('Staff', text='Staff')
+        self.usuarios_tree.heading('Active', text='Activo')
+        self.usuarios_tree.heading('Last Login', text='Último Login')
+        
+        self.usuarios_tree.column('ID', width=50)
+        self.usuarios_tree.column('Username', width=150)
+        self.usuarios_tree.column('Email', width=200)
+        self.usuarios_tree.column('Superuser', width=80)
+        self.usuarios_tree.column('Staff', width=80)
+        self.usuarios_tree.column('Active', width=80)
+        self.usuarios_tree.column('Last Login', width=150)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.usuarios_tree.yview)
+        self.usuarios_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.usuarios_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Frame inferior: Acciones
+        actions_frame = ttk.Frame(self.tab_usuarios)
+        actions_frame.pack(fill='x', padx=10, pady=5)
+        
+        ttk.Button(actions_frame, text="✏️ Editar", command=self.editar_usuario_seleccionado).pack(side='left', padx=5)
+        ttk.Button(actions_frame, text="🗑️ Eliminar", command=self.eliminar_usuario).pack(side='left', padx=5)
+        
+        # Cargar usuarios al abrir la pestaña
+        self.root.after(100, self.buscar_usuarios)
+    
+    def buscar_usuarios(self):
+        """Buscar usuarios por username o email"""
+        search_term = self.usuario_search_var.get().strip()
+        source = self.source_var.get()
+        
+        self.usuarios_tree.delete(*self.usuarios_tree.get_children())
+        
+        if search_term:
+            sql = """
+                SELECT id, username, email, is_superuser, is_staff, is_active, last_login
+                FROM auth_user
+                WHERE username LIKE ? OR email LIKE ?
+                ORDER BY username
+            """
+            params = (f'%{search_term}%', f'%{search_term}%')
+        else:
+            sql = """
+                SELECT id, username, email, is_superuser, is_staff, is_active, last_login
+                FROM auth_user
+                ORDER BY username
+            """
+            params = ()
+        
+        if source == 'local':
+            rows = self.query_local(sql, params)
+        else:
+            rows = self.query_turso(sql, list(params) if params else [])
+        
+        if rows:
+            for row in rows:
+                if not isinstance(row, dict):
+                    row = dict(row)
+                self.usuarios_tree.insert('', 'end', values=(
+                    row['id'],
+                    row['username'],
+                    row['email'] or '',
+                    '✓' if row['is_superuser'] else '',
+                    '✓' if row['is_staff'] else '',
+                    '✓' if row['is_active'] else '',
+                    row['last_login'] or 'Nunca'
+                ))
+            self.status_bar.config(text=f"Se encontraron {len(rows)} usuarios")
+    
+    def crear_nuevo_usuario(self):
+        """Crear nuevo usuario (solo muestra información, la creación real debe hacerse con Django)"""
+        messagebox.showinfo("Información", 
+            "Para crear usuarios con contraseñas seguras, debes usar:\n\n"
+            "1. Django Admin (python manage.py createsuperuser)\n"
+            "2. Django Shell (User.objects.create_user())\n\n"
+            "Los usuarios creados se sincronizarán automáticamente con Turso.")
+    
+    def editar_usuario_seleccionado(self):
+        """Editar usuario seleccionado"""
+        selection = self.usuarios_tree.selection()
+        if not selection:
+            messagebox.showwarning("Advertencia", "Selecciona un usuario para editar")
+            return
+        
+        item = self.usuarios_tree.item(selection[0])
+        usuario_id = item['values'][0]
+        
+        # Obtener datos completos del usuario
+        source = self.source_var.get()
+        sql = "SELECT * FROM auth_user WHERE id = ?"
+        if source == 'local':
+            rows = self.query_local(sql, (usuario_id,))
+        else:
+            rows = self.query_turso(sql, [usuario_id])
+        
+        if not rows:
+            messagebox.showerror("Error", "No se pudo cargar el usuario")
+            return
+        
+        usuario = dict(rows[0]) if not isinstance(rows[0], dict) else rows[0]
+        
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Editar Usuario")
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        form_frame = ttk.Frame(dialog, padding=20)
+        form_frame.pack(fill='both', expand=True)
+        
+        # Username (solo lectura)
+        ttk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
+        username_label = ttk.Label(form_frame, text=usuario.get('username', ''), font=('Arial', 10, 'bold'))
+        username_label.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+        
+        # Email
+        ttk.Label(form_frame, text="Email:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
+        email_var = tk.StringVar(value=usuario.get('email', ''))
+        ttk.Entry(form_frame, textvariable=email_var, width=40).grid(row=1, column=1, padx=5, pady=5)
+        
+        # First Name
+        ttk.Label(form_frame, text="Nombre:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
+        first_name_var = tk.StringVar(value=usuario.get('first_name', ''))
+        ttk.Entry(form_frame, textvariable=first_name_var, width=40).grid(row=2, column=1, padx=5, pady=5)
+        
+        # Last Name
+        ttk.Label(form_frame, text="Apellidos:").grid(row=3, column=0, sticky='e', padx=5, pady=5)
+        last_name_var = tk.StringVar(value=usuario.get('last_name', ''))
+        ttk.Entry(form_frame, textvariable=last_name_var, width=40).grid(row=3, column=1, padx=5, pady=5)
+        
+        # Checkboxes
+        ttk.Label(form_frame, text="Permisos:").grid(row=4, column=0, sticky='e', padx=5, pady=5)
+        permisos_frame = ttk.Frame(form_frame)
+        permisos_frame.grid(row=4, column=1, sticky='w', padx=5, pady=5)
+        
+        is_superuser_var = tk.BooleanVar(value=bool(usuario.get('is_superuser', 0)))
+        is_staff_var = tk.BooleanVar(value=bool(usuario.get('is_staff', 0)))
+        is_active_var = tk.BooleanVar(value=bool(usuario.get('is_active', 1)))
+        
+        ttk.Checkbutton(permisos_frame, text="Superusuario", variable=is_superuser_var).pack(anchor='w')
+        ttk.Checkbutton(permisos_frame, text="Staff", variable=is_staff_var).pack(anchor='w')
+        ttk.Checkbutton(permisos_frame, text="Activo", variable=is_active_var).pack(anchor='w')
+        
+        # Nota sobre contraseña
+        ttk.Label(form_frame, text="Nota:", font=('Arial', 9, 'bold')).grid(row=5, column=0, sticky='ne', padx=5, pady=10)
+        nota_text = "Para cambiar la contraseña, usa Django Admin\no Django Shell (user.set_password())"
+        ttk.Label(form_frame, text=nota_text, foreground='gray').grid(row=5, column=1, sticky='w', padx=5, pady=10)
+        
+        def guardar():
+            email = email_var.get().strip()
+            first_name = first_name_var.get().strip()
+            last_name = last_name_var.get().strip()
+            
+            source = self.source_var.get()
+            sql = """UPDATE auth_user SET 
+                     email = ?, first_name = ?, last_name = ?,
+                     is_superuser = ?, is_staff = ?, is_active = ?
+                     WHERE id = ?"""
+            
+            params = [email, first_name, last_name, 
+                     int(is_superuser_var.get()), int(is_staff_var.get()), int(is_active_var.get()),
+                     usuario_id]
+            
+            if source == 'local':
+                result = self.query_local(sql, tuple(params))
+            else:
+                result = self.query_turso(sql, params)
+            
+            if result:
+                messagebox.showinfo("Éxito", "Usuario actualizado correctamente")
+                dialog.destroy()
+                self.buscar_usuarios()
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar el usuario")
+        
+        button_frame = ttk.Frame(form_frame)
+        button_frame.grid(row=6, column=0, columnspan=2, pady=20)
+        ttk.Button(button_frame, text="Guardar", command=guardar).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancelar", command=dialog.destroy).pack(side='left', padx=5)
+    
+    def eliminar_usuario(self):
+        """Eliminar usuario seleccionado"""
+        selection = self.usuarios_tree.selection()
+        if not selection:
+            messagebox.showwarning("Advertencia", "Selecciona un usuario para eliminar")
+            return
+        
+        item = self.usuarios_tree.item(selection[0])
+        usuario_id = item['values'][0]
+        username = item['values'][1]
+        
+        if not messagebox.askyesno("Confirmar", 
+            f"¿Estás seguro de eliminar el usuario '{username}'?\n\n"
+            "ADVERTENCIA: Esta acción no se puede deshacer."):
+            return
+        
+        source = self.source_var.get()
+        sql = "DELETE FROM auth_user WHERE id = ?"
+        
+        if source == 'local':
+            result = self.query_local(sql, (usuario_id,))
+        else:
+            result = self.query_turso(sql, [usuario_id])
+        
+        if result:
+            messagebox.showinfo("Éxito", "Usuario eliminado correctamente")
+            self.buscar_usuarios()
+        else:
+            messagebox.showerror("Error", "No se pudo eliminar el usuario")
 
 # ==================== MAIN ====================
 
