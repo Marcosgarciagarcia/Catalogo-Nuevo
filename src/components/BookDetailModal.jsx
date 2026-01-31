@@ -42,10 +42,10 @@ function BookDetailModal({ libro, onClose }) {
                 <span className="detail-value">{libro.nombreAutor || 'Desconocido'}</span>
               </div>
               
-              {libro.descriEditorial && (
+              {libro.editorial && (
                 <div className="detail-row">
                   <span className="detail-label">Editorial:</span>
-                  <span className="detail-value">{libro.descriEditorial}</span>
+                  <span className="detail-value">{libro.editorial}</span>
                 </div>
               )}
               
@@ -85,7 +85,7 @@ BookDetailModal.propTypes = {
     titulo: PropTypes.string.isRequired,
     tituloOriginal: PropTypes.string,
     nombreAutor: PropTypes.string,
-    descriEditorial: PropTypes.string,
+    editorial: PropTypes.string,
     anyoEdicion: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     sinopsis: PropTypes.string,
     portada_cloudinary: PropTypes.string
