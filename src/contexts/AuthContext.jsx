@@ -5,15 +5,13 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Verificar si hay una sesión activa al cargar
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (token) {
       verifyToken(token);
-    } else {
-      setLoading(false);
     }
   }, []);
 
@@ -39,8 +37,6 @@ export function AuthProvider({ children }) {
       console.error('Error verifying token:', error);
       sessionStorage.removeItem('token');
       setUser(null);
-    } finally {
-      setLoading(false);
     }
   };
 
