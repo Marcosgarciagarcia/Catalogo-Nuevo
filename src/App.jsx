@@ -84,55 +84,19 @@ function App() {
       <div className={`header ${!isDesktop ? 'header-mobile' : ''}`}>
         <h2>Catálogo de libros de casa</h2>
         {isDesktop && (
-          <div className="auth-section" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '15px'
-          }}>
+          <div className="auth-section">
             {isAuthenticated ? (
               <>
-                <span className="user-info" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontWeight: 600,
-                  color: '#333'
-                }}>
+                <span className="user-info">
                   👤 {user?.username}
-                  {user?.isAdmin && <span className="admin-badge" style={{
-                    backgroundColor: '#ff9800',
-                    color: 'white',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.75em',
-                    fontWeight: 700,
-                    marginLeft: '5px'
-                  }}>Admin</span>}
+                  {user?.isAdmin && <span className="admin-badge">Admin</span>}
                 </span>
-                <button onClick={logout} className="auth-button logout-button" style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  backgroundColor: '#f44336',
-                  color: 'white'
-                }}>
+                <button onClick={logout} className="auth-button logout-button">
                   Cerrar Sesión
                 </button>
               </>
             ) : (
-              <button onClick={() => setShowLogin(true)} className="auth-button login-button" style={{
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                backgroundColor: '#4CAF50',
-                color: 'white'
-              }}>
+              <button onClick={() => setShowLogin(true)} className="auth-button login-button">
                 Iniciar Sesión
               </button>
             )}
