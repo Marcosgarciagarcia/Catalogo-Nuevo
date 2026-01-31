@@ -20,12 +20,20 @@ function App() {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const { user, logout, isAuthenticated } = useAuth();
 
-  // Calcular items por página según ancho de pantalla
+  // Calcular items por página según ancho y orientación
   const getItemsPerPage = () => {
     const width = window.innerWidth;
+    const height = window.innerHeight;
+    const isPortrait = height > width;
+    
+    // Si está en vertical (portrait), mostrar más items
+    if (isPortrait && width >= 768) return 15; // Tablet vertical
+    if (isPortrait && width < 768) return 15;  // Móvil vertical
+    
+    // Horizontal (landscape)
     if (width >= 1200) return 12; // Desktop grande / Tablet horizontal
-    if (width >= 900) return 10;  // Desktop mediano
-    return 15; // Tablet vertical y móvil (más items porque son 1 columna)
+    if (width >= 768) return 10;  // Desktop mediano
+    return 15; // Móvil horizontal
   };
 
   const [librosPorPagina, setLibrosPorPagina] = useState(getItemsPerPage());
