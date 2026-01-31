@@ -3,6 +3,8 @@ import { getAllBooks, searchBooks, filterBooksByLetter } from './services/apiSer
 import BookList from './components/BookList';
 import Pagination from './components/Pagination';
 import BookDetailModal from './components/BookDetailModal';
+import Login from './components/Login';
+import { useAuth } from './contexts/AuthContext';
 import './App.css'
 
 function App() {
@@ -14,6 +16,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
   const librosPorPagina = 10;
 
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
@@ -66,7 +70,27 @@ function App() {
 
   return (
     <div>
-      <h2>Catálogo de libros de casa</h2>
+      <div className="header">
+        <h2>Catálogo de libros de casa</h2>
+        <div className="auth-section">
+          {isAuthenticated ? (
+            <>
+              <span className="user-info">
+                👤 {user?.username}
+                {user?.isAdmin && <span className="admin-badge">Admin</span>}
+              </span>
+              <button onClick={logout} className="auth-button logout-button">
+                Cerrar Sesión
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setShowLogin(true)} className="auth-button login-button">
+              Iniciar Sesión
+            </button>
+          )}
+        </div>
+      </div>
+      
       <div className="filtro-container">
         <div className="opciones-busqueda">
           <button onClick={cambiarTipoDeFiltro}>
@@ -150,6 +174,10 @@ function App() {
           libro={selectedBook}
           onClose={() => setSelectedBook(null)}
         />
+      )}
+
+      {showLogin && (
+        <Login onClose={() => setShowLogin(false)} />
       )}
     </div>
   )
