@@ -32,6 +32,14 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  background-color: #f5f5f5;
+}
+
+/* Ocultar completamente auth-section en móvil */
+@media (max-width: 767px) {
+  .auth-section {
+    display: none !important;
+  }
 }
 
 .user-info {
