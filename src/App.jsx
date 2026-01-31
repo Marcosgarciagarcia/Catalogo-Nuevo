@@ -83,14 +83,14 @@ function App() {
     <div>
       <div className="header" style={{
         display: 'flex',
-        justifyContent: 'space-between',
+        justifyContent: isDesktop ? 'space-between' : 'center',
         alignItems: 'center',
         padding: '20px',
         backgroundColor: '#f5f5f5',
         borderBottom: '2px solid #ddd',
         marginBottom: '20px'
       }}>
-        <h2 style={{margin: 0, textAlign: 'left'}}>Catálogo de libros de casa</h2>
+        <h2 style={{margin: 0, textAlign: isDesktop ? 'left' : 'center'}}>Catálogo de libros de casa</h2>
         {isDesktop && (
           <div className="auth-section" style={{
             display: 'flex',
