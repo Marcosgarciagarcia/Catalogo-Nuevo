@@ -69,25 +69,9 @@ export function AuthProvider({ children }) {
   };
 
   // Logout
-  const logout = async () => {
-    try {
-      const token = sessionStorage.getItem('token');
-      
-      if (token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      sessionStorage.removeItem('token');
-      setUser(null);
-    }
+  const logout = () => {
+    sessionStorage.removeItem('token');
+    setUser(null);
   };
 
   // Obtener token para requests autenticados
