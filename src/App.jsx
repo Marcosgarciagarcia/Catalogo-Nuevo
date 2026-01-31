@@ -23,8 +23,8 @@ function App() {
   // Calcular items por página según ancho de pantalla
   const getItemsPerPage = () => {
     const width = window.innerWidth;
-    if (width >= 1200) return 12; // Desktop grande
-    if (width >= 768) return 10;  // Desktop/Tablet horizontal
+    if (width >= 1200) return 12; // Desktop grande / Tablet horizontal
+    if (width >= 900) return 10;  // Desktop mediano
     return 15; // Tablet vertical y móvil (más items porque son 1 columna)
   };
 
