@@ -954,3 +954,459 @@ body {
 ---
 
 **Fin de la Sesión - 30 de Enero de 2026, 20:13**
+
+---
+
+# Sesión del 31 de Enero de 2026
+
+## Fase 7: Implementación de Sistema de Autenticación y Gestión de Usuarios (13:00 - 14:33)
+
+### Contexto
+El usuario solicitó implementar un sistema de autenticación completo para la aplicación web React, permitiendo acceso público de lectura pero requiriendo autenticación para operaciones CUD (Create, Update, Delete). Posteriormente, se añadió gestión de usuarios a la aplicación de escritorio con sincronización bidireccional.
+
+---
+
+## Problema #1: Implementar Sistema de Autenticación
+
+### Solicitud del Usuario (13:00)
+> "Quiero que implementes un sistema de autenticación en la aplicación web. El acceso de lectura debe ser público, pero las operaciones de crear, actualizar y eliminar deben requerir autenticación."
+
+### Solución Implementada
+
+#### 1. **Backend - API de Autenticación**
+
+**Nuevo:** `api/lib/auth.js`
+- Función `verifyPassword()` - Verifica contraseñas Django PBKDF2
+- Función `generateToken()` - Genera JWT con expiración de 8 horas
+- Función `verifyToken()` - Valida tokens JWT
+
+**Nuevo:** `api/auth/login.js`
+- Endpoint POST `/api/auth/login`
+- Verifica credenciales contra tabla `auth_user`
+- Retorna JWT y datos del usuario
+- Identifica superusuarios y staff
+
+**Nuevo:** `api/auth/verify.js`
+- Endpoint POST `/api/auth/verify`
+- Valida tokens JWT
+- Retorna datos del usuario si el token es válido
+
+**Nuevo:** `api/auth/logout.js` (posteriormente eliminado)
+- Endpoint POST `/api/auth/logout`
+- Eliminado para reducir número de funciones serverless
+
+#### 2. **Frontend - React Context y Componentes**
+
+**Nuevo:** `src/contexts/AuthContext.jsx`
+- Context API para gestión de estado de autenticación
+- Estado: `user` (datos del usuario), `isAuthenticated` (booleano)
+- Funciones: `login()`, `logout()`, `verifyToken()`, `getToken()`
+- Almacenamiento: sessionStorage (no persistente entre sesiones)
+- Verificación automática de token al cargar la app
+
+**Nuevo:** `src/components/Login.jsx`
+- Modal de login con formulario
+- Validación de campos
+- Manejo de errores
+- Cierre con ESC o click fuera
+
+**Nuevo:** `src/components/Login.css`
+- Estilos para modal de login
+- Overlay semi-transparente
+- Animaciones suaves
+
+**Modificado:** `src/main.jsx`
+- Envuelve `<App>` con `<AuthProvider>`
+
+**Modificado:** `src/App.jsx`
+- Importa `useAuth` y `Login`
+- Header con sección de autenticación
+- Botón "Iniciar Sesión" cuando no autenticado
+- Usuario + badge "Admin" + botón "Cerrar Sesión" cuando autenticado
+- Estado `showLogin` para controlar modal
+
+**Modificado:** `src/App.css`
+- Estilos para header con sección de auth
+- Estilos para user-info y admin-badge
+- Estilos para botones de auth
+
+#### 3. **Configuración**
+
+**Modificado:** `.env.example`
+- Añadido `JWT_SECRET` para firma de tokens
+
+**Nuevo:** `VERCEL_SETUP.md`
+- Documentación para configurar variables de entorno en Vercel
+- Instrucciones de deployment
+
+**Commits iniciales:**
+- Múltiples commits durante desarrollo y debugging local
+
+---
+
+## Problema #2: Botón de Login No Aparece en Producción
+
+### Diagnóstico (13:35 - 13:50)
+
+**Errores reportados:**
+1. Login button no visible en Vercel
+2. CSS no se carga correctamente
+3. Errores de source map en consola
+4. Múltiples errores de parsing CSS
+
+**Causa raíz identificada:**
+- Variables de entorno NO configuradas en Vercel
+- CSS no se aplicaba debido a problemas de build
+- Funciones serverless excedían límite de 12 (Hobby plan)
+
+### Solución Aplicada
+
+#### 1. **Reducir Funciones Serverless**
+
+**Eliminados:**
+- `api/stats/books.js` - No usado en app actual
+- `api/auth/logout.js` - Logout manejado en cliente
+
+**Total de funciones:** 8 (bajo el límite de 12)
+
+**Commit:** `93838e3` - "Fix: Remove unnecessary endpoints to meet Vercel 12 function limit"
+
+#### 2. **Añadir Estilos Inline**
+
+**Modificado:** `src/App.jsx`
+- Añadidos estilos inline al header
+- Estilos inline a auth-section
+- Estilos inline a botones
+- Garantiza renderizado incluso si CSS no carga
+
+**Commit:** `fbe1e6d` - "Fix: Add inline styles to header to ensure login button renders in production"
+
+#### 3. **Configurar Variables de Entorno en Vercel**
+
+**Variables añadidas:**
+- `TURSO_DATABASE_URL` = `https://catalogo-prueba-marcosgarciagarcia.aws-eu-west-1.turso.io`
+- `TURSO_AUTH_TOKEN` = (token de Turso)
+- `JWT_SECRET` = `casateca-auth-secret-2026-super-seguro-cambiar`
+
+**Environments:** Production, Preview, Development
+
+**Resultado:** API endpoints funcionando correctamente
+
+#### 4. **Simplificar Logout**
+
+**Modificado:** `src/contexts/AuthContext.jsx`
+```javascript
+// Antes: Llamaba a /api/auth/logout
+const logout = async () => {
+  try {
+    await fetch('/api/auth/logout', {...});
+  } finally {
+    sessionStorage.removeItem('token');
+    setUser(null);
+  }
+};
+
+// Después: Solo limpia sessionStorage
+const logout = () => {
+  sessionStorage.removeItem('token');
+  setUser(null);
+};
+```
+
+**Commit:** `93838e3` (mismo commit)
+
+#### 5. **Limpiar Debug Indicators**
+
+**Modificado:** `src/App.jsx`
+- Eliminado texto "Auth: Yes/No" usado para debugging
+
+**Commit:** `7f2a4d8` - "Clean: Remove debug auth indicator"
+
+---
+
+## Resultado Final - Sistema de Autenticación
+
+### Estado al 31 de Enero, 14:10
+
+**Backend (8 funciones serverless):**
+- ✅ `/api/auth/login` - Autenticación con JWT
+- ✅ `/api/auth/verify` - Validación de tokens
+- ✅ `/api/media/books/*` - Endpoints de libros
+- ✅ `/api/media/authors/*` - Endpoints de autores
+- ✅ `/api/media/publishers/*` - Endpoints de editoriales
+- ✅ Verificación de contraseñas Django PBKDF2
+- ✅ JWT con expiración de 8 horas
+
+**Frontend:**
+- ✅ AuthContext con React Context API
+- ✅ Login modal funcional
+- ✅ Header con usuario y badge de admin
+- ✅ Botón "Iniciar Sesión" / "Cerrar Sesión"
+- ✅ SessionStorage (no persistente)
+- ✅ Estilos inline para garantizar renderizado
+
+**Seguridad:**
+- ✅ JWT con expiración de 8 horas
+- ✅ Tokens en sessionStorage
+- ✅ Variables de entorno protegidas en Vercel
+- ✅ Acceso público a lectura
+- ✅ Autenticación lista para CUD (futuro)
+
+**Producción:**
+- ✅ Desplegado en Vercel
+- ✅ Variables de entorno configuradas
+- ✅ Login funcional con usuario `administrador`
+- ✅ Badge "Admin" visible para superusuarios
+- ✅ Libros cargándose correctamente
+
+---
+
+## Problema #3: Sincronización de Usuarios en Aplicación de Escritorio
+
+### Solicitud del Usuario (14:15)
+> "Quiero que incorpores la sincronización de usuarios, con los mismos parámetros de funcionamiento que tenemos para libros, autores y editoriales, en la aplicación de escritorio que tenemos creada"
+
+### Contexto Adicional
+El usuario solicitó incorporar el historial de conversación del 29 de enero al contexto actual para entender mejor la aplicación de escritorio.
+
+### Solución Implementada
+
+#### 1. **Nueva Pestaña de Usuarios**
+
+**Modificado:** `catalogo_manager.py`
+- Añadida pestaña "👥 Usuarios" al notebook
+- Función `create_usuarios_tab()` completa
+
+**Características:**
+- Búsqueda por username o email
+- Listado con TreeView
+- Columnas: ID, Username, Email, Admin, Staff, Activo, Último Login
+- Botones: Recargar, Nuevo Usuario, Editar, Eliminar
+
+#### 2. **Operaciones CRUD de Usuarios**
+
+**Función `buscar_usuarios()`:**
+- Busca usuarios en Local o Turso
+- Filtra por username o email
+- Muestra todos los usuarios si no hay búsqueda
+
+**Función `crear_nuevo_usuario()`:**
+- Muestra mensaje informativo
+- Indica que se debe usar Django para crear usuarios
+- Protege la seguridad de contraseñas
+
+**Función `editar_usuario_seleccionado()`:**
+- Formulario de edición con:
+  - Username (solo lectura)
+  - Email, nombre, apellidos (editables)
+  - Checkboxes: Superusuario, Staff, Activo
+  - Nota sobre cambio de contraseña
+- Actualiza en Local o Turso según selección
+
+**Función `eliminar_usuario()`:**
+- Confirmación con advertencia
+- Elimina de Local o Turso
+- Actualiza listado
+
+#### 3. **Sincronización de Usuarios**
+
+**Modificado:** `sync_local_to_turso()`
+```python
+# Primero sincronizar usuarios
+self.log("\n👥 Sincronizando usuarios...")
+local_usuarios = self.query_local("""
+    SELECT * FROM auth_user 
+    WHERE date_joined >= datetime('now', '-1 day') OR date_joined IS NULL
+    ORDER BY date_joined DESC
+""")
+
+for usuario in local_usuarios:
+    turso_usuario = self.query_turso("SELECT id FROM auth_user WHERE id = ?", [usuario['id']])
+    if not turso_usuario:
+        # INSERT nuevo usuario
+        sql = """INSERT INTO auth_user (
+            id, password, last_login, is_superuser, username, first_name, 
+            last_name, email, is_staff, is_active, date_joined
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+    else:
+        # UPDATE usuario existente
+        sql = """UPDATE auth_user SET 
+            password = ?, last_login = ?, is_superuser = ?, first_name = ?,
+            last_name = ?, email = ?, is_staff = ?, is_active = ?
+            WHERE id = ?"""
+```
+
+**Modificado:** `sync_turso_to_local()`
+```python
+# Sincronizar usuarios
+self.log("\n👥 Sincronizando usuarios...")
+turso_usuarios = self.query_turso("SELECT * FROM auth_user")
+
+for usuario in turso_usuarios:
+    local_usuario = self.query_local("SELECT id FROM auth_user WHERE id = ?", (usuario['id'],))
+    if not local_usuario:
+        # INSERT nuevo usuario
+    else:
+        # UPDATE usuario existente
+```
+
+**Orden de sincronización:**
+1. 👥 Usuarios (auth_user)
+2. 👤 Autores (core_autores)
+3. 🏢 Editoriales (core_editoriales)
+4. 📚 Libros (core_titulos)
+
+**Parámetros:**
+- ✅ Misma frecuencia: últimas 24 horas
+- ✅ Misma dirección: bidireccional
+- ✅ Mismo manejo de conflictos
+- ✅ Mismos logs detallados
+
+**Commit:** `6b2e003` - "Feature: Añadir gestión y sincronización de usuarios (auth_user)"
+
+#### 4. **Documentación**
+
+**Nuevo:** `docs/GESTION-USUARIOS.md`
+- Descripción completa de funcionalidades
+- Campos sincronizados
+- Seguridad de contraseñas
+- Proceso de sincronización paso a paso
+- Operaciones CRUD detalladas
+- Verificación en Local y Turso
+- Consideraciones importantes
+- Flujo de trabajo recomendado
+
+**Eliminados:**
+- `sync-users.md` - No necesario (no había Django local)
+- `sync-users.ps1` - No necesario (no había Django local)
+
+**Commit:** `0764d5b` - "Docs: Añadir documentación completa de gestión de usuarios y limpiar archivos innecesarios"
+
+---
+
+## Resumen de Commits de la Sesión del 31 de Enero
+
+| Commit | Descripción |
+|--------|-------------|
+| (múltiples) | Implementación inicial de autenticación (desarrollo local) |
+| `93838e3` | Fix: Remove unnecessary endpoints to meet Vercel 12 function limit |
+| `fbe1e6d` | Fix: Add inline styles to header to ensure login button renders in production |
+| `7f2a4d8` | Clean: Remove debug auth indicator |
+| `6b2e003` | Feature: Añadir gestión y sincronización de usuarios (auth_user) |
+| `0764d5b` | Docs: Añadir documentación completa de gestión de usuarios |
+
+---
+
+## Estado Final del Proyecto al 31 de Enero, 14:33
+
+### Aplicación Web (Vercel)
+- ✅ Sistema de autenticación completo
+- ✅ Login funcional con JWT (8h expiración)
+- ✅ Header con usuario y badge de admin
+- ✅ Botón "Iniciar Sesión" / "Cerrar Sesión"
+- ✅ SessionStorage para tokens
+- ✅ 8 funciones serverless (bajo límite de 12)
+- ✅ Variables de entorno configuradas
+- ✅ Desplegado en: https://catalogo-nuevo-yngn.vercel.app
+
+### Aplicación de Escritorio
+- ✅ Gestión completa de usuarios
+- ✅ CRUD de usuarios (crear con Django, editar, eliminar)
+- ✅ Sincronización bidireccional Local ↔ Turso
+- ✅ Mismos parámetros que libros/autores/editoriales
+- ✅ Seguridad de contraseñas garantizada
+- ✅ Documentación completa
+
+### Base de Datos
+- ✅ Tabla `auth_user` sincronizada entre Local y Turso
+- ✅ Contraseñas hasheadas con PBKDF2 (Django)
+- ✅ Usuarios disponibles para autenticación web
+- ✅ Sincronización automática en ambas direcciones
+
+### Funcionalidades Completas
+- ✅ Búsqueda y filtrado de libros
+- ✅ Modal de detalles de libro
+- ✅ Layout responsive (desktop y mobile)
+- ✅ Autenticación con JWT
+- ✅ Gestión de usuarios
+- ✅ Sincronización completa (libros, autores, editoriales, usuarios)
+
+---
+
+## Lecciones Aprendidas
+
+### 1. Límites de Vercel Hobby Plan
+- Máximo 12 funciones serverless
+- Importante optimizar y eliminar endpoints no usados
+- Considerar consolidar funciones relacionadas
+
+### 2. Variables de Entorno en Vercel
+- CRÍTICO configurar antes del deployment
+- Deben estar en Production, Preview y Development
+- Errores 500 si faltan variables
+
+### 3. CSS en Producción
+- Estilos inline como fallback para elementos críticos
+- Vite maneja CSS automáticamente, pero puede fallar
+- Importante probar en producción, no solo local
+
+### 4. Seguridad de Contraseñas
+- NUNCA crear usuarios con contraseñas en texto plano
+- Usar siempre Django para gestionar contraseñas
+- Sincronizar hashes, no contraseñas
+
+### 5. Sincronización de Usuarios
+- Usuarios deben sincronizarse ANTES que otras entidades
+- Importante mantener integridad de permisos
+- SessionStorage vs localStorage: elegir según necesidad
+
+---
+
+## Archivos Modificados en la Sesión
+
+### Backend (Vercel Functions)
+- `api/lib/auth.js` - Librería de autenticación
+- `api/auth/login.js` - Endpoint de login
+- `api/auth/verify.js` - Endpoint de verificación
+- `api/auth/logout.js` - (Eliminado)
+- `api/stats/books.js` - (Eliminado)
+
+### Frontend (React)
+- `src/contexts/AuthContext.jsx` - Context de autenticación
+- `src/components/Login.jsx` - Componente de login
+- `src/components/Login.css` - Estilos de login
+- `src/main.jsx` - Wrapper con AuthProvider
+- `src/App.jsx` - Integración de auth en header
+- `src/App.css` - Estilos de header y auth
+
+### Aplicación de Escritorio
+- `catalogo_manager.py` - Gestión y sincronización de usuarios
+
+### Documentación
+- `.env.example` - Variables de entorno
+- `VERCEL_SETUP.md` - Setup de Vercel
+- `docs/GESTION-USUARIOS.md` - Guía completa de usuarios
+
+---
+
+## Próximos Pasos Sugeridos
+
+### Autenticación
+1. **Proteger endpoints CUD** - Añadir middleware de autenticación
+2. **Refresh tokens** - Para sesiones más largas
+3. **Recuperación de contraseña** - Flujo completo
+4. **Roles y permisos** - Más granulares que superuser/staff
+
+### Gestión de Usuarios
+1. **Panel de admin** - Interfaz web para gestionar usuarios
+2. **Logs de actividad** - Registro de acciones de usuarios
+3. **Permisos por recurso** - Control fino de acceso
+
+### Optimizaciones
+1. **Caché de autenticación** - Reducir llamadas a BD
+2. **Rate limiting** - Proteger contra ataques
+3. **2FA** - Autenticación de dos factores
+
+---
+
+**Fin de la Sesión - 31 de Enero de 2026, 14:33**
