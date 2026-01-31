@@ -1,50 +1,24 @@
-/* Header con autenticación */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background-color: #f5f5f5;
-  border-bottom: 2px solid #ddd;
-  margin-bottom: 20px;
-}
-
-.header h2,
-.header-title {
-  margin: 0;
-  text-align: left;
-  color: #333 !important;
-  font-size: 1.5em;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  flex: 0 0 auto;
-}
-
-.header-mobile {
-  justify-content: center;
-}
-
-.header-mobile h2,
-.header-mobile .header-title {
+/* Título de página */
+.page-title {
   text-align: center;
-  flex: 1;
+  margin: 20px 0;
+  padding: 0 20px;
+  color: inherit;
+  font-size: 1.8em;
+}
+
+/* Header solo para autenticación en desktop */
+.auth-header {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 
 .auth-section {
   display: flex;
   align-items: center;
   gap: 15px;
-  background-color: transparent;
-}
-
-/* Ocultar completamente auth-section en móvil */
-@media (max-width: 767px) {
-  .auth-section {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-  }
 }
 
 .user-info {

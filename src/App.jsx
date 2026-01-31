@@ -81,9 +81,10 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className={`header ${!isDesktop ? 'header-mobile' : ''}`}>
-        <h2 className="header-title">Catálogo de libros de casa</h2>
-        {isDesktop && (
+      <h2 className="page-title">Catálogo de libros de casa</h2>
+      
+      {isDesktop && (
+        <header className="auth-header">
           <div className="auth-section">
             {isAuthenticated ? (
               <>
@@ -101,8 +102,8 @@ function App() {
               </button>
             )}
           </div>
-        )}
-      </header>
+        </header>
+      )}
       
       <div className="filtro-container">
         <div className="opciones-busqueda">
