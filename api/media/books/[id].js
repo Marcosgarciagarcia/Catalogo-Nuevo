@@ -29,7 +29,21 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Book not found' });
     }
 
-    return res.status(200).json(books[0]);
+    // Sanitizar datos para evitar problemas con caracteres especiales
+    const book = books[0];
+    const sanitizedBook = {
+      ...book,
+      titulo: book.titulo || '',
+      tituloOriginal: book.tituloOriginal || null,
+      nombreAutor: book.nombreAutor || '',
+      editorial: book.editorial || '',
+      sinopsis: book.sinopsis || null,
+      observaciones: book.observaciones || null,
+      coleccion: book.coleccion || null,
+      serie: book.serie || null
+    };
+
+    return res.status(200).json(sanitizedBook);
 
   } catch (error) {
     console.error(`Error in /api/media/books/${req.query.id}:`, error);

@@ -52,9 +52,22 @@ export default async function handler(req, res) {
 
     const books = await executeQuery(query, params);
 
+    // Sanitizar datos para evitar problemas con caracteres especiales
+    const sanitizedBooks = books.map(book => ({
+      ...book,
+      titulo: book.titulo || '',
+      tituloOriginal: book.tituloOriginal || null,
+      nombreAutor: book.nombreAutor || '',
+      editorial: book.editorial || '',
+      sinopsis: book.sinopsis || null,
+      observaciones: book.observaciones || null,
+      coleccion: book.coleccion || null,
+      serie: book.serie || null
+    }));
+
     return res.status(200).json({
-      data: books,
-      total: books.length,
+      data: sanitizedBooks,
+      total: sanitizedBooks.length,
       filters: {
         search: search || null,
         searchBy,

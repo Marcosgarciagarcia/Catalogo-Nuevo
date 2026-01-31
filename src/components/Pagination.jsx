@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 function Pagination({
   totalLibros,
   librosPorPagina,
@@ -142,5 +144,12 @@ function Pagination({
     </div>
   );
 }
+
+Pagination.propTypes = {
+  totalLibros: PropTypes.number.isRequired,
+  librosPorPagina: PropTypes.number.isRequired,
+  paginaActual: PropTypes.number.isRequired,
+  setPaginaActual: PropTypes.func.isRequired
+};
 
 export default Pagination;

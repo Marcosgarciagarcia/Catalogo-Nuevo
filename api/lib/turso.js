@@ -50,7 +50,21 @@ export async function executeQuery(sql, params = []) {
     return rows.map(row => {
       const obj = {};
       columns.forEach((col, index) => {
-        obj[col] = row[index];
+        let value = row[index];
+        
+        // Sanitizar valores para evitar problemas con JSON
+        if (value !== null && value !== undefined) {
+          if (typeof value === 'string') {
+            // Limpiar caracteres de control y caracteres problemáticos
+            // eslint-disable-next-line no-control-regex
+            value = value
+              .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Eliminar caracteres de control
+              .replace(/\r\n/g, '\n') // Normalizar saltos de línea
+              .replace(/\r/g, '\n');
+          }
+        }
+        
+        obj[col] = value;
       });
       return obj;
     });
