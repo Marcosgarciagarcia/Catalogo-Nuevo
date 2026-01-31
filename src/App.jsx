@@ -80,9 +80,9 @@ function App() {
   };
 
   return (
-    <div>
-      <div className={`header ${!isDesktop ? 'header-mobile' : ''}`}>
-        <h2>Catálogo de libros de casa</h2>
+    <div className="app-container">
+      <header className={`header ${!isDesktop ? 'header-mobile' : ''}`}>
+        <h2 className="header-title">Catálogo de libros de casa</h2>
         {isDesktop && (
           <div className="auth-section">
             {isAuthenticated ? (
@@ -102,7 +102,7 @@ function App() {
             )}
           </div>
         )}
-      </div>
+      </header>
       
       <div className="filtro-container">
         <div className="opciones-busqueda">

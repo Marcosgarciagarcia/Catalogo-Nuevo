@@ -9,13 +9,15 @@
   margin-bottom: 20px;
 }
 
-.header h2 {
+.header h2,
+.header-title {
   margin: 0;
   text-align: left;
-  color: #333;
+  color: #333 !important;
   font-size: 1.5em;
-  display: block;
-  visibility: visible;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .header-mobile {
