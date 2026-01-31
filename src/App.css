@@ -69,15 +69,17 @@
 
 .card-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 300px));
   gap: 15px;
   padding: 20px;
   max-width: 100%;
   width: 100%;
+  justify-content: center;
 }
 
 .card {
   width: 100%;
+  max-width: 300px;
   height: 450px;
   /*  border: 2px solid #ddd; */
   border: 2px solid blue;
