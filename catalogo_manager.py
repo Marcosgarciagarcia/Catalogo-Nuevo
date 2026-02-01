@@ -1315,6 +1315,22 @@ class CatalogoManager:
         self.log("⚠️  Este proceso puede tardar varios minutos...")
         self.log("="*60 + "\n")
         
+        # ==================== USUARIOS ====================
+        self.log("\n👥 Sincronizando TODOS los usuarios...")
+        self._sync_full_table(
+            table_name='auth_user',
+            id_field='id',
+            display_field='username',
+            fields=['id', 'password', 'last_login', 'is_superuser', 'username', 'first_name', 
+                    'last_name', 'email', 'is_staff', 'is_active', 'date_joined'],
+            insert_sql="""INSERT INTO auth_user (id, password, last_login, is_superuser, username, 
+                          first_name, last_name, email, is_staff, is_active, date_joined) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            update_sql="""UPDATE auth_user SET password = ?, last_login = ?, is_superuser = ?, 
+                          first_name = ?, last_name = ?, email = ?, is_staff = ?, is_active = ? 
+                          WHERE id = ?"""
+        )
+        
         # ==================== AUTORES ====================
         self.log("\n👤 Sincronizando TODOS los autores...")
         self._sync_full_table(
