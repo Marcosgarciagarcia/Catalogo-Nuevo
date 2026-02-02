@@ -40,29 +40,31 @@ function App() {
 
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
-  // Scroll to top when page changes
+  // Detectar cambios de tamaño de pantalla con debounce
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [paginaActual]);
-
-  // Detectar cambios de tamaño de pantalla
-  useEffect(() => {
+    let resizeTimer;
     const handleResize = () => {
-      const newIsDesktop = window.innerWidth >= 768;
-      const newItemsPerPage = getItemsPerPage();
-      
-      setIsDesktop(newIsDesktop);
-      
-      // Solo resetear página si cambia el número de items por página
-      if (newItemsPerPage !== librosPorPagina) {
-        setLibrosPorPagina(newItemsPerPage);
-        setPaginaActual(1);
-      }
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const newIsDesktop = window.innerWidth >= 768;
+        const newItemsPerPage = getItemsPerPage();
+        
+        setIsDesktop(newIsDesktop);
+        
+        // Solo resetear página si cambia el número de items por página
+        if (newItemsPerPage !== librosPorPagina) {
+          setLibrosPorPagina(newItemsPerPage);
+          setPaginaActual(1);
+        }
+      }, 250); // Esperar 250ms después del último resize
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isDesktop, librosPorPagina]);
+    return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [librosPorPagina]);
 
   // Cargar libros desde Turso
   useEffect(() => {
