@@ -46,7 +46,11 @@ function Pagination({
           paginas.push(
             <button
               key={i}
-              onClick={() => setPaginaActual(i)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setPaginaActual(i);
+              }}
               className={paginaActual === i ? 'activo' : ''}
             >
               {i}
@@ -57,7 +61,11 @@ function Pagination({
         paginas.push(
           <button
             key={totalPaginas}
-            onClick={() => setPaginaActual(totalPaginas)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPaginaActual(totalPaginas);
+            }}
           >
             {totalPaginas}
           </button>
@@ -67,7 +75,11 @@ function Pagination({
         paginas.push(
           <button
             key={1}
-            onClick={() => setPaginaActual(1)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPaginaActual(1);
+            }}
           >
             1
           </button>
@@ -77,7 +89,11 @@ function Pagination({
           paginas.push(
             <button
               key={i}
-              onClick={() => setPaginaActual(i)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setPaginaActual(i);
+              }}
               className={paginaActual === i ? 'activo' : ''}
             >
               {i}
@@ -89,7 +105,11 @@ function Pagination({
         paginas.push(
           <button
             key={1}
-            onClick={() => setPaginaActual(1)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPaginaActual(1);
+            }}
           >
             1
           </button>
@@ -101,7 +121,11 @@ function Pagination({
           paginas.push(
             <button
               key={i}
-              onClick={() => setPaginaActual(i)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setPaginaActual(i);
+              }}
               className={paginaActual === i ? 'activo' : ''}
             >
               {i}
@@ -125,7 +149,11 @@ function Pagination({
     paginas.push(
       <button
         key="next"
-        onClick={() => setPaginaActual(Math.min(totalPaginas, paginaActual + 1))}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setPaginaActual(Math.min(totalPaginas, paginaActual + 1));
+        }}
         disabled={paginaActual === totalPaginas}
       >
         →

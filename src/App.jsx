@@ -40,17 +40,29 @@ function App() {
 
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [paginaActual]);
+
   // Detectar cambios de tamaño de pantalla
   useEffect(() => {
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 768);
-      setLibrosPorPagina(getItemsPerPage());
-      setPaginaActual(1);
+      const newIsDesktop = window.innerWidth >= 768;
+      const newItemsPerPage = getItemsPerPage();
+      
+      setIsDesktop(newIsDesktop);
+      
+      // Solo resetear página si cambia el número de items por página
+      if (newItemsPerPage !== librosPorPagina) {
+        setLibrosPorPagina(newItemsPerPage);
+        setPaginaActual(1);
+      }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isDesktop, librosPorPagina]);
 
   // Cargar libros desde Turso
   useEffect(() => {
