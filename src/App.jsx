@@ -8,14 +8,24 @@ import { useAuth } from './contexts/AuthContext';
 import './App.css'
 
 function App() {
+  // Obtener página actual de URL
+  const getPageFromURL = () => {
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page');
+    return page ? parseInt(page, 10) : 1;
+  };
+
+  // Actualizar URL con nueva página
+  const updateURLPage = (page) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', page.toString());
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  };
+
   const [filtroLetra, setFiltroLetra] = useState(null);
   const [filtrarPor, setFiltrarPor] = useState('titulo');
   const [busqueda, setBusqueda] = useState('');
-  const [paginaActual, setPaginaActual] = useState(() => {
-    // Recuperar página actual de sessionStorage
-    const saved = sessionStorage.getItem('paginaActual');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [paginaActual, setPaginaActual] = useState(getPageFromURL());
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,6 +33,11 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const { user, logout, isAuthenticated } = useAuth();
+
+  // Actualizar URL cuando cambia la página
+  useEffect(() => {
+    updateURLPage(paginaActual);
+  }, [paginaActual]);
 
   // Calcular items por página según ancho y orientación
   const getItemsPerPage = () => {
