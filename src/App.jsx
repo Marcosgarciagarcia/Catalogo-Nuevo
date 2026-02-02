@@ -41,30 +41,31 @@ function App() {
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
   // Detectar cambios de tamaño de pantalla con debounce
-  useEffect(() => {
-    let resizeTimer;
-    const handleResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        const newIsDesktop = window.innerWidth >= 768;
-        const newItemsPerPage = getItemsPerPage();
-        
-        setIsDesktop(newIsDesktop);
-        
-        // Solo resetear página si cambia el número de items por página
-        if (newItemsPerPage !== librosPorPagina) {
-          setLibrosPorPagina(newItemsPerPage);
-          setPaginaActual(1);
-        }
-      }, 250); // Esperar 250ms después del último resize
-    };
+  // DESACTIVADO TEMPORALMENTE PARA DEBUG
+  // useEffect(() => {
+  //   let resizeTimer;
+  //   const handleResize = () => {
+  //     clearTimeout(resizeTimer);
+  //     resizeTimer = setTimeout(() => {
+  //       const newIsDesktop = window.innerWidth >= 768;
+  //       const newItemsPerPage = getItemsPerPage();
+  //       
+  //       setIsDesktop(newIsDesktop);
+  //       
+  //       // Solo resetear página si cambia el número de items por página
+  //       if (newItemsPerPage !== librosPorPagina) {
+  //         setLibrosPorPagina(newItemsPerPage);
+  //         setPaginaActual(1);
+  //       }
+  //     }, 250); // Esperar 250ms después del último resize
+  //   };
 
-    window.addEventListener('resize', handleResize);
-    return () => {
-      clearTimeout(resizeTimer);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [librosPorPagina]);
+  //   window.addEventListener('resize', handleResize);
+  //   return () => {
+  //     clearTimeout(resizeTimer);
+  //     window.removeEventListener('resize', handleResize);
+  //   };
+  // }, [librosPorPagina]);
 
   // Cargar libros desde Turso
   useEffect(() => {
