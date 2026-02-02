@@ -11,7 +11,11 @@ function App() {
   const [filtroLetra, setFiltroLetra] = useState(null);
   const [filtrarPor, setFiltrarPor] = useState('titulo');
   const [busqueda, setBusqueda] = useState('');
-  const [paginaActual, setPaginaActual] = useState(1);
+  const [paginaActual, setPaginaActual] = useState(() => {
+    // Recuperar página actual de sessionStorage
+    const saved = sessionStorage.getItem('paginaActual');
+    return saved ? parseInt(saved, 10) : 1;
+  });
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
