@@ -1,253 +1,293 @@
 import { useState, useEffect } from 'react';
-import { getAllBooks, searchBooks, filterBooksByLetter } from './services/apiService';
+
+import { getAllBooks, searchBooks, filterBooksByLetter } from './services/tursoService';
+
 import BookList from './components/BookList';
+
 import Pagination from './components/Pagination';
-import BookDetailModal from './components/BookDetailModal';
-import Login from './components/Login';
-import { useAuth } from './contexts/AuthContext';
+
 import './App.css'
 
-function App() {
-  // Obtener página actual de URL
-  const getPageFromURL = () => {
-    const params = new URLSearchParams(window.location.search);
-    const page = params.get('page');
-    return page ? parseInt(page, 10) : 1;
-  };
 
-  // Actualizar URL con nueva página
-  const updateURLPage = (page) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set('page', page.toString());
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-  };
+
+function App() {
 
   const [filtroLetra, setFiltroLetra] = useState(null);
+
   const [filtrarPor, setFiltrarPor] = useState('titulo');
+
   const [busqueda, setBusqueda] = useState('');
-  const [paginaActual, setPaginaActual] = useState(getPageFromURL());
+
+  const [paginaActual, setPaginaActual] = useState(1);
+
   const [libros, setLibros] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState(null);
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-  const { user, logout, isAuthenticated } = useAuth();
 
-  // Actualizar URL cuando cambia la página
-  useEffect(() => {
-    updateURLPage(paginaActual);
-  }, [paginaActual]);
+  const librosPorPagina = 10;
 
-  // Calcular items por página según ancho y orientación
-  const getItemsPerPage = () => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const isPortrait = height > width;
-    
-    // Si está en vertical (portrait), mostrar más items
-    if (isPortrait && width >= 768) return 15; // Tablet vertical
-    if (isPortrait && width < 768) return 15;  // Móvil vertical
-    
-    // Horizontal (landscape)
-    if (width >= 1200) return 12; // Desktop grande / Tablet horizontal
-    if (width >= 768) return 10;  // Desktop mediano
-    return 15; // Móvil horizontal
-  };
 
-  const [librosPorPagina, setLibrosPorPagina] = useState(getItemsPerPage());
 
   const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 
-  // Detectar cambios de tamaño de pantalla con debounce
-  // DESACTIVADO TEMPORALMENTE PARA DEBUG
-  // useEffect(() => {
-  //   let resizeTimer;
-  //   const handleResize = () => {
-  //     clearTimeout(resizeTimer);
-  //     resizeTimer = setTimeout(() => {
-  //       const newIsDesktop = window.innerWidth >= 768;
-  //       const newItemsPerPage = getItemsPerPage();
-  //       
-  //       setIsDesktop(newIsDesktop);
-  //       
-  //       // Solo resetear página si cambia el número de items por página
-  //       if (newItemsPerPage !== librosPorPagina) {
-  //         setLibrosPorPagina(newItemsPerPage);
-  //         setPaginaActual(1);
-  //       }
-  //     }, 250); // Esperar 250ms después del último resize
-  //   };
 
-  //   window.addEventListener('resize', handleResize);
-  //   return () => {
-  //     clearTimeout(resizeTimer);
-  //     window.removeEventListener('resize', handleResize);
-  //   };
-  // }, [librosPorPagina]);
 
   // Cargar libros desde Turso
+
   useEffect(() => {
+
     const fetchBooks = async () => {
+
       try {
+
         setLoading(true);
+
         setError(null);
+
         
-        let response;
+
+        let resultado;
+
         
+
         if (busqueda) {
+
           // Buscar por término
-          response = await searchBooks(busqueda, filtrarPor);
+
+          resultado = await searchBooks(busqueda, filtrarPor);
+
         } else if (filtroLetra) {
+
           // Filtrar por letra
-          response = await filterBooksByLetter(filtroLetra, filtrarPor);
+
+          resultado = await filterBooksByLetter(filtroLetra, filtrarPor);
+
         } else {
+
           // Cargar todos los libros
-          response = await getAllBooks();
+
+          resultado = await getAllBooks();
+
         }
+
         
-        // La API devuelve { data: [...], total: N }
-        setLibros(response.data || response);
+
+        setLibros(resultado);
+
       } catch (err) {
+
         console.error('Error cargando libros:', err);
+
         setError('Error al cargar los libros. Por favor, intenta de nuevo.');
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
+
+
     fetchBooks();
+
   }, [filtroLetra, filtrarPor, busqueda]);
 
+
+
   const cambiarTipoDeFiltro = () => {
+
     setFiltrarPor(filtrarPor === 'titulo' ? 'autor' : 'titulo');
+
     setFiltroLetra(null);
+
     setBusqueda('');
+
     setPaginaActual(1);
+
   };
+
+
 
   const limpiarFiltros = () => {
+
     setFiltroLetra(null);
+
     setBusqueda('');
+
     setPaginaActual(1);
+
   };
 
+
+
   return (
-    <div className="app-container">
-      <h2 className="page-title">Catálogo de libros de casa</h2>
-      
-      {isDesktop && (
-        <header className="auth-header">
-          <div className="auth-section">
-            {isAuthenticated ? (
-              <>
-                <span className="user-info">
-                  👤 {user?.username}
-                  {user?.isAdmin && <span className="admin-badge">Admin</span>}
-                </span>
-                <button onClick={logout} className="auth-button logout-button">
-                  Cerrar Sesión
-                </button>
-              </>
-            ) : (
-              <button onClick={() => setShowLogin(true)} className="auth-button login-button">
-                Iniciar Sesión
-              </button>
-            )}
-          </div>
-        </header>
-      )}
-      
+
+    <div>
+
+      <h2>Catálogo de libros de casa</h2>
+
       <div className="filtro-container">
+
         <div className="opciones-busqueda">
+
           <button onClick={cambiarTipoDeFiltro}>
+
             Buscar por: {filtrarPor === 'titulo' ? 'Título' : 'Autor'}
+
           </button>
 
+
+
           <input
+
             type="text"
+
             placeholder={`Buscar por ${filtrarPor === 'titulo' ? 'título' : 'autor'}...`}
+
             value={busqueda}
+
             onChange={(e) => {
+
               setBusqueda(e.target.value);
+
               setPaginaActual(1);
+
             }}
+
           />
+
+
 
           {(busqueda || filtroLetra) && (
+
             <button onClick={limpiarFiltros}>
+
               Limpiar Filtros
+
             </button>
+
           )}
+
         </div>
+
+
 
         <div className="alfabeto">
+
           {alfabeto.map(letra => (
+
             <button
+
               key={letra}
+
               onClick={() => {
+
                 setFiltroLetra(letra);
+
                 setPaginaActual(1);
+
               }}
+
               className={filtroLetra === letra ? 'activo' : ''}
+
             >
+
               {letra}
+
             </button>
+
           ))}
+
         </div>
+
       </div>
 
+
+
       {loading && (
+
         <div className="loading">
+
           <p>Cargando libros desde Turso...</p>
+
         </div>
+
       )}
+
+
 
       {error && (
+
         <div className="error">
+
           <p>{error}</p>
+
         </div>
+
       )}
+
+
 
       {!loading && !error && (
+
         <>
+
           <div className="resultados-info">
+
             <p>
+
               {libros.length} libro(s) encontrado(s)
+
               {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
+
               {busqueda ? ` que contienen "${busqueda}"` : ''}
+
             </p>
+
           </div>
 
+
+
           <BookList
+
             libros={libros.slice(
+
               (paginaActual - 1) * librosPorPagina,
+
               paginaActual * librosPorPagina
+
             )}
-            onBookClick={setSelectedBook}
+
           />
+
+
 
           <Pagination
+
             totalLibros={libros.length}
+
             librosPorPagina={librosPorPagina}
+
             paginaActual={paginaActual}
+
             setPaginaActual={setPaginaActual}
+
           />
+
         </>
+
       )}
 
-      {selectedBook && (
-        <BookDetailModal
-          libro={selectedBook}
-          onClose={() => setSelectedBook(null)}
-        />
-      )}
-
-      {showLogin && (
-        <Login onClose={() => setShowLogin(false)} />
-      )}
     </div>
+
   )
+
 }
+
+
 
 export default App;
