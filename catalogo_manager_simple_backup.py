@@ -1,9 +1,9 @@
-﻿# -*- coding: utf-8 -*-
-"""
+﻿"""
 Catálogo Manager - Versión Simple y Rápida
 Interfaz moderna con CustomTkinter - Lista simple sin imágenes en grid
 """
 
+# -*- coding: utf-8-
 import customtkinter as ctk
 from tkinter import messagebox
 import sqlite3
@@ -12,15 +12,18 @@ import json
 from datetime import datetime
 from PIL import Image
 import io
+import sys
 
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
-
-class CatalogoManagerSimple(ctk.CTk):
+# Forzar UTF-8 en la salida
+if sys.version_info[0] >= 3:
+    import locale
+    try:
+        locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+    except:
     def __init__(self):
         super().__init__()
         
-        self.title("📚 Catálogo Manager - Modern UI")
+        self.title("­ƒôÜ Cat├ílogo Manager - Modern UI")
         
         # Maximizar ventana al iniciar (mantiene controles de ventana)
         self.after(100, lambda: self.state('zoomed'))
@@ -38,185 +41,42 @@ class CatalogoManagerSimple(ctk.CTk):
         
         self.create_widgets()
         self.load_initial_data()
-        
-        # Mostrar catálogo por defecto
-        self.show_catalogo()
     
     def create_widgets(self):
-        # Header principal de la aplicación
-        self.app_header = ctk.CTkFrame(self, height=60, fg_color=("#1e3a8a", "#1e293b"))
-        self.app_header.pack(fill="x", side="top")
-        self.app_header.pack_propagate(False)
-        
-        # Contenido del header principal
-        header_content = ctk.CTkFrame(self.app_header, fg_color="transparent")
-        header_content.pack(expand=True, fill="both", padx=20, pady=10)
-        
-        # Logo y nombre de la aplicación
-        ctk.CTkLabel(header_content, text="📚", font=ctk.CTkFont(size=28)).pack(side="left", padx=(0, 10))
-        ctk.CTkLabel(header_content, text="Catálogo Manager", font=ctk.CTkFont(size=24, weight="bold")).pack(side="left")
-        ctk.CTkLabel(header_content, text="Sistema de Gestión Bibliotecaria", font=ctk.CTkFont(size=14), text_color=("#94a3b8", "#64748b")).pack(side="left", padx=(20, 0))
-        
         # Sidebar
         self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0)
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
         
-        ctk.CTkLabel(self.sidebar, text="📚 Catálogo", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=20)
+        ctk.CTkLabel(self.sidebar, text="­ƒôÜ Cat├ílogo", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=20)
         
-        # Selector de BD en el menú lateral (arriba de CONTENIDO)
-        db_frame = ctk.CTkFrame(self.sidebar, fg_color=("#f0f0f0", "#2b2b2b"))
-        db_frame.pack(fill="x", padx=10, pady=(20, 10))
-        
-        ctk.CTkLabel(db_frame, text="Base de Datos", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=(10, 5))
-        
-        self.sidebar_source_var = ctk.StringVar(value="local")
-        sidebar_selector = ctk.CTkSegmentedButton(
-            db_frame, 
-            values=["Local", "Turso"], 
-            variable=self.sidebar_source_var, 
-            command=self.on_sidebar_source_change,
-            font=ctk.CTkFont(size=12, weight="bold"),
-            width=200,
-            dynamic_resizing=False
-        )
-        sidebar_selector.pack(padx=10, pady=(0, 10))
-        sidebar_selector.set("Local")
-        
-        self.sidebar_db_indicator = ctk.CTkLabel(
-            db_frame,
-            text="● LOCAL",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=("#2ecc71", "#27ae60")
-        )
-        self.sidebar_db_indicator.pack(pady=(0, 10))
-        
-        # Separador
-        ctk.CTkFrame(self.sidebar, height=2, fg_color=("gray", "gray")).pack(fill="x", padx=10, pady=5)
-        
-        # Menú de navegación - Agrupado por categorías
+        # Botones de navegaci├│n
         self.nav_buttons = {}
-        
-        # 📚 CONTENIDO
-        ctk.CTkLabel(self.sidebar, text="📚 CONTENIDO", font=ctk.CTkFont(size=12, weight="bold"), text_color=("#666666", "#999999")).pack(pady=(20, 10), padx=10, anchor="w")
-        
-        content_buttons = [
+        nav_items = [
             ("📚 Catálogo", self.show_catalogo),
-            ("👤 Autores", self.show_autores),
-            ("🏢 Editoriales", self.show_editoriales)
-        ]
-        
-        for text, command in content_buttons:
-            btn = ctk.CTkButton(self.sidebar, text=text, command=command, height=40, fg_color="transparent", anchor="w", text_color=("#000000", "#ffffff"))
-            btn.pack(fill="x", padx=10, pady=2)
-            self.nav_buttons[text] = btn
-        
-        # BLOQUE 2: Gestión de Usuarios
-        ctk.CTkLabel(self.sidebar, text="👥 USUARIOS", font=ctk.CTkFont(size=12, weight="bold"), text_color=("#64748b", "#94a3b8")).pack(pady=(20, 10), padx=10, anchor="w")
-        
-        user_items = [
             ("👥 Usuarios", self.show_usuarios),
-        ]
-        
-        for text, command in user_items:
-            btn = ctk.CTkButton(self.sidebar, text=text, command=command, height=40, fg_color="transparent", anchor="w", text_color=("#000000", "#ffffff"))
-            btn.pack(fill="x", padx=10, pady=2)
-            self.nav_buttons[text] = btn
-        
-        # BLOQUE 3: Sistema
-        ctk.CTkLabel(self.sidebar, text="⚙️ SISTEMA", font=ctk.CTkFont(size=12, weight="bold"), text_color=("#64748b", "#94a3b8")).pack(pady=(20, 10), padx=10, anchor="w")
-        
-        system_items = [
             ("🔄 Sincronización", self.show_sincronizacion),
             ("📊 Estadísticas", self.show_estadisticas),
+            ("👤 Autores", self.show_autores),
+            ("🏢 Editoriales", self.show_editoriales),
         ]
         
-        for text, command in system_items:
-            btn = ctk.CTkButton(self.sidebar, text=text, command=command, height=40, fg_color="transparent", anchor="w", text_color=("#000000", "#ffffff"))
-            btn.pack(fill="x", padx=10, pady=2)
+        for text, command in nav_items:
+            btn = ctk.CTkButton(self.sidebar, text=text, command=command, height=40, fg_color="transparent", anchor="w")
+            btn.pack(fill="x", padx=10, pady=5)
             self.nav_buttons[text] = btn
         
         # Theme switch
-        ctk.CTkLabel(self.sidebar, text="Tema:", font=ctk.CTkFont(size=12)).pack(pady=(20, 5), padx=10, anchor="w")
-        self.theme_switch = ctk.CTkSegmentedButton(self.sidebar, values=["light", "dark"], command=self.toggle_theme, width=180)
+        ctk.CTkLabel(self.sidebar, text="Tema:", font=ctk.CTkFont(size=12)).pack(pady=(20, 5))
+        self.theme_switch = ctk.CTkSegmentedButton(self.sidebar, values=["light", "dark"], command=self.toggle_theme)
         self.theme_switch.set("dark")
-        self.theme_switch.pack(padx=10, pady=(0, 20))
+        self.theme_switch.pack(padx=10)
         
-        # Main frame - Contenedor para todos los frames de contenido
-        self.main_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_container.pack(side="right", fill="both", expand=True, padx=10, pady=10)
+        # Main frame
+        self.main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.main_frame.pack(side="right", fill="both", expand=True, padx=10, pady=10)
         
-        # Crear todos los frames una vez (persistentes)
-        self.create_all_frames()
-    
-    def create_all_frames(self):
-        """Crear todos los frames persistentes una sola vez"""
-        # Frame de catálogo
-        self.catalogo_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        
-        # Frame de autores
-        self.autores_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        
-        # Frame de editoriales
-        self.editoriales_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        
-        # Frame de usuarios
-        self.usuarios_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        
-        # Frame de sincronización
-        self.sincronizacion_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        
-        # Frame de estadísticas
-        self.estadisticas_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        
-        # Inicializar componentes de cada frame
-        self.init_catalogo_frame()
-        self.init_autores_frame()
-        self.init_editoriales_frame()
-        self.init_usuarios_frame()
-        self.init_sincronizacion_frame()
-        self.init_estadisticas_frame()
-    
-    def switch_frame(self, frame_to_show):
-        """Cambiar entre frames usando grid/grid_forget"""
-        # Ocultar todos los frames
-        self.catalogo_frame.grid_forget()
-        self.autores_frame.grid_forget()
-        self.editoriales_frame.grid_forget()
-        self.usuarios_frame.grid_forget()
-        self.sincronizacion_frame.grid_forget()
-        self.estadisticas_frame.grid_forget()
-        
-        # Mostrar solo el frame seleccionado
-        frame_to_show.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-        
-        # Configurar el main_container para que expanda el frame
-        self.main_container.grid_rowconfigure(0, weight=1)
-        self.main_container.grid_columnconfigure(0, weight=1)
-    
-    def get_current_db_source(self):
-        """Obtener la fuente de datos actual (única para toda la aplicación)"""
-        return self.sidebar_source_var.get().lower()
-    
-    def query_db(self, sql, params=None):
-        """Método universal de base de datos que usa la fuente seleccionada"""
-        source = self.get_current_db_source()
-        
-        if source == "local":
-            return self.query_local(sql, params)
-        else:
-            return self.query_turso(sql, params)
-    
-    def query_db_single(self, sql, params=None):
-        """Método universal para consultas que devuelven un solo valor"""
-        source = self.get_current_db_source()
-        
-        if source == "local":
-            result = self.query_local(sql, params)
-        else:
-            result = self.query_turso(sql, params)
-        
-        return result[0][0] if result and len(result) > 0 else None
+        self.show_catalogo()
     
     def toggle_theme(self, value):
         ctk.set_appearance_mode(value)
@@ -224,39 +84,70 @@ class CatalogoManagerSimple(ctk.CTk):
     def highlight_nav_button(self, button_text):
         for text, btn in self.nav_buttons.items():
             if text == button_text:
-                btn.configure(fg_color=("#3b82f6", "#1e40af"), text_color=("#ffffff", "#ffffff"))  # Azul con texto blanco
+                btn.configure(fg_color=("#3b82f6", "#1e40af"))  # Azul claro/oscuro
             else:
-                btn.configure(fg_color="transparent", text_color=("#000000", "#ffffff"))  # Texto negro en claro, blanco en oscuro
+                btn.configure(fg_color="transparent")
     
-    def init_catalogo_frame(self):
-        """Inicializar frame de catálogo con componentes persistentes"""
-        # Header persistente
-        header = ctk.CTkFrame(self.catalogo_frame)
+    def clear_main_frame(self):
+        """Limpia el frame principal de forma segura"""
+        try:
+            for widget in self.main_frame.winfo_children():
+                widget.destroy()
+        except Exception as e:
+            print(f"Error limpiando frame: {e}")
+    
+    def show_catalogo(self):
+        self.clear_main_frame()
+        self.highlight_nav_button("­ƒôÜ Cat├ílogo")
+        
+        # Header reorganizado: BD | T├¡tulo | B├║squeda
+        header = ctk.CTkFrame(self.main_frame)
         header.pack(fill="x", padx=20, pady=(20, 10))
         
-        # IZQUIERDA: Botón Crear (donde estaba el selector BD)
-        create_frame = ctk.CTkFrame(header, fg_color="transparent")
-        create_frame.pack(side="left", padx=5)
+        # IZQUIERDA: Selector de BD
+        source_frame = ctk.CTkFrame(header, fg_color="transparent")
+        source_frame.pack(side="left", padx=5)
         
-        ctk.CTkButton(create_frame, text="➕ Crear Libro", command=self.crear_libro, width=120, height=40).pack(side="left", padx=5)
+        ctk.CTkLabel(source_frame, text="BD:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=(0, 5))
         
-        # CENTRO: Título
+        self.source_var = ctk.StringVar(value="local")
+        source_selector = ctk.CTkSegmentedButton(
+            source_frame, 
+            values=["Local", "Turso"], 
+            variable=self.source_var, 
+            command=self.on_source_change,
+            selected_color=("#2ecc71", "#27ae60"),
+            selected_hover_color=("#27ae60", "#229954"),
+            font=ctk.CTkFont(size=12, weight="bold")
+        )
+        source_selector.pack(side="left", padx=5)
+        
+        self.db_indicator = ctk.CTkLabel(
+            source_frame,
+            text="ÔùÅ LOCAL",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color=("#2ecc71", "#27ae60")
+        )
+        self.db_indicator.pack(side="left", padx=(5, 0))
+        
+        # CENTRO: Título con botón Crear
         title_frame = ctk.CTkFrame(header, fg_color="transparent")
         title_frame.pack(side="left", expand=True, padx=20)
         
         ctk.CTkLabel(title_frame, text="Catálogo de Libros", font=ctk.CTkFont(size=28, weight="bold")).pack(side="left")
+        ctk.CTkButton(title_frame, text="➕ Crear Libro", command=self.crear_libro, width=120).pack(side="right", padx=(20, 0))
         
-        # DERECHA: Búsqueda con filtros
+        # DERECHA: B├║squeda con filtros
         search_frame = ctk.CTkFrame(header, fg_color="transparent")
         search_frame.pack(side="right", padx=5)
         
+        # Filtro de b├║squeda
         self.search_filter_var = ctk.StringVar(value="titulo")
         filter_menu = ctk.CTkSegmentedButton(
             search_frame,
-            values=["Título", "Autor", "EAN"],
+            values=["T├¡tulo", "Autor", "EAN"],
             variable=self.search_filter_var,
-            width=200,
-            font=ctk.CTkFont(size=12, weight="bold")
+            width=200
         )
         filter_menu.pack(side="left", padx=(0, 5))
         
@@ -264,49 +155,49 @@ class CatalogoManagerSimple(ctk.CTk):
         self.search_entry.pack(side="left", padx=5)
         self.search_entry.bind("<Return>", lambda e: self.buscar_libros())
         
-        ctk.CTkButton(search_frame, text="🔍", command=self.buscar_libros, width=40).pack(side="left", padx=2)
-        ctk.CTkButton(search_frame, text="✖ Limpiar", command=self.limpiar_filtros, width=80).pack(side="left", padx=2)
+        ctk.CTkButton(search_frame, text="­ƒöì", command=self.buscar_libros, width=40).pack(side="left", padx=2)
+        ctk.CTkButton(search_frame, text="Ô£û Limpiar", command=self.limpiar_filtros, width=80).pack(side="left", padx=2)
         
         # Lista simple de libros
-        list_frame = ctk.CTkFrame(self.catalogo_frame)
+        list_frame = ctk.CTkFrame(self.main_frame)
         list_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
         self.books_scroll = ctk.CTkScrollableFrame(list_frame, label_text="Libros Disponibles", label_font=ctk.CTkFont(size=16, weight="bold"))
         self.books_scroll.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Paginación persistente
-        pagination_frame = ctk.CTkFrame(self.catalogo_frame)
+        # Paginaci├│n al pie con primera/├║ltima
+        pagination_frame = ctk.CTkFrame(self.main_frame)
         pagination_frame.pack(fill="x", padx=20, pady=(0, 20))
         
-        # Botones de navegación izquierda
+        # Botones de navegaci├│n izquierda
         nav_left = ctk.CTkFrame(pagination_frame, fg_color="transparent")
         nav_left.pack(side="left", padx=5)
         
-        self.first_btn = ctk.CTkButton(nav_left, text="⏪ Primera", command=self.first_page, width=90, height=32, text_color=("#000000", "#ffffff"))
+        self.first_btn = ctk.CTkButton(nav_left, text="ÔÅ« Primera", command=self.first_page, width=90, height=32)
         self.first_btn.pack(side="left", padx=2)
         
-        self.prev_btn = ctk.CTkButton(nav_left, text="◀ Anterior", command=self.prev_page, width=90, height=32, text_color=("#000000", "#ffffff"))
+        self.prev_btn = ctk.CTkButton(nav_left, text="ÔùÇ Anterior", command=self.prev_page, width=90, height=32)
         self.prev_btn.pack(side="left", padx=2)
         
-        # Frame para números de página (centro)
+        # Frame para n├║meros de p├ígina (centro)
         self.pages_frame = ctk.CTkFrame(pagination_frame, fg_color="transparent")
         self.pages_frame.pack(side="left", padx=10)
         
-        # Botones de navegación derecha
+        # Botones de navegaci├│n derecha
         nav_right = ctk.CTkFrame(pagination_frame, fg_color="transparent")
         nav_right.pack(side="left", padx=5)
         
-        self.next_btn = ctk.CTkButton(nav_right, text="Siguiente ▶", command=self.next_page, width=90, height=32, text_color=("#000000", "#ffffff"))
+        self.next_btn = ctk.CTkButton(nav_right, text="Siguiente ÔûÂ", command=self.next_page, width=90, height=32)
         self.next_btn.pack(side="left", padx=2)
         
-        self.last_btn = ctk.CTkButton(nav_right, text="Última ⏭", command=self.last_page, width=90, height=32, text_color=("#000000", "#ffffff"))
+        self.last_btn = ctk.CTkButton(nav_right, text="├Ültima ÔÅ¡", command=self.last_page, width=90, height=32)
         self.last_btn.pack(side="left", padx=2)
         
-        # Ir a página específica (derecha)
+        # Ir a p├ígina espec├¡fica (derecha)
         goto_frame = ctk.CTkFrame(pagination_frame, fg_color="transparent")
         goto_frame.pack(side="right", padx=10)
         
-        self.page_label = ctk.CTkLabel(goto_frame, text="Página 1", font=ctk.CTkFont(size=12, weight="bold"))
+        self.page_label = ctk.CTkLabel(goto_frame, text="P├ígina 1", font=ctk.CTkFont(size=12, weight="bold"))
         self.page_label.pack(side="left", padx=10)
         
         ctk.CTkLabel(goto_frame, text="Ir a:", font=ctk.CTkFont(size=11)).pack(side="left", padx=(10, 5))
@@ -315,90 +206,29 @@ class CatalogoManagerSimple(ctk.CTk):
         self.page_entry.pack(side="left", padx=2)
         self.page_entry.bind("<Return>", lambda e: self.goto_page())
         
-        self.goto_btn = ctk.CTkButton(goto_frame, text="→", command=self.goto_page, width=35, height=32, text_color=("#000000", "#ffffff"))
-        self.goto_btn.pack(side="left", padx=2)
-    
-    def save_persistent_components(self):
-        """Guardar estado de componentes persistentes"""
-        # Guardar valores de los componentes si existen
-        if hasattr(self, 'sidebar_source_var'):
-            self.persistent_components['source'] = self.sidebar_source_var.get()
-        if hasattr(self, 'search_filter_var'):
-            self.persistent_components['search_filter'] = self.search_filter_var.get()
-        if hasattr(self, 'search_entry'):
-            self.persistent_components['search_text'] = self.search_entry.get()
-    
-    def restore_persistent_components(self):
-        """Restaurar valores de componentes persistentes"""
-        # Restaurar valores guardados
-        if 'source' in self.persistent_components and hasattr(self, 'sidebar_source_var'):
-            self.sidebar_source_var.set(self.persistent_components['source'])
-        if 'search_filter' in self.persistent_components and hasattr(self, 'search_filter_var'):
-            self.search_filter_var.set(self.persistent_components['search_filter'])
-        if 'search_text' in self.persistent_components and hasattr(self, 'search_entry'):
-            self.search_entry.delete(0, 'end')
-            self.search_entry.insert(0, self.persistent_components['search_text'])
-    
-    def show_catalogo(self):
-        self.highlight_nav_button("📚 Catálogo")
-        self.switch_frame(self.catalogo_frame)
+        ctk.CTkButton(goto_frame, text="ÔåÆ", command=self.goto_page, width=35, height=32).pack(side="left", padx=2)
+        
         self.current_page = 0
         self.cargar_libros()
     
-    def show_autores(self):
-        self.highlight_nav_button("👤 Autores")
-        self.switch_frame(self.autores_frame)
-        self.autores_current_page = 0
-        self.cargar_autores()
-    
-    def show_editoriales(self):
-        self.highlight_nav_button("🏢 Editoriales")
-        self.switch_frame(self.editoriales_frame)
-        self.editoriales_current_page = 0
-        self.cargar_editoriales()
-    
-    def show_usuarios(self):
-        self.highlight_nav_button("👥 Usuarios")
-        self.switch_frame(self.usuarios_frame)
-    
-    def show_sincronizacion(self):
-        self.highlight_nav_button("🔄 Sincronización")
-        self.switch_frame(self.sincronizacion_frame)
-    
-    def show_estadisticas(self):
-        self.highlight_nav_button("📊 Estadísticas")
-        self.switch_frame(self.estadisticas_frame)
-    
-    def on_sidebar_source_change(self, value):
-        """Cambiar fuente de datos desde el sidebar (único para toda la aplicación)"""
-        # Actualizar selector para mostrar la opción seleccionada
-        self.sidebar_source_var.set(value.lower())
+    def on_source_change(self, value):
+        self.source_var.set(value.lower())
+        self.current_page = 0
         
-        # Actualizar indicador visual en sidebar
-        if hasattr(self, 'sidebar_db_indicator'):
+        # Actualizar indicador visual
+        if hasattr(self, 'db_indicator'):
             if value.lower() == "local":
-                self.sidebar_db_indicator.configure(
-                    text="● LOCAL",
+                self.db_indicator.configure(
+                    text="ÔùÅ LOCAL",
                     text_color=("#2ecc71", "#27ae60")
                 )
             else:
-                self.sidebar_db_indicator.configure(
-                    text="● TURSO",
+                self.db_indicator.configure(
+                    text="ÔùÅ TURSO",
                     text_color=("#3498db", "#2980b9")
                 )
         
-        # Resetear paginación de todas las secciones
-        self.current_page = 0
-        self.autores_current_page = 0
-        self.editoriales_current_page = 0
-        
-        # Detectar qué sección está activa y recargar con la nueva BD
-        if hasattr(self, 'catalogo_frame') and self.catalogo_frame.winfo_ismapped():
-            self.cargar_libros()
-        elif hasattr(self, 'autores_frame') and self.autores_frame.winfo_ismapped():
-            self.cargar_autores()
-        elif hasattr(self, 'editoriales_frame') and self.editoriales_frame.winfo_ismapped():
-            self.cargar_editoriales()
+        self.cargar_libros()
     
     def cargar_libros(self):
         if not hasattr(self, 'books_scroll'):
@@ -408,20 +238,35 @@ class CatalogoManagerSimple(ctk.CTk):
             widget.destroy()
         
         try:
+            source = self.source_var.get().lower()
             offset = self.current_page * self.items_per_page
             
-            # Usar método universal de base de datos
-            self.total_books = self.query_db_single("SELECT COUNT(*) FROM core_titulos") or 0
-            
-            books = self.query_db(f"""
-                SELECT t.id, t.EAN, t.titulo, a.nombreAutor, e.descriEditorial, 
-                       t.anyoEdicion, t.portada_cloudinary, t.sinopsis
-                FROM core_titulos t
-                LEFT JOIN core_autores a ON t.codiAutor_id = a.id
-                LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
-                ORDER BY t.titulo
-                LIMIT {self.items_per_page} OFFSET {offset}
-            """)
+            if source == "local":
+                count_result = self.query_local("SELECT COUNT(*) FROM core_titulos")
+                self.total_books = count_result[0][0] if count_result else 0
+                
+                books = self.query_local(f"""
+                    SELECT t.id, t.EAN, t.titulo, a.nombreAutor, e.descriEditorial, 
+                           t.anyoEdicion, t.portada_cloudinary, t.sinopsis
+                    FROM core_titulos t
+                    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+                    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+                    ORDER BY t.titulo
+                    LIMIT {self.items_per_page} OFFSET {offset}
+                """)
+            else:
+                count_result = self.query_turso("SELECT COUNT(*) FROM core_titulos")
+                self.total_books = count_result[0][0] if count_result else 0
+                
+                books = self.query_turso(f"""
+                    SELECT t.id, t.EAN, t.titulo, a.nombreAutor, e.descriEditorial, 
+                           t.anyoEdicion, t.portada_cloudinary, t.sinopsis
+                    FROM core_titulos t
+                    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+                    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+                    ORDER BY t.titulo
+                    LIMIT {self.items_per_page} OFFSET {offset}
+                """)
             
             if books:
                 for book in books:
@@ -470,7 +315,7 @@ class CatalogoManagerSimple(ctk.CTk):
         # Header con t├¡tulo
         header = ctk.CTkFrame(modal)
         header.pack(fill="x", padx=20, pady=20)
-        ctk.CTkLabel(header, text=book[2] if len(book) > 2 else "Sin título", font=ctk.CTkFont(size=24, weight="bold"), wraplength=700).pack()
+        ctk.CTkLabel(header, text=book[2] if len(book) > 2 else "Sin t├¡tulo", font=ctk.CTkFont(size=24, weight="bold"), wraplength=700).pack()
         
         # Contenido scrollable
         content = ctk.CTkScrollableFrame(modal)
@@ -496,12 +341,12 @@ class CatalogoManagerSimple(ctk.CTk):
             except:
                 pass
         
-        # 3. Resto de información
+        # 3. Resto de informaci├│n
         info_data = [
             ("EAN:", book[1] if len(book) > 1 and book[1] else "N/A"),
             ("Autor:", book[3] if len(book) > 3 and book[3] else "Desconocido"),
             ("Editorial:", book[4] if len(book) > 4 and book[4] else "Desconocida"),
-            ("Año:", book[5] if len(book) > 5 and book[5] else "N/A"),
+            ("A├▒o:", book[5] if len(book) > 5 and book[5] else "N/A"),
         ]
         
         for label, value in info_data:
@@ -522,8 +367,8 @@ class CatalogoManagerSimple(ctk.CTk):
         actions = ctk.CTkFrame(modal)
         actions.pack(fill="x", padx=20, pady=(0, 20))
         
-        ctk.CTkButton(actions, text="✏️ Editar", command=lambda: self.editar_libro_from_modal(book, modal), width=120, height=40, fg_color="#3498db", hover_color="#2980b9").pack(side="left", padx=5)
-        ctk.CTkButton(actions, text="🗑️ Eliminar", command=lambda: self.eliminar_libro_from_modal(book, modal), width=120, height=40, fg_color="#e74c3c", hover_color="#c0392b").pack(side="left", padx=5)
+        ctk.CTkButton(actions, text="Ô£Å´©Å Editar", command=lambda: self.editar_libro_from_modal(book, modal), width=120, height=40, fg_color="#3498db", hover_color="#2980b9").pack(side="left", padx=5)
+        ctk.CTkButton(actions, text="­ƒùæ´©Å Eliminar", command=lambda: self.eliminar_libro_from_modal(book, modal), width=120, height=40, fg_color="#e74c3c", hover_color="#c0392b").pack(side="left", padx=5)
         ctk.CTkButton(actions, text="Cerrar", command=modal.destroy, width=120, height=40).pack(side="right", padx=5)
     
     def editar_libro_from_modal(self, book, modal):
@@ -533,13 +378,13 @@ class CatalogoManagerSimple(ctk.CTk):
     
     def eliminar_libro_from_modal(self, book, modal):
         """Eliminar libro desde modal"""
-        if messagebox.askyesno("Confirmar Eliminación", f"¿Seguro que desea eliminar el libro '{book[2]}'?\n\nEsta acción no se puede deshacer."):
+        if messagebox.askyesno("Confirmar Eliminaci├│n", f"┬┐Est├í seguro de que desea eliminar el libro '{book[2]}'?\n\nEsta acci├│n no se puede deshacer."):
             modal.destroy()
             messagebox.showinfo("Eliminar", "Funcionalidad de eliminar en desarrollo")
             self.cargar_libros()
     
     def first_page(self):
-        """Ir a la primera página"""
+        """Ir a la primera p├ígina"""
         if self.current_page > 0:
             self.current_page = 0
             self.cargar_libros()
@@ -556,14 +401,14 @@ class CatalogoManagerSimple(ctk.CTk):
             self.cargar_libros()
     
     def last_page(self):
-        """Ir a la última página"""
+        """Ir a la ├║ltima p├ígina"""
         total_pages = (self.total_books + self.items_per_page - 1) // self.items_per_page
         if self.current_page < total_pages - 1:
             self.current_page = total_pages - 1
             self.cargar_libros()
     
     def goto_page(self):
-        """Ir a página específica"""
+        """Ir a p├ígina espec├¡fica"""
         try:
             page_num = int(self.page_entry.get())
             total_pages = max(1, (self.total_books + self.items_per_page - 1) // self.items_per_page)
@@ -572,9 +417,9 @@ class CatalogoManagerSimple(ctk.CTk):
                 self.current_page = page_num - 1
                 self.cargar_libros()
             else:
-                messagebox.showwarning("Página inválida", f"Por favor ingrese un número entre 1 y {total_pages}")
+                messagebox.showwarning("P├ígina inv├ílida", f"Por favor ingrese un n├║mero entre 1 y {total_pages}")
         except ValueError:
-            messagebox.showwarning("Entrada inválida", "Por favor ingrese un número válido")
+            messagebox.showwarning("Entrada inv├ílida", "Por favor ingrese un n├║mero v├ílido")
     
     def update_pagination_controls(self):
         if not hasattr(self, 'page_label'):
@@ -583,7 +428,7 @@ class CatalogoManagerSimple(ctk.CTk):
         total_pages = max(1, (self.total_books + self.items_per_page - 1) // self.items_per_page)
         current = self.current_page + 1
         
-        self.page_label.configure(text=f"Página {current} de {total_pages} ({self.total_books} libros)")
+        self.page_label.configure(text=f"P├ígina {current} de {total_pages} ({self.total_books} libros)")
         
         # Habilitar/deshabilitar botones
         self.first_btn.configure(state="normal" if self.current_page > 0 else "disabled")
@@ -611,7 +456,6 @@ class CatalogoManagerSimple(ctk.CTk):
                     width=35,
                     height=32,
                     fg_color=("#3498db", "#2980b9"),
-                    text_color=("#ffffff", "#ffffff"),
                     command=lambda p=i: self.jump_to_page(p)
                 )
             else:
@@ -622,7 +466,6 @@ class CatalogoManagerSimple(ctk.CTk):
                     height=32,
                     fg_color="transparent",
                     border_width=1,
-                    text_color=("#000000", "#ffffff"),
                     command=lambda p=i: self.jump_to_page(p)
                 )
             btn.pack(side="left", padx=1)
@@ -631,12 +474,12 @@ class CatalogoManagerSimple(ctk.CTk):
             ctk.CTkLabel(self.pages_frame, text="...", font=ctk.CTkFont(size=12)).pack(side="left", padx=2)
     
     def jump_to_page(self, page_index):
-        """Saltar a página específica"""
+        """Saltar a p├ígina espec├¡fica"""
         self.current_page = page_index
         self.cargar_libros()
     
     def limpiar_filtros(self):
-        """Limpiar filtros de búsqueda y recargar catálogo completo"""
+        """Limpiar filtros de b├║squeda y recargar cat├ílogo completo"""
         self.search_entry.delete(0, 'end')
         self.current_page = 0
         self.cargar_libros()
@@ -653,10 +496,11 @@ class CatalogoManagerSimple(ctk.CTk):
             widget.destroy()
         
         try:
+            source = self.source_var.get().lower()
             search_filter = self.search_filter_var.get().lower()
             
-            # Construir SQL según el filtro seleccionado
-            if search_filter == "título":
+            # Construir SQL seg├║n el filtro seleccionado
+            if search_filter == "t├¡tulo":
                 where_clause = "t.titulo LIKE ?"
                 params = (f"%{search_term}%",)
             elif search_filter == "autor":
@@ -680,8 +524,10 @@ class CatalogoManagerSimple(ctk.CTk):
                 LIMIT 100
             """
             
-            # Usar método universal de base de datos
-            books = self.query_db(sql, params)
+            if source == "local":
+                books = self.query_local(sql, params)
+            else:
+                books = self.query_turso(sql, list(params))
             
             if books:
                 for book in books:
@@ -698,25 +544,22 @@ class CatalogoManagerSimple(ctk.CTk):
         
         ctk.CTkLabel(self.main_frame, text="Vista de Edici├│n - En desarrollo", font=ctk.CTkFont(size=20)).pack(pady=100)
     
-    def init_autores_frame(self):
-        """Inicializar frame de autores"""
-        # Header persistente
-        header = ctk.CTkFrame(self.autores_frame)
+    def show_autores(self):
+        self.clear_main_frame()
+        self.highlight_nav_button("👤 Autores")
+        
+        # Header con búsqueda y botón crear
+        header = ctk.CTkFrame(self.main_frame)
         header.pack(fill="x", padx=20, pady=(20, 10))
         
-        # IZQUIERDA: Botón Crear (donde estaba el selector BD)
-        create_frame = ctk.CTkFrame(header, fg_color="transparent")
-        create_frame.pack(side="left", padx=5)
-        
-        ctk.CTkButton(create_frame, text="➕ Crear Autor", command=self.crear_autor, width=120, height=40).pack(side="left", padx=5)
-        
-        # CENTRO: Título
+        # Título y botón crear
         title_frame = ctk.CTkFrame(header, fg_color="transparent")
         title_frame.pack(side="left", expand=True, padx=20)
         
         ctk.CTkLabel(title_frame, text="Gestión de Autores", font=ctk.CTkFont(size=28, weight="bold")).pack(side="left")
+        ctk.CTkButton(title_frame, text="➕ Crear Autor", command=self.crear_autor, width=120).pack(side="right", padx=(20, 0))
         
-        # DERECHA: Búsqueda
+        # Búsqueda
         search_frame = ctk.CTkFrame(header, fg_color="transparent")
         search_frame.pack(side="right", padx=5)
         
@@ -727,209 +570,23 @@ class CatalogoManagerSimple(ctk.CTk):
         ctk.CTkButton(search_frame, text="🔍", command=self.buscar_autores, width=40).pack(side="left", padx=2)
         ctk.CTkButton(search_frame, text="✖ Limpiar", command=self.limpiar_busqueda_autores, width=80).pack(side="left", padx=2)
         
-        # Tabla
-        table_frame = ctk.CTkFrame(self.autores_frame)
+        # Tabla de autores
+        table_frame = ctk.CTkFrame(self.main_frame)
         table_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
         self.autores_scroll = ctk.CTkScrollableFrame(table_frame, label_text="Autores Registrados", label_font=ctk.CTkFont(size=16, weight="bold"))
         self.autores_scroll.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Paginación persistente para autores (idéntica a catálogo)
-        pagination_frame = ctk.CTkFrame(self.autores_frame)
-        pagination_frame.pack(fill="x", padx=20, pady=(0, 20))
-        
-        # Botones de navegación izquierda
-        nav_left = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        nav_left.pack(side="left", padx=5)
-        
-        self.autores_first_btn = ctk.CTkButton(nav_left, text="⏪ Primera", command=self.autores_first_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.autores_first_btn.pack(side="left", padx=2)
-        
-        self.autores_prev_btn = ctk.CTkButton(nav_left, text="◀ Anterior", command=self.autores_prev_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.autores_prev_btn.pack(side="left", padx=2)
-        
-        # Frame para números de página (centro)
-        self.autores_pages_frame = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        self.autores_pages_frame.pack(side="left", padx=10)
-        
-        # Botones de navegación derecha
-        nav_right = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        nav_right.pack(side="left", padx=5)
-        
-        self.autores_next_btn = ctk.CTkButton(nav_right, text="Siguiente ▶", command=self.autores_next_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.autores_next_btn.pack(side="left", padx=2)
-        
-        self.autores_last_btn = ctk.CTkButton(nav_right, text="Última ⏭", command=self.autores_last_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.autores_last_btn.pack(side="left", padx=2)
-        
-        # Ir a página específica (derecha)
-        goto_frame = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        goto_frame.pack(side="right", padx=10)
-        
-        self.autores_page_label = ctk.CTkLabel(goto_frame, text="Página 1", font=ctk.CTkFont(size=12, weight="bold"))
-        self.autores_page_label.pack(side="left", padx=10)
-        
-        ctk.CTkLabel(goto_frame, text="Ir a:", font=ctk.CTkFont(size=11)).pack(side="left", padx=(10, 5))
-        
-        self.autores_page_entry = ctk.CTkEntry(goto_frame, width=50, height=32)
-        self.autores_page_entry.pack(side="left", padx=2)
-        self.autores_page_entry.bind("<Return>", lambda e: self.autores_goto_page())
-        
-        self.autores_goto_btn = ctk.CTkButton(goto_frame, text="→", command=self.autores_goto_page, width=35, height=32, text_color=("#000000", "#ffffff"))
-        self.autores_goto_btn.pack(side="left", padx=2)
-        
-        # Variables para paginación
-        self.autores_current_page = 0
-        self.autores_items_per_page = 50
-        self.autores_total = 0
-    
-    def init_editoriales_frame(self):
-        """Inicializar frame de editoriales"""
-        # Header persistente
-        header = ctk.CTkFrame(self.editoriales_frame)
-        header.pack(fill="x", padx=20, pady=(20, 10))
-        
-        # IZQUIERDA: Botón Crear (donde estaba el selector BD)
-        create_frame = ctk.CTkFrame(header, fg_color="transparent")
-        create_frame.pack(side="left", padx=5)
-        
-        ctk.CTkButton(create_frame, text="➕ Crear Editorial", command=self.crear_editorial, width=140, height=40).pack(side="left", padx=5)
-        
-        # CENTRO: Título
-        title_frame = ctk.CTkFrame(header, fg_color="transparent")
-        title_frame.pack(side="left", expand=True, padx=20)
-        
-        ctk.CTkLabel(title_frame, text="Gestión de Editoriales", font=ctk.CTkFont(size=28, weight="bold")).pack(side="left")
-        
-        # DERECHA: Búsqueda
-        search_frame = ctk.CTkFrame(header, fg_color="transparent")
-        search_frame.pack(side="right", padx=5)
-        
-        self.editoriales_search_entry = ctk.CTkEntry(search_frame, placeholder_text="Buscar editorial...", width=250)
-        self.editoriales_search_entry.pack(side="left", padx=5)
-        self.editoriales_search_entry.bind("<Return>", lambda e: self.buscar_editoriales())
-        
-        ctk.CTkButton(search_frame, text="🔍", command=self.buscar_editoriales, width=40).pack(side="left", padx=2)
-        ctk.CTkButton(search_frame, text="✖ Limpiar", command=self.limpiar_busqueda_editoriales, width=80).pack(side="left", padx=2)
-        
-        # Tabla
-        table_frame = ctk.CTkFrame(self.editoriales_frame)
-        table_frame.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        self.editoriales_scroll = ctk.CTkScrollableFrame(table_frame, label_text="Editoriales Registradas", label_font=ctk.CTkFont(size=16, weight="bold"))
-        self.editoriales_scroll.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Paginación persistente para editoriales (idéntica a catálogo)
-        pagination_frame = ctk.CTkFrame(self.editoriales_frame)
-        pagination_frame.pack(fill="x", padx=20, pady=(0, 20))
-        
-        # Botones de navegación izquierda
-        nav_left = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        nav_left.pack(side="left", padx=5)
-        
-        self.editoriales_first_btn = ctk.CTkButton(nav_left, text="⏪ Primera", command=self.editoriales_first_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.editoriales_first_btn.pack(side="left", padx=2)
-        
-        self.editoriales_prev_btn = ctk.CTkButton(nav_left, text="◀ Anterior", command=self.editoriales_prev_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.editoriales_prev_btn.pack(side="left", padx=2)
-        
-        # Frame para números de página (centro)
-        self.editoriales_pages_frame = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        self.editoriales_pages_frame.pack(side="left", padx=10)
-        
-        # Botones de navegación derecha
-        nav_right = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        nav_right.pack(side="left", padx=5)
-        
-        self.editoriales_next_btn = ctk.CTkButton(nav_right, text="Siguiente ▶", command=self.editoriales_next_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.editoriales_next_btn.pack(side="left", padx=2)
-        
-        self.editoriales_last_btn = ctk.CTkButton(nav_right, text="Última ⏭", command=self.editoriales_last_page, width=90, height=32, text_color=("#000000", "#ffffff"))
-        self.editoriales_last_btn.pack(side="left", padx=2)
-        
-        # Ir a página específica (derecha)
-        goto_frame = ctk.CTkFrame(pagination_frame, fg_color="transparent")
-        goto_frame.pack(side="right", padx=10)
-        
-        self.editoriales_page_label = ctk.CTkLabel(goto_frame, text="Página 1", font=ctk.CTkFont(size=12, weight="bold"))
-        self.editoriales_page_label.pack(side="left", padx=10)
-        
-        ctk.CTkLabel(goto_frame, text="Ir a:", font=ctk.CTkFont(size=11)).pack(side="left", padx=(10, 5))
-        
-        self.editoriales_page_entry = ctk.CTkEntry(goto_frame, width=50, height=32)
-        self.editoriales_page_entry.pack(side="left", padx=2)
-        self.editoriales_page_entry.bind("<Return>", lambda e: self.editoriales_goto_page())
-        
-        self.editoriales_goto_btn = ctk.CTkButton(goto_frame, text="→", command=self.editoriales_goto_page, width=35, height=32, text_color=("#000000", "#ffffff"))
-        self.editoriales_goto_btn.pack(side="left", padx=2)
-        
-        # Variables para paginación
-        self.editoriales_current_page = 0
-        self.editoriales_items_per_page = 50
-        self.editoriales_total = 0
-    
-    def init_usuarios_frame(self):
-        """Inicializar frame de usuarios"""
-        header = ctk.CTkFrame(self.usuarios_frame)
-        header.pack(fill="x", padx=20, pady=(20, 10))
-        ctk.CTkLabel(header, text="Gestión de Usuarios", font=ctk.CTkFont(size=28, weight="bold")).pack(side="left")
-        
-        info_frame = ctk.CTkFrame(self.usuarios_frame)
-        info_frame.pack(fill="x", padx=20, pady=10)
-        
-        ctk.CTkLabel(info_frame, text="🚧 Gestión de usuarios en desarrollo", font=ctk.CTkFont(size=16)).pack(pady=20)
-    
-    def init_sincronizacion_frame(self):
-        """Inicializar frame de sincronización"""
-        header = ctk.CTkFrame(self.sincronizacion_frame)
-        header.pack(fill="x", padx=20, pady=(20, 10))
-        ctk.CTkLabel(header, text="Sincronización de Datos", font=ctk.CTkFont(size=28, weight="bold")).pack(side="left")
-        
-        info_frame = ctk.CTkFrame(self.sincronizacion_frame)
-        info_frame.pack(fill="x", padx=20, pady=10)
-        
-        ctk.CTkLabel(info_frame, text="🚧 Sincronización en desarrollo", font=ctk.CTkFont(size=16)).pack(pady=20)
-    
-    def init_estadisticas_frame(self):
-        """Inicializar frame de estadísticas"""
-        header = ctk.CTkFrame(self.estadisticas_frame)
-        header.pack(fill="x", padx=20, pady=(20, 10))
-        ctk.CTkLabel(header, text="Estadísticas del Catálogo", font=ctk.CTkFont(size=28, weight="bold")).pack(side="left")
-        
-        info_frame = ctk.CTkFrame(self.estadisticas_frame)
-        info_frame.pack(fill="x", padx=20, pady=10)
-        
-        ctk.CTkLabel(info_frame, text="🚧 Estadísticas en desarrollo", font=ctk.CTkFont(size=16)).pack(pady=20)
-    
-    def create_autores_pagination(self):
-        """Crear paginación persistente para autores"""
+        # Paginación para autores
         self.autores_pagination_frame = ctk.CTkFrame(self.main_frame)
         self.autores_pagination_frame.pack(fill="x", padx=20, pady=(0, 20))
         
-        # Info de página
-        if not hasattr(self, 'autores_page_label'):
-            self.autores_page_label = ctk.CTkLabel(self.autores_pagination_frame, text="Página 1 de 1 (0 autores)", font=ctk.CTkFont(size=12))
-        self.autores_page_label.pack(side="left", padx=10)
+        # Variables para paginación de autores
+        self.autores_current_page = 0
+        self.autores_items_per_page = 50
+        self.autores_total = 0
         
-        # Botones de navegación
-        nav_frame = ctk.CTkFrame(self.autores_pagination_frame, fg_color="transparent")
-        nav_frame.pack(side="right", padx=10)
-        
-        if not hasattr(self, 'autores_first_btn'):
-            self.autores_first_btn = ctk.CTkButton(nav_frame, text="⏮ Primera", command=self.autores_first_page, width=80, text_color=("#000000", "#ffffff"))
-        self.autores_first_btn.pack(side="left", padx=2)
-        
-        if not hasattr(self, 'autores_prev_btn'):
-            self.autores_prev_btn = ctk.CTkButton(nav_frame, text="◀ Anterior", command=self.autores_prev_page, width=80, text_color=("#000000", "#ffffff"))
-        self.autores_prev_btn.pack(side="left", padx=2)
-        
-        if not hasattr(self, 'autores_next_btn'):
-            self.autores_next_btn = ctk.CTkButton(nav_frame, text="Siguiente ▶", command=self.autores_next_page, width=80, text_color=("#000000", "#ffffff"))
-        self.autores_next_btn.pack(side="left", padx=2)
-        
-        if not hasattr(self, 'autores_last_btn'):
-            self.autores_last_btn = ctk.CTkButton(nav_frame, text="Última ⏭", command=self.autores_last_page, width=80, text_color=("#000000", "#ffffff"))
-        self.autores_last_btn.pack(side="left", padx=2)
+        self.cargar_autores()
     
     # Métodos para gestión de Autores
     def cargar_autores(self):
@@ -943,11 +600,12 @@ class CatalogoManagerSimple(ctk.CTk):
         try:
             offset = self.autores_current_page * self.autores_items_per_page
             
-            # Usar método universal de base de datos
-            self.autores_total = self.query_db_single("SELECT COUNT(*) FROM core_autores") or 0
+            # Contar total
+            count_result = self.query_local("SELECT COUNT(*) FROM core_autores")
+            self.autores_total = count_result[0][0] if count_result else 0
             
             # Cargar autores con ordenación accent-insensitive
-            autores = self.query_db(f"""
+            autores = self.query_local(f"""
                 SELECT id, nombreAutor, enlaceWiki, enlaceWiki2, observaciones
                 FROM core_autores 
                 ORDER BY nombreAutor COLLATE NOCASE
@@ -1136,10 +794,7 @@ class CatalogoManagerSimple(ctk.CTk):
     
     def buscar_autores(self):
         """Buscar autores con filtro"""
-        if not hasattr(self, 'search_entry'):
-            return
-            
-        search_term = self.search_entry.get().strip()
+        search_term = self.autores_search_entry.get().strip()
         
         if not search_term:
             self.cargar_autores()
@@ -1177,87 +832,32 @@ class CatalogoManagerSimple(ctk.CTk):
     
     def limpiar_busqueda_autores(self):
         """Limpiar búsqueda y recargar autores"""
-        if hasattr(self, 'search_entry'):
-            self.search_entry.delete(0, 'end')
+        self.autores_search_entry.delete(0, 'end')
         self.cargar_autores()
     
-    def autores_goto_page(self):
-        """Ir a página específica de autores"""
-        try:
-            page_num = int(self.autores_page_entry.get())
-            total_pages = max(1, (self.autores_total + self.autores_items_per_page - 1) // self.autores_items_per_page)
-            
-            if 1 <= page_num <= total_pages:
-                self.autores_current_page = page_num - 1
-                self.cargar_autores()
-            else:
-                messagebox.showwarning("Página inválida", f"Por favor ingrese un número entre 1 y {total_pages}")
-        except ValueError:
-            messagebox.showwarning("Entrada inválida", "Por favor ingrese un número válido")
-    
     def update_autores_pagination(self):
-        """Actualizar controles de paginación de autores (idéntico a catálogo)"""
+        """Actualizar controles de paginación de autores"""
+        if not hasattr(self, 'autores_pagination_frame'):
+            return
+        
+        for widget in self.autores_pagination_frame.winfo_children():
+            widget.destroy()
+        
         total_pages = max(1, (self.autores_total + self.autores_items_per_page - 1) // self.autores_items_per_page)
         current = self.autores_current_page + 1
         
-        # Actualizar label de página con formato completo como catálogo
-        if hasattr(self, 'autores_page_label'):
-            self.autores_page_label.configure(text=f"Página {current} de {total_pages} ({self.autores_total} autores)")
+        # Info de página
+        info_label = ctk.CTkLabel(self.autores_pagination_frame, text=f"Página {current} de {total_pages} ({self.autores_total} autores)", font=ctk.CTkFont(size=12))
+        info_label.pack(side="left", padx=10)
         
-        # Actualizar botones de navegación
-        if hasattr(self, 'autores_first_btn'):
-            self.autores_first_btn.configure(state="normal" if self.autores_current_page > 0 else "disabled")
-        if hasattr(self, 'autores_prev_btn'):
-            self.autores_prev_btn.configure(state="normal" if self.autores_current_page > 0 else "disabled")
-        if hasattr(self, 'autores_next_btn'):
-            self.autores_next_btn.configure(state="normal" if self.autores_current_page < total_pages - 1 else "disabled")
-        if hasattr(self, 'autores_last_btn'):
-            self.autores_last_btn.configure(state="normal" if self.autores_current_page < total_pages - 1 else "disabled")
+        # Botones de navegación
+        nav_frame = ctk.CTkFrame(self.autores_pagination_frame, fg_color="transparent")
+        nav_frame.pack(side="right", padx=10)
         
-        # Actualizar botones de números de página (exactamente como catálogo)
-        if hasattr(self, 'autores_pages_frame'):
-            for widget in self.autores_pages_frame.winfo_children():
-                widget.destroy()
-            
-            # Mostrar hasta 10 números de página
-            start_page = max(0, self.autores_current_page - 5)
-            end_page = min(total_pages, start_page + 10)
-            
-            if start_page > 0:
-                ctk.CTkLabel(self.autores_pages_frame, text="...", font=ctk.CTkFont(size=12)).pack(side="left", padx=2)
-            
-            for i in range(start_page, end_page):
-                page_num = i + 1
-                if i == self.autores_current_page:
-                    btn = ctk.CTkButton(
-                        self.autores_pages_frame,
-                        text=str(page_num),
-                        width=35,
-                        height=32,
-                        fg_color=("#3498db", "#2980b9"),
-                        text_color=("#ffffff", "#ffffff"),
-                        command=lambda p=i: self.autores_go_to_page_num(p)
-                    )
-                else:
-                    btn = ctk.CTkButton(
-                        self.autores_pages_frame,
-                        text=str(page_num),
-                        width=35,
-                        height=32,
-                        fg_color="transparent",
-                        border_width=1,
-                        text_color=("#000000", "#ffffff"),
-                        command=lambda p=i: self.autores_go_to_page_num(p)
-                    )
-                btn.pack(side="left", padx=1)
-            
-            if end_page < total_pages:
-                ctk.CTkLabel(self.autores_pages_frame, text="...", font=ctk.CTkFont(size=12)).pack(side="left", padx=2)
-    
-    def autores_go_to_page_num(self, page_num):
-        """Ir a número de página específico de autores"""
-        self.autores_current_page = page_num - 1
-        self.cargar_autores()
+        ctk.CTkButton(nav_frame, text="⏮ Primera", command=self.autores_first_page, width=80).pack(side="left", padx=2)
+        ctk.CTkButton(nav_frame, text="◀ Anterior", command=self.autores_prev_page, width=80).pack(side="left", padx=2)
+        ctk.CTkButton(nav_frame, text="Siguiente ▶", command=self.autores_next_page, width=80).pack(side="left", padx=2)
+        ctk.CTkButton(nav_frame, text="Última ⏭", command=self.autores_last_page, width=80).pack(side="left", padx=2)
     
     def autores_first_page(self):
         self.autores_current_page = 0
@@ -1280,9 +880,47 @@ class CatalogoManagerSimple(ctk.CTk):
         self.cargar_autores()
     
     def show_editoriales(self):
+        self.clear_main_frame()
         self.highlight_nav_button("🏢 Editoriales")
-        self.switch_frame(self.editoriales_frame)
+        
+        # Header con búsqueda y botón crear
+        header = ctk.CTkFrame(self.main_frame)
+        header.pack(fill="x", padx=20, pady=(20, 10))
+        
+        # Título y botón crear
+        title_frame = ctk.CTkFrame(header, fg_color="transparent")
+        title_frame.pack(side="left", expand=True, padx=20)
+        
+        ctk.CTkLabel(title_frame, text="Gestión de Editoriales", font=ctk.CTkFont(size=28, weight="bold")).pack(side="left")
+        ctk.CTkButton(title_frame, text="➕ Crear Editorial", command=self.crear_editorial, width=140).pack(side="right", padx=(20, 0))
+        
+        # Búsqueda
+        search_frame = ctk.CTkFrame(header, fg_color="transparent")
+        search_frame.pack(side="right", padx=5)
+        
+        self.editoriales_search_entry = ctk.CTkEntry(search_frame, placeholder_text="Buscar editorial...", width=250)
+        self.editoriales_search_entry.pack(side="left", padx=5)
+        self.editoriales_search_entry.bind("<Return>", lambda e: self.buscar_editoriales())
+        
+        ctk.CTkButton(search_frame, text="🔍", command=self.buscar_editoriales, width=40).pack(side="left", padx=2)
+        ctk.CTkButton(search_frame, text="✖ Limpiar", command=self.limpiar_busqueda_editoriales, width=80).pack(side="left", padx=2)
+        
+        # Tabla de editoriales
+        table_frame = ctk.CTkFrame(self.main_frame)
+        table_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        self.editoriales_scroll = ctk.CTkScrollableFrame(table_frame, label_text="Editoriales Registradas", label_font=ctk.CTkFont(size=16, weight="bold"))
+        self.editoriales_scroll.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Paginación para editoriales
+        self.editoriales_pagination_frame = ctk.CTkFrame(self.main_frame)
+        self.editoriales_pagination_frame.pack(fill="x", padx=20, pady=(0, 20))
+        
+        # Variables para paginación de editoriales
         self.editoriales_current_page = 0
+        self.editoriales_items_per_page = 50
+        self.editoriales_total = 0
+        
         self.cargar_editoriales()
     
     # Métodos para gestión de Editoriales
@@ -1297,11 +935,12 @@ class CatalogoManagerSimple(ctk.CTk):
         try:
             offset = self.editoriales_current_page * self.editoriales_items_per_page
             
-            # Usar método universal de base de datos
-            self.editoriales_total = self.query_db_single("SELECT COUNT(*) FROM core_editoriales") or 0
+            # Contar total
+            count_result = self.query_local("SELECT COUNT(*) FROM core_editoriales")
+            self.editoriales_total = count_result[0][0] if count_result else 0
             
             # Cargar editoriales con ordenación accent-insensitive
-            editoriales = self.query_db(f"""
+            editoriales = self.query_local(f"""
                 SELECT id, descriEditorial
                 FROM core_editoriales 
                 ORDER BY descriEditorial COLLATE NOCASE
@@ -1550,84 +1189,6 @@ class CatalogoManagerSimple(ctk.CTk):
         total_pages = (self.editoriales_total + self.editoriales_items_per_page - 1) // self.editoriales_items_per_page
         self.editoriales_current_page = max(0, total_pages - 1)
         self.cargar_editoriales()
-    
-    def editoriales_goto_page(self):
-        """Ir a página específica de editoriales"""
-        try:
-            page_num = int(self.editoriales_page_entry.get())
-            total_pages = max(1, (self.editoriales_total + self.editoriales_items_per_page - 1) // self.editoriales_items_per_page)
-            
-            if 1 <= page_num <= total_pages:
-                self.editoriales_current_page = page_num - 1
-                self.cargar_editoriales()
-            else:
-                messagebox.showwarning("Página inválida", f"Por favor ingrese un número entre 1 y {total_pages}")
-        except ValueError:
-            messagebox.showwarning("Entrada inválida", "Por favor ingrese un número válido")
-    
-    def editoriales_go_to_page_num(self, page_num):
-        """Ir a número de página específico de editoriales"""
-        self.editoriales_current_page = page_num - 1
-        self.cargar_editoriales()
-    
-    def update_editoriales_pagination(self):
-        """Actualizar controles de paginación de editoriales (idéntico a catálogo)"""
-        total_pages = max(1, (self.editoriales_total + self.editoriales_items_per_page - 1) // self.editoriales_items_per_page)
-        current = self.editoriales_current_page + 1
-        
-        # Actualizar label de página con formato completo como catálogo
-        if hasattr(self, 'editoriales_page_label'):
-            self.editoriales_page_label.configure(text=f"Página {current} de {total_pages} ({self.editoriales_total} editoriales)")
-        
-        # Actualizar botones de navegación
-        if hasattr(self, 'editoriales_first_btn'):
-            self.editoriales_first_btn.configure(state="normal" if self.editoriales_current_page > 0 else "disabled")
-        if hasattr(self, 'editoriales_prev_btn'):
-            self.editoriales_prev_btn.configure(state="normal" if self.editoriales_current_page > 0 else "disabled")
-        if hasattr(self, 'editoriales_next_btn'):
-            self.editoriales_next_btn.configure(state="normal" if self.editoriales_current_page < total_pages - 1 else "disabled")
-        if hasattr(self, 'editoriales_last_btn'):
-            self.editoriales_last_btn.configure(state="normal" if self.editoriales_current_page < total_pages - 1 else "disabled")
-        
-        # Actualizar botones de números de página (exactamente como catálogo)
-        if hasattr(self, 'editoriales_pages_frame'):
-            for widget in self.editoriales_pages_frame.winfo_children():
-                widget.destroy()
-            
-            # Mostrar hasta 10 números de página
-            start_page = max(0, self.editoriales_current_page - 5)
-            end_page = min(total_pages, start_page + 10)
-            
-            if start_page > 0:
-                ctk.CTkLabel(self.editoriales_pages_frame, text="...", font=ctk.CTkFont(size=12)).pack(side="left", padx=2)
-            
-            for i in range(start_page, end_page):
-                page_num = i + 1
-                if i == self.editoriales_current_page:
-                    btn = ctk.CTkButton(
-                        self.editoriales_pages_frame,
-                        text=str(page_num),
-                        width=35,
-                        height=32,
-                        fg_color=("#3498db", "#2980b9"),
-                        text_color=("#ffffff", "#ffffff"),
-                        command=lambda p=i: self.editoriales_go_to_page_num(p)
-                    )
-                else:
-                    btn = ctk.CTkButton(
-                        self.editoriales_pages_frame,
-                        text=str(page_num),
-                        width=35,
-                        height=32,
-                        fg_color="transparent",
-                        border_width=1,
-                        text_color=("#000000", "#ffffff"),
-                        command=lambda p=i: self.editoriales_go_to_page_num(p)
-                    )
-                btn.pack(side="left", padx=1)
-            
-            if end_page < total_pages:
-                ctk.CTkLabel(self.editoriales_pages_frame, text="...", font=ctk.CTkFont(size=12)).pack(side="left", padx=2)
     
     def query_local(self, sql, params=None):
         try:
