@@ -2,11 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  base: "/", // Añade esta línea
+  base: "/",
   plugins: [react()],
   build: {
-    assetsDir: "images", // Añade esta línea
-    // Resto de tu configuración existente
+    assetsDir: "images",
     assetsInlineLimit: 4096,
     chunkSizeWarningLimit: 500,
     rollupOptions: {
