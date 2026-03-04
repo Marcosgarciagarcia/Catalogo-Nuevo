@@ -6,7 +6,13 @@ import BookList from './components/BookList';
 
 import Pagination from './components/Pagination';
 
-import './App.css'
+import BookDetailModal from './components/BookDetailModal';
+
+import Login from './components/Login';
+
+import { useAuth } from './contexts/AuthContext';
+
+import './App.css';
 
 
 
@@ -25,6 +31,12 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState(null);
+
+  const [selectedBook, setSelectedBook] = useState(null);
+
+  const [showLogin, setShowLogin] = useState(false);
+
+  const { user, logout, isAdmin } = useAuth();
 
   const librosPorPagina = 10;
 
@@ -126,7 +138,45 @@ function App() {
 
   return (
 
-    <div>
+    <div className="app-container">
+
+      <header className="auth-header">
+
+        <div className="auth-section">
+
+          {user ? (
+
+            <>
+
+              <span className="user-info">
+
+                {user.username}
+
+                {isAdmin && <span className="admin-badge">Admin</span>}
+
+              </span>
+
+              <button type="button" className="auth-button logout-button" onClick={logout}>
+
+                Cerrar sesión
+
+              </button>
+
+            </>
+
+          ) : (
+
+            <button type="button" className="auth-button login-button" onClick={() => setShowLogin(true)}>
+
+              Iniciar sesión
+
+            </button>
+
+          )}
+
+        </div>
+
+      </header>
 
       <h2>Catálogo de libros de casa</h2>
 
@@ -262,6 +312,8 @@ function App() {
 
             )}
 
+            onBookClick={(libro) => setSelectedBook(libro)}
+
           />
 
 
@@ -279,6 +331,20 @@ function App() {
           />
 
         </>
+
+      )}
+
+      {showLogin && <Login onClose={() => setShowLogin(false)} />}
+
+      {selectedBook && (
+
+        <BookDetailModal
+
+          libro={selectedBook}
+
+          onClose={() => setSelectedBook(null)}
+
+        />
 
       )}
 

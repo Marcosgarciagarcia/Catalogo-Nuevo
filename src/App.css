@@ -1,3 +1,8 @@
+.app-container {
+  position: relative;
+  min-height: 100vh;
+}
+
 /* Título de página */
 .page-title {
   text-align: center;
@@ -7,12 +12,19 @@
   font-size: 1.8em;
 }
 
-/* Header solo para autenticación en desktop */
+/* Header solo para autenticación en tablet/desktop (oculto en smartphones) */
 .auth-header {
+  display: none;
   position: absolute;
   top: 20px;
   right: 20px;
   z-index: 100;
+}
+
+@media (min-width: 769px) {
+  .auth-header {
+    display: flex;
+  }
 }
 
 .auth-section {
