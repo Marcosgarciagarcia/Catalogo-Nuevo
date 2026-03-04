@@ -1,214 +1,72 @@
 /**
- * Servicio para conectar con Turso Database
- * Usa el cliente HTTP de Turso para hacer consultas desde el navegador
+ * Servicio para obtener datos del catálogo desde la API (backend).
+ * No se conecta a Turso desde el navegador; todas las peticiones pasan por /api.
+ * No se usa ningún token de base de datos en el frontend.
  */
 
-const TURSO_URL = import.meta.env.VITE_TURSO_DATABASE_URL || 'https://catalogo-prueba-marcosgarciagarcia.aws-eu-west-1.turso.io';
-const TURSO_TOKEN = import.meta.env.VITE_TURSO_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3Njk2MDExMjYsImlkIjoiNmQ5OGZlODYtYjQzNy00ZGFhLWI0MmEtZGY4N2IwOWMxNzBjIiwicmlkIjoiMmE4ODQyM2QtYjFhZS00Y2JlLThjNjMtYjFiZjc2NTkwODZmIn0.kfk7CCGPtbJAZq8maUtOy_L8aR-t6qHaUEuvOPDobkN0rLSKTNJiCeAa9LEWpn8r8b8BZ4SPPXs74klIfJuKDA';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-/**
- * Ejecuta una query en Turso usando HTTP
- */
-async function executeQuery(sql, params = []) {
-  try {
-    const response = await fetch(TURSO_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${TURSO_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        statements: [{
-          q: sql,
-          params: params
-        }]
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    
-    if (data[0]?.error) {
-      throw new Error(data[0].error);
-    }
-
-    const results = data[0]?.results;
-    const rows = results?.rows || [];
-    const columns = results?.columns || [];
-
-    // Convertir rows a objetos con nombres de columna
-    return rows.map(row => {
-      const obj = {};
-      columns.forEach((col, index) => {
-        obj[col] = row[index];
-      });
-      return obj;
-    });
-  } catch (error) {
-    console.error('Error ejecutando query en Turso:', error);
-    throw error;
+async function apiGet(path, params = {}) {
+  const search = new URLSearchParams(params).toString();
+  const url = `${API_BASE}${path}${search ? `?${search}` : ''}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+  return response.json();
 }
 
 /**
  * Obtiene todos los libros con información de autor y editorial
  */
 export async function getAllBooks() {
-  const sql = `
-    SELECT 
-      t.id,
-      t.EAN,
-      t.titulo,
-      t.tituloOriginal,
-      t.anyoEdicion,
-      t.numeroPaginas,
-      t.portada_cloudinary,
-      t.sinopsis,
-      a.nombreAutor,
-      e.descriEditorial as editorial
-    FROM core_titulos t
-    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
-    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
-    ORDER BY t.titulo
-  `;
-  
-  return executeQuery(sql, []);
+  const json = await apiGet('/api/media/books');
+  return json.data ?? [];
 }
 
 /**
  * Busca libros por título o autor
  */
 export async function searchBooks(searchTerm, searchBy = 'titulo') {
-  const searchPattern = `%${searchTerm}%`;
-  
-  let sql;
-  if (searchBy === 'titulo') {
-    sql = `
-      SELECT 
-        t.id,
-        t.EAN,
-        t.titulo,
-        t.tituloOriginal,
-        t.anyoEdicion,
-        t.numeroPaginas,
-        t.portada_cloudinary,
-        t.sinopsis,
-        a.nombreAutor,
-        e.descriEditorial as editorial
-      FROM core_titulos t
-      LEFT JOIN core_autores a ON t.codiAutor_id = a.id
-      LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
-      WHERE t.titulo LIKE ?
-      ORDER BY t.titulo
-    `;
-  } else {
-    sql = `
-      SELECT 
-        t.id,
-        t.EAN,
-        t.titulo,
-        t.tituloOriginal,
-        t.anyoEdicion,
-        t.numeroPaginas,
-        t.portada_cloudinary,
-        t.sinopsis,
-        a.nombreAutor,
-        e.descriEditorial as editorial
-      FROM core_titulos t
-      LEFT JOIN core_autores a ON t.codiAutor_id = a.id
-      LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
-      WHERE a.nombreAutor LIKE ?
-      ORDER BY a.nombreAutor, t.titulo
-    `;
-  }
-  
-  return executeQuery(sql, [searchPattern]);
+  const json = await apiGet('/api/media/books', {
+    search: searchTerm,
+    searchBy,
+  });
+  return json.data ?? [];
 }
 
 /**
  * Filtra libros por letra inicial
  */
 export async function filterBooksByLetter(letter, filterBy = 'titulo') {
-  const letterPattern = `${letter}%`;
-  
-  let sql;
-  if (filterBy === 'titulo') {
-    sql = `
-      SELECT 
-        t.id,
-        t.EAN,
-        t.titulo,
-        t.tituloOriginal,
-        t.anyoEdicion,
-        t.numeroPaginas,
-        t.portada_cloudinary,
-        t.sinopsis,
-        a.nombreAutor,
-        e.descriEditorial as editorial
-      FROM core_titulos t
-      LEFT JOIN core_autores a ON t.codiAutor_id = a.id
-      LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
-      WHERE UPPER(t.titulo) LIKE UPPER(?)
-      ORDER BY t.titulo
-    `;
-  } else {
-    sql = `
-      SELECT 
-        t.id,
-        t.EAN,
-        t.titulo,
-        t.tituloOriginal,
-        t.anyoEdicion,
-        t.numeroPaginas,
-        t.portada_cloudinary,
-        t.sinopsis,
-        a.nombreAutor,
-        e.descriEditorial as editorial
-      FROM core_titulos t
-      LEFT JOIN core_autores a ON t.codiAutor_id = a.id
-      LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
-      WHERE UPPER(a.nombreAutor) LIKE UPPER(?)
-      ORDER BY a.nombreAutor, t.titulo
-    `;
-  }
-  
-  return executeQuery(sql, [letterPattern]);
+  const json = await apiGet('/api/media/books', {
+    letter,
+    filterBy,
+  });
+  return json.data ?? [];
 }
 
 /**
  * Obtiene estadísticas del catálogo
  */
 export async function getStats() {
-  const sql = `
-    SELECT 
-      (SELECT COUNT(*) FROM core_titulos) as totalLibros,
-      (SELECT COUNT(*) FROM core_autores) as totalAutores,
-      (SELECT COUNT(*) FROM core_editoriales) as totalEditoriales,
-      (SELECT COUNT(*) FROM core_titulos WHERE portada_cloudinary IS NOT NULL) as librosConPortada
-  `;
-  
-  const results = await executeQuery(sql);
-  return results[0] || {};
+  return apiGet('/api/media/stats');
 }
 
 /**
  * Obtiene un libro por ID
  */
 export async function getBookById(id) {
-  const sql = `
-    SELECT 
-      t.*,
-      a.nombreAutor,
-      e.descriEditorial as editorial
-    FROM core_titulos t
-    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
-    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
-    WHERE t.id = ?
-  `;
-  
-  const results = await executeQuery(sql, [id]);
-  return results[0] || null;
+  const res = await fetch(`${API_BASE}/api/media/books/${id}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`HTTP error! status: ${res.status}`);
+  }
+  return res.json();
 }

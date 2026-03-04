@@ -6,6 +6,16 @@ La parte web tiene **riesgos graves** por exponer credenciales de base de datos 
 
 ---
 
+## Estado actual (referencia, tras mejoras de seguridad)
+
+- **Frontend:** Ya **no** llama a Turso desde el navegador. Usa solo la API (`/api/media/books`, `/api/media/stats`, `/api/auth/login`, `/api/auth/verify`). No hay token de base de datos ni variables `VITE_TURSO_*` en el cliente.
+- **API:** Existen `api/lib/turso.js`, `api/lib/auth.js`, `api/auth/login.js` y `api/auth/verify.js`. Los datos de catálogo se sirven desde `api/media/*` usando Turso solo en el servidor.
+- **Login:** Implementado en `api/auth/login.js` (validación contra tabla `core_users` en Turso, JWT firmado en servidor).
+- **Permisos:** Los GET de lectura son públicos. Para futuras escrituras se deben usar `requireAuth`, `requireStaff` o `requireAdmin` de `api/lib/auth.js`.
+- **.gitignore:** Incluye `.env` y `.env.*` (excepto `.env.example`) para no subir secretos.
+
+---
+
 ## 1. Riesgos críticos
 
 ### 1.1 Token de Turso expuesto en el frontend
@@ -122,3 +132,35 @@ La parte web tiene **riesgos graves** por exponer credenciales de base de datos 
 ```
 
 Con este esquema, la base de datos solo es accesible desde el servidor; el usuario no puede editar la base de datos sin permiso más que a través de la lógica que tú implementes y protejas en la API.
+
+---
+
+## 6. Otros aspectos de seguridad
+
+### 6.1 XSS (Cross-Site Scripting)
+
+- React escapa por defecto el contenido renderizado; no se usa `dangerouslySetInnerHTML` con datos del catálogo en el código revisado.
+- Si en el futuro se muestran textos introducidos por usuarios (por ejemplo sinopsis editables), hay que seguir escapándolos o sanitizarlos.
+
+### 6.2 HTTPS y cookies
+
+- En producción la aplicación debe servirse solo por **HTTPS** (Vercel lo ofrece por defecto).
+- El JWT se guarda en `sessionStorage`, no en cookies; no hay riesgo de envío automático por dominios cruzados. Si más adelante se usan cookies para el token, deben ser `HttpOnly`, `Secure` y con `SameSite` adecuado.
+
+### 6.3 Contraseñas en el login
+
+- Cuando exista `api/auth/login`, las contraseñas deben compararse en el servidor con un hash (por ejemplo bcrypt); nunca guardar ni registrar contraseñas en claro.
+
+---
+
+## 7. Resumen para decisión
+
+| Área | Riesgo | Estado | Acción prioritaria |
+|------|--------|--------|--------------------|
+| Token Turso en el cliente | Crítico | Token en frontend (y hardcodeado como fallback) | Quitar del frontend; usar solo API con credenciales en servidor |
+| Conexión directa a Turso | Crítico | Navegador → Turso | Frontend solo → API; API → Turso |
+| Login | Alto | Endpoint inexistente (404) | Implementar `api/auth/login.js` + `api/lib/auth.js` |
+| API backend (Turso) | Alto | Faltan `api/lib/turso.js` y `api/lib/auth.js` | Crear módulos y variables de entorno en Vercel |
+| Protección de escrituras | Medio | Sin escrituras aún en web | Cuando se añadan, exigir JWT y roles en la API |
+| Variables de entorno | Bajo | `.env` no en .gitignore | Añadir `.env` al `.gitignore` |
+| XSS / HTTPS / contraseñas | Bajo / preventivo | React escapa; HTTPS en Vercel | Mantener buenas prácticas al añadir funcionalidad |
