@@ -125,6 +125,12 @@ Si algo falla, revisa `docs/API-AUTH-SETUP.md` y que las variables no tengan esp
 
 ---
 
+## Límite de 12 funciones (plan Hobby)
+
+En el **plan Hobby**, Vercel permite **máximo 12 Serverless Functions por despliegue**. El límite es **por proyecto** (por cada deployment de ese proyecto), no por cuenta. En este proyecto la API de catálogo está unificada en **4 funciones** (health, login, verify, media) para no superar el límite.
+
+---
+
 ## Si en el PC no cargan los libros o falla el login
 
 ### Si abres la URL de Vercel (p. ej. https://catalogo-nuevo-yngn.vercel.app)
