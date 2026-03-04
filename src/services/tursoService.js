@@ -8,7 +8,8 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 function toErrorMessage(j, fallback) {
   if (!j || typeof j === 'string') return j || fallback;
-  const msg = j.error ?? j.message;
+  // Mostrar message (detalle técnico) si existe; si no, error (resumen)
+  const msg = j.message ?? j.error;
   if (typeof msg === 'string') return msg;
   if (msg && typeof msg.message === 'string') return msg.message;
   return fallback;

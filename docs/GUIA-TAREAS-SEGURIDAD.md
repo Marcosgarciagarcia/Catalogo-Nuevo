@@ -125,6 +125,19 @@ Si algo falla, revisa `docs/API-AUTH-SETUP.md` y que las variables no tengan esp
 
 ---
 
+## Si ves "A server error has occurred" o "Error en el servidor"
+
+Suele indicar que la **función de la API ha fallado** en Vercel. La causa más habitual es que **faltan las variables de entorno** en el proyecto:
+
+1. En **Vercel → tu proyecto → Settings → Environment Variables** revisa que existan (para **Production** y, si usas previews, **Preview**):
+   - `TURSO_DATABASE_URL`
+   - `TURSO_AUTH_TOKEN`
+2. Después de añadir o cambiar variables, haz un **nuevo despliegue** (Redeploy) para que se apliquen.
+
+Tras los últimos cambios, cuando la API devuelve error 500, la app intenta mostrar el **mensaje concreto** (por ejemplo que faltan las variables de Turso) en lugar de un texto genérico.
+
+---
+
 ## Límite de 12 funciones (plan Hobby)
 
 En el **plan Hobby**, Vercel permite **máximo 12 Serverless Functions por despliegue**. El límite es **por proyecto** (por cada deployment de ese proyecto), no por cuenta. En este proyecto la API de catálogo está unificada en **4 funciones** (health, login, verify, media) para no superar el límite.

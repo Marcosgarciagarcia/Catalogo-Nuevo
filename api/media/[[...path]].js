@@ -30,13 +30,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Path desde query (Vercel) o desde URL
+  // Path: Vercel puede pasar req.query.path o lo extraemos de req.url
   let pathSegments = req.query.path;
   if (pathSegments == null && typeof req.url === 'string') {
-    const pathname = req.url.split('?')[0] || '';
+    let pathname = req.url.split('?')[0] || '';
+    pathname = pathname.replace(/^https?:\/\/[^/]+/, ''); // quitar origen si es URL completa
     pathSegments = pathname.replace(/^\/api\/media\/?/, '').split('/').filter(Boolean);
   }
-  if (!Array.isArray(pathSegments)) pathSegments = pathSegments ? [pathSegments] : [];
+  if (!Array.isArray(pathSegments)) pathSegments = pathSegments != null ? [pathSegments] : [];
   const segment = pathSegments[0];
   const id = pathSegments.length > 1 ? pathSegments[1] : req.query.id;
 
@@ -107,6 +108,10 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Not found' });
   } catch (error) {
     console.error('Error in /api/media:', error);
-    return res.status(500).json({ error: 'Server error', message: error.message });
+    const message = error?.message || String(error);
+    return res.status(500).json({
+      error: 'Error en el servidor',
+      message: message,
+    });
   }
 }
