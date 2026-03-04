@@ -1,10 +1,10 @@
 /**
- * Una sola función para todas las rutas /api/media/* (books, authors, publishers, stats).
- * Reduce el número de Serverless Functions para respetar el límite del plan Hobby (12).
+ * Una sola función para /api/media y /api/media/* (books, authors, publishers, stats).
+ * Las peticiones a /api/media/books, /api/media/books/123, etc. se reescriben a /api/media?path=...
  */
 
-import { executeQuery } from '../../lib/turso.js';
-import { QUERIES } from '../../lib/queries.js';
+import { executeQuery } from './lib/turso.js';
+import { QUERIES } from './lib/queries.js';
 
 function cors(res) {
   return res.status(200).json({});
@@ -25,23 +25,18 @@ function sanitizeBook(book) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') return cors(res);
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Path: Vercel puede pasar req.query.path o lo extraemos de req.url
-  let pathSegments = req.query.path;
-  if (pathSegments == null && typeof req.url === 'string') {
-    let pathname = req.url.split('?')[0] || '';
-    pathname = pathname.replace(/^https?:\/\/[^/]+/, ''); // quitar origen si es URL completa
-    pathSegments = pathname.replace(/^\/api\/media\/?/, '').split('/').filter(Boolean);
-  }
-  if (!Array.isArray(pathSegments)) pathSegments = pathSegments != null ? [pathSegments] : [];
-  const segment = pathSegments[0];
-  const id = pathSegments.length > 1 ? pathSegments[1] : req.query.id;
-
   try {
+    if (req.method === 'OPTIONS') return cors(res);
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // path viene del rewrite: /api/media/books -> ?path=books, /api/media/books/123 -> ?path=books/123
+    const pathParam = req.query.path || '';
+    const pathSegments = typeof pathParam === 'string' ? pathParam.split('/').filter(Boolean) : [];
+    const segment = pathSegments[0];
+    const id = pathSegments.length > 1 ? pathSegments[1] : req.query.id;
+
     // GET /api/media/stats
     if (segment === 'stats') {
       const rows = await executeQuery(QUERIES.GET_BOOKS_STATS);
@@ -103,6 +98,28 @@ export default async function handler(req, res) {
       const params = search ? [`%${search}%`] : [];
       const publishers = await executeQuery(query, params);
       return res.status(200).json({ data: publishers, total: publishers.length, filters: { search: search || null } });
+    }
+
+    // Sin segmento o segmento desconocido: por defecto listar libros (compatibilidad con /api/media/books)
+    if (!segment || segment === '') {
+      const { search, searchBy = 'titulo', letter, filterBy = 'titulo' } = req.query;
+      let query, params = [];
+      if (search) {
+        query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR : QUERIES.SEARCH_BOOKS_BY_TITLE;
+        params = [`%${search}%`];
+      } else if (letter) {
+        query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE;
+        params = [`${letter}%`];
+      } else {
+        query = QUERIES.GET_ALL_BOOKS;
+      }
+      const books = await executeQuery(query, params);
+      const sanitized = books.map(sanitizeBook);
+      return res.status(200).json({
+        data: sanitized,
+        total: sanitized.length,
+        filters: { search: search || null, searchBy, letter: letter || null, filterBy },
+      });
     }
 
     return res.status(404).json({ error: 'Not found' });
