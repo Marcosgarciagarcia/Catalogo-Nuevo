@@ -26,8 +26,14 @@ export function AuthProvider({ children }) {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          setUser(data.user);
+        } else {
+          sessionStorage.removeItem('token');
+          setUser(null);
+        }
       } else {
         sessionStorage.removeItem('token');
         setUser(null);
@@ -50,9 +56,29 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ username, password })
       });
 
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Login failed');
+        let message = 'Error al iniciar sesión';
+        if (isJson) {
+          try {
+            const error = await response.json();
+            message = error.error || message;
+          } catch {
+            // ignore
+          }
+        } else if (response.status === 404) {
+          message = 'API no disponible. En local ejecuta: npx vercel dev';
+        } else {
+          const text = await response.text();
+          if (text) message = text.slice(0, 100);
+        }
+        throw new Error(message);
+      }
+
+      if (!isJson) {
+        throw new Error('La API no devolvió JSON. En local ejecuta: npx vercel dev');
       }
 
       const data = await response.json();

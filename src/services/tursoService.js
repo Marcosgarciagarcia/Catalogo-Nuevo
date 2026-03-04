@@ -6,6 +6,17 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
+function apiError(response, fallbackMessage) {
+  if (response.status === 404) {
+    return new Error('API no disponible. En local ejecuta: npx vercel dev');
+  }
+  const ct = response.headers.get('content-type');
+  if (ct && ct.includes('application/json')) {
+    return response.json().then((j) => new Error(j.error || j.message || fallbackMessage)).catch(() => new Error(fallbackMessage));
+  }
+  return Promise.resolve(new Error(fallbackMessage));
+}
+
 async function apiGet(path, params = {}) {
   const search = new URLSearchParams(params).toString();
   const url = `${API_BASE}${path}${search ? `?${search}` : ''}`;
@@ -14,9 +25,17 @@ async function apiGet(path, params = {}) {
     headers: { Accept: 'application/json' },
   });
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    throw await apiError(response, `Error ${response.status} al cargar datos`);
   }
-  return response.json();
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('API no disponible. En local ejecuta: npx vercel dev');
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new Error('API no devolvió JSON válido. En local ejecuta: npx vercel dev');
+  }
 }
 
 /**
@@ -66,7 +85,11 @@ export async function getBookById(id) {
   });
   if (!res.ok) {
     if (res.status === 404) return null;
-    throw new Error(`HTTP error! status: ${res.status}`);
+    throw await apiError(res, `Error ${res.status}`);
+  }
+  const ct = res.headers.get('content-type');
+  if (!ct || !ct.includes('application/json')) {
+    throw new Error('API no disponible. En local ejecuta: npx vercel dev');
   }
   return res.json();
 }

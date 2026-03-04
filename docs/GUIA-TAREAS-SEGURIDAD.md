@@ -122,3 +122,35 @@ npx vercel dev
 | 3. Local | Crear `.env.local` con las mismas variables y ejecutar `npx vercel dev` para probar. |
 
 Si algo falla, revisa `docs/API-AUTH-SETUP.md` y que las variables no tengan espacios ni comillas de más en Vercel.
+
+---
+
+## Si en el PC no cargan los libros o falla el login
+
+### Si abres la URL de Vercel (p. ej. https://catalogo-nuevo-yngn.vercel.app)
+
+Entonces el frontend y la API están en el mismo sitio. Si aun así en el PC no cargan los libros o el login da error, suele ser que **la API en Vercel está fallando** (variables de entorno o error en la función).
+
+**Comprobaciones en el PC:**
+
+1. **Probar que la API responde y tiene las variables:**  
+   Abre en el navegador:  
+   **https://catalogo-nuevo-yngn.vercel.app/api/health**  
+   Deberías ver algo como:  
+   `{"ok":true,"api":"catalogo","env":{"turso":"set","jwt":"set"}}`  
+   - Si ves `"turso":"missing"` o `"jwt":"missing"`: en **Vercel → tu proyecto → Settings → Environment Variables** añade (o corrige) **TURSO_DATABASE_URL**, **TURSO_AUTH_TOKEN** y **JWT_SECRET** para el entorno **Production**. Vuelve a desplegar.
+   - Si esa URL no carga o da error de página: revisa en **Vercel → Deployments → última deployment → Functions** si hay errores en las funciones.
+
+2. **Probar la ruta de libros:**  
+   Abre:  
+   **https://catalogo-nuevo-yngn.vercel.app/api/media/books**  
+   Deberías ver JSON con una lista de libros. Si ves HTML de error o página en blanco, en Vercel revisa los **logs de la función** de esa ruta.
+
+3. **Después de cambiar variables en Vercel** hay que hacer un nuevo despliegue (o “Redeploy” del último) para que las funciones usen los nuevos valores.
+
+### Si en el PC abres la app en local (localhost)
+
+En ese caso **no hay API** si solo usas `npm run dev`. Opciones:
+
+1. **Opción A:** Usar en el PC la **misma URL de Vercel** que en tablet/móvil.
+2. **Opción B:** Probar en local con **`npx vercel dev`** (o `npm run dev:full`) y abrir la URL que indique (p. ej. `http://localhost:3000`).

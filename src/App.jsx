@@ -92,7 +92,7 @@ function App() {
 
         console.error('Error cargando libros:', err);
 
-        setError('Error al cargar los libros. Por favor, intenta de nuevo.');
+        setError(err?.message || 'Error al cargar los libros. Por favor, intenta de nuevo.');
 
       } finally {
 
