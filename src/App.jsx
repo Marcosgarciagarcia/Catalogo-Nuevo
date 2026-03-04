@@ -92,7 +92,9 @@ function App() {
 
         console.error('Error cargando libros:', err);
 
-        setError(err?.message || 'Error al cargar los libros. Por favor, intenta de nuevo.');
+        const msg = err?.message ?? err?.error;
+        const text = typeof msg === 'string' ? msg : String(err || '');
+        setError(text || 'Error al cargar los libros. Por favor, intenta de nuevo.');
 
       } finally {
 

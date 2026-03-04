@@ -6,13 +6,21 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
+function toErrorMessage(j, fallback) {
+  if (!j || typeof j === 'string') return j || fallback;
+  const msg = j.error ?? j.message;
+  if (typeof msg === 'string') return msg;
+  if (msg && typeof msg.message === 'string') return msg.message;
+  return fallback;
+}
+
 function apiError(response, fallbackMessage) {
   if (response.status === 404) {
-    return new Error('API no disponible. En local ejecuta: npx vercel dev');
+    return Promise.resolve(new Error('API no disponible. En local ejecuta: npx vercel dev'));
   }
   const ct = response.headers.get('content-type');
   if (ct && ct.includes('application/json')) {
-    return response.json().then((j) => new Error(j.error || j.message || fallbackMessage)).catch(() => new Error(fallbackMessage));
+    return response.json().then((j) => new Error(toErrorMessage(j, fallbackMessage))).catch(() => new Error(fallbackMessage));
   }
   return Promise.resolve(new Error(fallbackMessage));
 }
