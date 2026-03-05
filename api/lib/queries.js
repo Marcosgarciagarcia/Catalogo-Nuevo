@@ -213,10 +213,10 @@ export const QUERIES = {
 
   INSERT_BOOK: `
     INSERT INTO core_titulos (
-      EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas,
+      EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
       portada_cloudinary, sinopsis, observaciones, coleccion, serie,
       codiAutor_id, codiEditorial_id, created, updated
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id
   `,
   
   // ==================== ESTADÍSTICAS ====================

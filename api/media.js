@@ -96,11 +96,12 @@ export default async function handler(req, res) {
         if (codiAutor_id == null) return res.status(400).json({ error: 'Se requiere codiAutor_id o authorName' });
         if (codiEditorial_id == null) return res.status(400).json({ error: 'Se requiere codiEditorial_id o publisherName' });
 
-        const titulo = (body.titulo || '').trim() || null;
+        const titulo = (body.titulo || '').trim() || '';
         const tituloOriginal = (body.tituloOriginal || '').trim() || null;
         const anyoEdicion = body.anyoEdicion != null && body.anyoEdicion !== '' ? Number(body.anyoEdicion) : null;
         const numeroEdicion = body.numeroEdicion != null && body.numeroEdicion !== '' ? Number(body.numeroEdicion) : 1;
-        const numeroPaginas = body.numeroPaginas != null && body.numeroPaginas !== '' ? Number(body.numeroPaginas) : null;
+        const numeroPaginas = body.numeroPaginas != null && body.numeroPaginas !== '' ? Number(body.numeroPaginas) : 0;
+        const numeroEjemplares = body.numeroEjemplares != null && body.numeroEjemplares !== '' ? Number(body.numeroEjemplares) : 1;
         const portada_cloudinary = (body.portada_cloudinary || '').trim() || null;
         const sinopsis = (body.sinopsis || '').trim() || null;
         const observaciones = (body.observaciones || '').trim() || null;
@@ -108,7 +109,7 @@ export default async function handler(req, res) {
         const serie = (body.serie || '').trim() || null;
 
         const rows = await executeQuery(QUERIES.INSERT_BOOK, [
-          EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas,
+          EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
           portada_cloudinary, sinopsis, observaciones, coleccion, serie,
           codiAutor_id, codiEditorial_id,
         ]);

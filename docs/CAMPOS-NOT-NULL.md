@@ -1,69 +1,74 @@
-# Campos NOT NULL en tablas del catálogo (Turso/SQLite)
+# Estructura de las tablas del catálogo (Turso/SQLite)
 
-Listado inferido a partir de los errores de inserción y del uso en el Catálogo Manager. **Comprueba en tu base de datos** con `PRAGMA table_info(nombre_tabla);` para confirmar.
+Obtenida con `node scripts/schema-info.js` contra la base de datos Turso.
 
 ---
 
 ## core_autores
 
-| Campo        | NOT NULL | Cómo se cumple en altas                          |
-|-------------|----------|--------------------------------------------------|
-| **id**      | Sí (PK)  | Autoincrement                                    |
-| **nombreAutor** | Sí* | Obligatorio en el body del POST                  |
-| **enlaceWiki**  | No   | NULL si no se envía                              |
-| **enlaceWiki2** | No   | NULL si no se envía                              |
-| **created** | Sí       | `datetime('now')` en INSERT                      |
-| **updated** | Sí       | `datetime('now')` en INSERT                      |
+| # | Columna      | Tipo           | NOT NULL | Default | PK  |
+|---|--------------|----------------|----------|--------|-----|
+| 0 | id           | INTEGER        | **Sí**   |        | Sí  |
+| 1 | nombreAutor  | varchar(100)   | **Sí**   |        |     |
+| 2 | enlaceWiki   | varchar(200)   | No       |        |     |
+| 3 | enlaceWiki2  | varchar(200)   | No       |        |     |
+| 4 | created      | datetime       | **Sí**   |        |     |
+| 5 | updated      | datetime       | **Sí**   |        |     |
+| 6 | observaciones| varchar(500)  | No       |        |     |
 
-\* Inferido: la API exige `nombreAutor` obligatorio.
+**Campos NOT NULL:** id, nombreAutor, created, updated
 
 ---
 
 ## core_editoriales
 
-| Campo            | NOT NULL | Cómo se cumple en altas                          |
-|-----------------|----------|--------------------------------------------------|
-| **id**          | Sí (PK)  | Autoincrement                                    |
-| **descriEditorial** | Sí* | Obligatorio en el body del POST              |
-| **created**     | Sí       | `datetime('now')` en INSERT                      |
-| **updated**     | Sí       | `datetime('now')` en INSERT                      |
+| # | Columna          | Tipo         | NOT NULL | Default | PK  |
+|---|------------------|--------------|----------|--------|-----|
+| 0 | id               | INTEGER      | **Sí**   |        | Sí  |
+| 1 | descriEditorial  | varchar(100) | No       |        |     |
+| 2 | created          | datetime     | **Sí**   |        |     |
+| 3 | updated          | datetime     | **Sí**   |        |     |
 
-\* Inferido: la API exige `descriEditorial` obligatorio.
+**Campos NOT NULL:** id, created, updated
 
 ---
 
 ## core_titulos
 
-| Campo               | NOT NULL | Cómo se cumple en altas                          |
-|--------------------|----------|--------------------------------------------------|
-| **id**             | Sí (PK)  | Autoincrement                                    |
-| **EAN**            | Sí*      | Obligatorio en el body; se valida antes de insertar |
-| **titulo**         | No       | NULL permitido en la API                         |
-| **tituloOriginal** | No       | NULL                                             |
-| **anyoEdicion**    | No       | NULL                                             |
-| **numeroEdicion**  | **Sí**   | Valor por defecto **1** si no se envía           |
-| **numeroPaginas** | No       | NULL                                             |
-| **portada_cloudinary** | No   | NULL                                             |
-| **sinopsis**       | No       | NULL                                             |
-| **observaciones**  | No       | NULL                                             |
-| **coleccion**      | No       | NULL                                             |
-| **serie**          | No       | NULL                                             |
-| **codiAutor_id**   | Sí*      | Obligatorio: o se envía id o se crea autor nuevo |
-| **codiEditorial_id** | Sí*   | Obligatorio: o se envía id o se crea editorial nueva |
-| **created**        | Sí       | `datetime('now')` en INSERT                      |
-| **updated**        | Sí       | `datetime('now')` en INSERT                      |
+| # | Columna            | Tipo         | NOT NULL | Default | PK  |
+|---|--------------------|--------------|----------|--------|-----|
+| 0 | id                 | INTEGER      | **Sí**   |        | Sí  |
+| 1 | EAN                | varchar(13)  | No       |        |     |
+| 2 | titulo             | varchar(100) | **Sí**   |        |     |
+| 3 | numeroEdicion      | INTEGER      | **Sí**   |        |     |
+| 4 | anyoEdicion        | varchar(4)   | No       |        |     |
+| 5 | numeroPaginas      | INTEGER      | **Sí**   |        |     |
+| 6 | tituloOriginal     | varchar(100) | No       |        |     |
+| 7 | portada            | varchar(100) | No       |        |     |
+| 8 | numeroEjemplares   | INTEGER      | **Sí**   |        |     |
+| 9 | created            | datetime     | **Sí**   |        |     |
+| 10| updated            | datetime     | **Sí**   |        |     |
+| 11| codiAutor_id       | INTEGER      | No       |        |     |
+| 12| codiGenero_id      | INTEGER      | No       |        |     |
+| 13| codiSoporte_id     | INTEGER      | No       |        |     |
+| 14| codiUbicacion_id   | INTEGER      | No       |        |     |
+| 15| coleccion          | varchar(100) | No       |        |     |
+| 16| contraportada      | varchar(100) | No       |        |     |
+| 17| codiEstante_id     | varchar(6)   | No       |        |     |
+| 18| serie              | varchar(100) | No       |        |     |
+| 19| codiEditorial_id   | INTEGER      | No       |        |     |
+| 20| sinopsis           | TEXT         | No       |        |     |
+| 21| observaciones      | TEXT         | No       |        |     |
+| 22| portada_cloudinary | TEXT         | No       |        |     |
 
-\* Inferido por validación en la API.
+**Campos NOT NULL:** id, titulo, numeroEdicion, numeroPaginas, numeroEjemplares, created, updated
 
 ---
 
-## Cómo verificar en Turso/SQLite
+## Resumen para altas (API)
 
-```bash
-# En Turso CLI o cliente SQLite conectado a tu BD:
-PRAGMA table_info(core_autores);
-PRAGMA table_info(core_editoriales);
-PRAGMA table_info(core_titulos);
-```
-
-La columna `notnull` será 1 para los campos NOT NULL. Si aparece algún otro campo con NOT NULL que no esté en este listado, hay que añadirlo al INSERT correspondiente en `api/lib/queries.js` y al body en `api/media.js`.
+| Tabla            | Campos NOT NULL que debe enviar la API |
+|------------------|----------------------------------------|
+| **core_autores** | nombreAutor, created, updated (estos dos con `datetime('now')`) |
+| **core_editoriales** | created, updated (`datetime('now')`); descriEditorial puede ser NULL en BD |
+| **core_titulos** | titulo (nunca NULL, usar `''` si vacío), numeroEdicion, numeroPaginas, numeroEjemplares, created, updated. Valores por defecto recomendados: numeroEdicion=1, numeroEjemplares=1; numeroPaginas puede requerir valor por defecto si no se envía. |
