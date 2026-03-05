@@ -8,14 +8,6 @@ import {
 } from '../services/tursoService';
 import './AltaLibro.css';
 
-function formatEanDisplay(value) {
-  const digits = String(value).replace(/\D/g, '');
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  if (digits.length <= 9) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 9)}-${digits.slice(9, 13)}`;
-}
-
 function AltaLibro({ onClose, onSuccess, getToken }) {
   const [authors, setAuthors] = useState([]);
   const [publishers, setPublishers] = useState([]);
@@ -58,13 +50,8 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
     loadCombos();
   }, [loadCombos]);
 
-  const handleEanChange = (e) => {
-    const v = e.target.value.replace(/\D/g, '');
-    if (v.length <= 13) setEanDisplay(formatEanDisplay(v));
-  };
-
   const handleBuscarIsbn = async () => {
-    const isbn = eanDisplay.replace(/-/g, '');
+    const isbn = String(eanDisplay).replace(/\D/g, '').trim();
     if (!isbn) {
       setError('Introduce el EAN/ISBN para buscar.');
       return;
@@ -91,7 +78,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
       }
       if (data.anyoEdicion != null) setAnyoEdicion(String(data.anyoEdicion));
       if (data.sinopsis) setSinopsis(data.sinopsis);
-      if (data.observaciones) setObservaciones(data.observaciones || '');
+      setObservaciones(data.observaciones != null ? String(data.observaciones) : '');
       if (data.portadaUrl) setPortadaPreviewUrl(data.portadaUrl);
     } catch (err) {
       setError(err?.message ?? 'Error al buscar por ISBN');
@@ -104,7 +91,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
-    const ean = eanDisplay.replace(/-/g, '').trim();
+    const ean = String(eanDisplay).replace(/\D/g, '').trim();
     if (!ean) {
       setError('EAN es obligatorio.');
       return;
@@ -179,14 +166,15 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
         <h2>Alta de libro</h2>
 
         <div className="alta-libro-isbn-row">
-          <label htmlFor="alta-ean">EAN / ISBN</label>
+          <label htmlFor="alta-ean">ISBN/EAN</label>
           <input
             id="alta-ean"
             type="text"
             value={eanDisplay}
-            onChange={handleEanChange}
-            placeholder="978-84-..."
-            maxLength={17}
+            onChange={(e) => setEanDisplay(e.target.value)}
+            placeholder="9788484831234"
+            inputMode="numeric"
+            autoComplete="off"
           />
           <button
             type="button"

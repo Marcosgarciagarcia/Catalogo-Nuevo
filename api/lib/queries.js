@@ -36,6 +36,9 @@ export const QUERIES = {
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
     WHERE t.id = ?
   `,
+
+  /** Para validar EAN duplicado antes de crear autor/editorial en altas */
+  GET_BOOK_ID_BY_EAN: `SELECT id FROM core_titulos WHERE EAN = ? LIMIT 1`,
   
   SEARCH_BOOKS_BY_TITLE: `
     SELECT 

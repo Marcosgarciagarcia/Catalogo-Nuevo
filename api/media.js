@@ -69,6 +69,13 @@ export default async function handler(req, res) {
       }
 
       if (segment === 'books') {
+        const EAN = (body.EAN || '').replace(/-/g, '').trim();
+        if (!EAN) return res.status(400).json({ error: 'EAN es obligatorio' });
+        const existing = await executeQuery(QUERIES.GET_BOOK_ID_BY_EAN, [EAN]);
+        if (existing?.length > 0) {
+          return res.status(400).json({ error: 'Ya existe un libro con este ISBN/EAN' });
+        }
+
         let codiAutor_id = body.codiAutor_id != null ? Number(body.codiAutor_id) : null;
         let codiEditorial_id = body.codiEditorial_id != null ? Number(body.codiEditorial_id) : null;
         const authorName = (body.authorName || '').trim();
@@ -89,8 +96,6 @@ export default async function handler(req, res) {
         if (codiAutor_id == null) return res.status(400).json({ error: 'Se requiere codiAutor_id o authorName' });
         if (codiEditorial_id == null) return res.status(400).json({ error: 'Se requiere codiEditorial_id o publisherName' });
 
-        const EAN = (body.EAN || '').replace(/-/g, '').trim();
-        if (!EAN) return res.status(400).json({ error: 'EAN es obligatorio' });
         const titulo = (body.titulo || '').trim() || null;
         const tituloOriginal = (body.tituloOriginal || '').trim() || null;
         const anyoEdicion = body.anyoEdicion != null && body.anyoEdicion !== '' ? Number(body.anyoEdicion) : null;

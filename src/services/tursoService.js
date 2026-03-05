@@ -183,12 +183,14 @@ export async function fetchOpenLibraryByIsbn(isbn) {
   if (!book || typeof book !== 'object') return null;
   const titulo = book.title ?? '';
   const tituloOriginal = book.title ?? null;
-  const authors = Array.isArray(book.authors) ? book.authors.map((a) => a.name || '').filter(Boolean) : [];
+  let authors = Array.isArray(book.authors) ? book.authors.map((a) => (a && (a.name != null ? a.name : a)) || '').filter(Boolean) : [];
+  if (authors.length === 0 && book.by_statement && typeof book.by_statement === 'string') {
+    authors = book.by_statement.split(/\s+and\s+|,\s*|\s*;\s*/i).map((s) => s.replace(/^\s*by\s*\.?\s*/i, '').trim()).filter(Boolean);
+  }
   const primerAutor = authors[0] ?? '';
   const restoAutores = authors.length > 1 ? authors.slice(1) : [];
-  const observaciones = restoAutores.length
-    ? `Ilustraciones / otros: ${restoAutores.join(', ')}`
-    : (book.notes?.value ?? null) || null;
+  const observacionesDeAutores = restoAutores.length > 0 ? `Otros autores: ${restoAutores.join(', ')}` : null;
+  const observaciones = observacionesDeAutores ?? (book.notes?.value ?? null) ?? null;
   const covers = book.cover;
   let portadaUrl = null;
   if (covers && typeof covers === 'object' && covers.large) portadaUrl = covers.large;
