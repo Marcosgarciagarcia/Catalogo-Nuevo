@@ -199,21 +199,24 @@ export const QUERIES = {
   `,
 
   // ==================== INSERTS (altas) ====================
+  // created/updated con datetime('now') para cumplir NOT NULL en SQLite/Turso
 
   INSERT_AUTHOR: `
-    INSERT INTO core_autores (nombreAutor, enlaceWiki, enlaceWiki2) VALUES (?, ?, ?) RETURNING id
+    INSERT INTO core_autores (nombreAutor, enlaceWiki, enlaceWiki2, created, updated)
+    VALUES (?, ?, ?, datetime('now'), datetime('now')) RETURNING id
   `,
 
   INSERT_PUBLISHER: `
-    INSERT INTO core_editoriales (descriEditorial) VALUES (?) RETURNING id
+    INSERT INTO core_editoriales (descriEditorial, created, updated)
+    VALUES (?, datetime('now'), datetime('now')) RETURNING id
   `,
 
   INSERT_BOOK: `
     INSERT INTO core_titulos (
       EAN, titulo, tituloOriginal, anyoEdicion, numeroPaginas,
       portada_cloudinary, sinopsis, observaciones, coleccion, serie,
-      codiAutor_id, codiEditorial_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+      codiAutor_id, codiEditorial_id, created, updated
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id
   `,
   
   // ==================== ESTADÍSTICAS ====================
