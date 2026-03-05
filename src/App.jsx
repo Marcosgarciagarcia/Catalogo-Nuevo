@@ -1,17 +1,11 @@
-import { useState, useEffect } from 'react';
-
+import { useState, useEffect, useCallback } from 'react';
 import { getAllBooks, searchBooks, filterBooksByLetter } from './services/tursoService';
-
 import BookList from './components/BookList';
-
 import Pagination from './components/Pagination';
-
 import BookDetailModal from './components/BookDetailModal';
-
 import Login from './components/Login';
-
+import AltaLibro from './components/AltaLibro';
 import { useAuth } from './contexts/AuthContext';
-
 import './App.css';
 
 
@@ -35,8 +29,8 @@ function App() {
   const [selectedBook, setSelectedBook] = useState(null);
 
   const [showLogin, setShowLogin] = useState(false);
-
-  const { user, logout, isAdmin } = useAuth();
+  const [showAltaLibro, setShowAltaLibro] = useState(false);
+  const { user, logout, isAdmin, isStaff, getToken } = useAuth();
 
   const librosPorPagina = 10;
 
@@ -107,8 +101,19 @@ function App() {
 
 
     fetchBooks();
-
   }, [filtroLetra, filtrarPor, busqueda]);
+
+  const refreshBooks = useCallback(async () => {
+    try {
+      let resultado;
+      if (busqueda) resultado = await searchBooks(busqueda, filtrarPor);
+      else if (filtroLetra) resultado = await filterBooksByLetter(filtroLetra, filtrarPor);
+      else resultado = await getAllBooks();
+      setLibros(resultado);
+    } catch {
+      // ignorar
+    }
+  }, [busqueda, filtrarPor, filtroLetra]);
 
 
 
@@ -145,37 +150,30 @@ function App() {
       <header className="auth-header">
 
         <div className="auth-section">
-
           {user ? (
-
             <>
-
               <span className="user-info">
-
                 {user.username}
-
                 {isAdmin && <span className="admin-badge">Admin</span>}
-
               </span>
-
+              {(isStaff || isAdmin) && (
+                <button
+                  type="button"
+                  className="auth-button alta-button"
+                  onClick={() => setShowAltaLibro(true)}
+                >
+                  Alta de libro
+                </button>
+              )}
               <button type="button" className="auth-button logout-button" onClick={logout}>
-
                 Cerrar sesión
-
               </button>
-
             </>
-
           ) : (
-
             <button type="button" className="auth-button login-button" onClick={() => setShowLogin(true)}>
-
               Iniciar sesión
-
             </button>
-
           )}
-
         </div>
 
       </header>
@@ -337,7 +335,13 @@ function App() {
       )}
 
       {showLogin && <Login onClose={() => setShowLogin(false)} />}
-
+      {showAltaLibro && (
+        <AltaLibro
+          onClose={() => setShowAltaLibro(false)}
+          onSuccess={refreshBooks}
+          getToken={getToken}
+        />
+      )}
       {selectedBook && (
 
         <BookDetailModal

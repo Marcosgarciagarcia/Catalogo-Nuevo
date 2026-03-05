@@ -102,3 +102,115 @@ export async function getBookById(id) {
   }
   return res.json();
 }
+
+/**
+ * Lista de autores (para combos en altas)
+ */
+export async function getAuthors(search = '') {
+  const params = search ? { search } : {};
+  const json = await apiGet('/api/media/authors', params);
+  return json.data ?? [];
+}
+
+/**
+ * Lista de editoriales (para combos en altas)
+ */
+export async function getPublishers(search = '') {
+  const params = search ? { search } : {};
+  const json = await apiGet('/api/media/publishers', params);
+  return json.data ?? [];
+}
+
+async function apiPost(path, body, token) {
+  const url = `${API_BASE}${path}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  if (!response.ok) {
+    throw await apiError(response, `Error ${response.status} al enviar datos`);
+  }
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('La API no devolvió JSON');
+  }
+  return response.json();
+}
+
+/**
+ * Crea un autor. Requiere token de staff.
+ */
+export async function createAuthor(body, token) {
+  return apiPost('/api/media/authors', body, token);
+}
+
+/**
+ * Crea una editorial. Requiere token de staff.
+ */
+export async function createPublisher(body, token) {
+  return apiPost('/api/media/publishers', body, token);
+}
+
+/**
+ * Crea un libro. Requiere token de staff.
+ * body: EAN, titulo, tituloOriginal, anyoEdicion, numeroPaginas, portada_cloudinary,
+ *       sinopsis, observaciones, coleccion, serie, codiAutor_id, codiEditorial_id
+ *       o en su lugar authorName/addNewAuthor, publisherName/addNewPublisher.
+ */
+export async function createBook(body, token) {
+  return apiPost('/api/media/books', body, token);
+}
+
+const OPEN_LIBRARY_BOOKS = 'https://openlibrary.org/api/books';
+
+/**
+ * Busca datos de un libro por ISBN en Open Library (desde el navegador, sin API key).
+ * @param {string} isbn - ISBN sin guiones
+ * @returns {Promise<{ titulo?: string, tituloOriginal?: string, autores?: string[], editorial?: string, anyoEdicion?: number, portadaUrl?: string, sinopsis?: string } | null>}
+ */
+export async function fetchOpenLibraryByIsbn(isbn) {
+  const clean = String(isbn).replace(/-/g, '').trim();
+  if (!clean) return null;
+  const url = `${OPEN_LIBRARY_BOOKS}?bibkeys=ISBN:${encodeURIComponent(clean)}&format=json&jscmd=data`;
+  const response = await fetch(url, { method: 'GET' });
+  if (!response.ok) return null;
+  const data = await response.json().catch(() => null);
+  if (!data || typeof data !== 'object') return null;
+  const key = `ISBN:${clean}`;
+  const book = data[key];
+  if (!book || typeof book !== 'object') return null;
+  const titulo = book.title ?? '';
+  const tituloOriginal = book.title ?? null;
+  const authors = Array.isArray(book.authors) ? book.authors.map((a) => a.name || '').filter(Boolean) : [];
+  const primerAutor = authors[0] ?? '';
+  const restoAutores = authors.length > 1 ? authors.slice(1) : [];
+  const observaciones = restoAutores.length
+    ? `Ilustraciones / otros: ${restoAutores.join(', ')}`
+    : (book.notes?.value ?? null) || null;
+  const covers = book.cover;
+  let portadaUrl = null;
+  if (covers && typeof covers === 'object' && covers.large) portadaUrl = covers.large;
+  else if (covers && typeof covers === 'object' && covers.medium) portadaUrl = covers.medium;
+  else if (covers && typeof covers === 'object' && covers.small) portadaUrl = covers.small;
+  const publishers = Array.isArray(book.publishers) ? book.publishers.map((p) => p.name || '').filter(Boolean) : [];
+  const editorial = publishers[0] ?? '';
+  const publishDate = book.publish_date?.trim();
+  let anyoEdicion = null;
+  if (publishDate) {
+    const match = publishDate.match(/\d{4}/);
+    if (match) anyoEdicion = parseInt(match[0], 10);
+  }
+  const sinopsis = book.notes?.value ?? null;
+  return {
+    titulo: titulo || null,
+    tituloOriginal: tituloOriginal || null,
+    autor: primerAutor || null,
+    observaciones: observaciones || null,
+    editorial: editorial || null,
+    anyoEdicion,
+    portadaUrl: portadaUrl || null,
+    sinopsis: sinopsis || null,
+  };
+}

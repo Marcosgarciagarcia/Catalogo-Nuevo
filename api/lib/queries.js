@@ -194,6 +194,24 @@ export const QUERIES = {
     GROUP BY e.id, e.descriEditorial
     ORDER BY e.descriEditorial
   `,
+
+  // ==================== INSERTS (altas) ====================
+
+  INSERT_AUTHOR: `
+    INSERT INTO core_autores (nombreAutor, enlaceWiki, enlaceWiki2) VALUES (?, ?, ?) RETURNING id
+  `,
+
+  INSERT_PUBLISHER: `
+    INSERT INTO core_editoriales (descriEditorial) VALUES (?) RETURNING id
+  `,
+
+  INSERT_BOOK: `
+    INSERT INTO core_titulos (
+      EAN, titulo, tituloOriginal, anyoEdicion, numeroPaginas,
+      portada_cloudinary, sinopsis, observaciones, coleccion, serie,
+      codiAutor_id, codiEditorial_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+  `,
   
   // ==================== ESTADÍSTICAS ====================
   
