@@ -99,6 +99,7 @@ export default async function handler(req, res) {
         const titulo = (body.titulo || '').trim() || null;
         const tituloOriginal = (body.tituloOriginal || '').trim() || null;
         const anyoEdicion = body.anyoEdicion != null && body.anyoEdicion !== '' ? Number(body.anyoEdicion) : null;
+        const numeroEdicion = body.numeroEdicion != null && body.numeroEdicion !== '' ? Number(body.numeroEdicion) : 1;
         const numeroPaginas = body.numeroPaginas != null && body.numeroPaginas !== '' ? Number(body.numeroPaginas) : null;
         const portada_cloudinary = (body.portada_cloudinary || '').trim() || null;
         const sinopsis = (body.sinopsis || '').trim() || null;
@@ -107,7 +108,7 @@ export default async function handler(req, res) {
         const serie = (body.serie || '').trim() || null;
 
         const rows = await executeQuery(QUERIES.INSERT_BOOK, [
-          EAN, titulo, tituloOriginal, anyoEdicion, numeroPaginas,
+          EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas,
           portada_cloudinary, sinopsis, observaciones, coleccion, serie,
           codiAutor_id, codiEditorial_id,
         ]);
