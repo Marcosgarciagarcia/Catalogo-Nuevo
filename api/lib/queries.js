@@ -39,6 +39,12 @@ export const QUERIES = {
 
   /** Para validar EAN duplicado antes de crear autor/editorial en altas */
   GET_BOOK_ID_BY_EAN: `SELECT id FROM core_titulos WHERE EAN = ? LIMIT 1`,
+
+  /** Buscar autor por nombre exacto (evitar duplicados en altas) */
+  GET_AUTHOR_ID_BY_NAME: `SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1`,
+
+  /** Buscar editorial por nombre exacto (evitar duplicados en altas) */
+  GET_PUBLISHER_ID_BY_NAME: `SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1`,
   
   SEARCH_BOOKS_BY_TITLE: `
     SELECT 
@@ -217,6 +223,20 @@ export const QUERIES = {
       portada_cloudinary, sinopsis, observaciones, coleccion, serie,
       codiAutor_id, codiEditorial_id, created, updated
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id
+  `,
+
+  /** Para uso en transacción: codiAutor_id y codiEditorial_id por subconsulta por nombre (evita pasar ids entre sentencias) */
+  INSERT_BOOK_BY_AUTHOR_AND_PUBLISHER_NAME: `
+    INSERT INTO core_titulos (
+      EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
+      portada_cloudinary, sinopsis, observaciones, coleccion, serie,
+      codiAutor_id, codiEditorial_id, created, updated
+    ) VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      (SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1),
+      (SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1),
+      datetime('now'), datetime('now')
+    ) RETURNING id
   `,
   
   // ==================== ESTADÍSTICAS ====================

@@ -7,6 +7,75 @@
 const TURSO_URL = process.env.TURSO_DATABASE_URL;
 const TURSO_TOKEN = process.env.TURSO_AUTH_TOKEN;
 
+function toPipelineArg(value) {
+  if (value === null || value === undefined) {
+    return { type: 'null' };
+  }
+  if (typeof value === 'number') {
+    return { type: Number.isInteger(value) ? 'integer' : 'float', value: String(value) };
+  }
+  return { type: 'text', value: String(value) };
+}
+
+/**
+ * Ejecuta varias sentencias en una sola petición (transacción implícita en pipeline).
+ * Usa el endpoint /v2/pipeline de Turso. Si una sentencia falla, ninguna se aplica.
+ * @param {{ sql: string, params?: unknown[] }[]} statements - Lista de { sql, params }
+ * @returns {Promise<{ rows: unknown[][], last_insert_rowid: number | null }[]>} Resultado por sentencia
+ */
+export async function executePipeline(statements) {
+  if (!TURSO_URL || !TURSO_TOKEN) {
+    throw new Error('TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in environment');
+  }
+  const base = TURSO_URL.replace(/\/$/, '');
+  const pipelineUrl = base.startsWith('http') ? `${base}/v2/pipeline` : `https://${base}/v2/pipeline`;
+
+  const requests = [
+    { type: 'execute', stmt: { sql: 'BEGIN' } },
+    ...statements.map(({ sql, params = [] }) => ({
+      type: 'execute',
+      stmt: {
+        sql,
+        args: params.map(toPipelineArg),
+      },
+    })),
+    { type: 'execute', stmt: { sql: 'COMMIT' } },
+    { type: 'close' },
+  ];
+
+  const response = await fetch(pipelineUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${TURSO_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ requests }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Turso pipeline HTTP error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const results = data.results || [];
+
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.type !== 'ok' || (r.response?.type === 'execute' && r.response?.result?.error)) {
+      const err = r.response?.result?.error || r.error || data;
+      throw new Error(typeof err === 'string' ? err : JSON.stringify(err));
+    }
+  }
+
+  return results
+    .filter((r) => r.response?.type === 'execute' && r.response?.result)
+    .map((r) => {
+      const res = r.response.result;
+      const rows = (res.rows || []).map((row) => row.map((cell) => cell?.value ?? cell));
+      return { rows, last_insert_rowid: res.last_insert_rowid ?? null };
+    });
+}
+
 /**
  * Ejecuta una query en Turso (API HTTP).
  * @param {string} sql - Query SQL con ? para parámetros
