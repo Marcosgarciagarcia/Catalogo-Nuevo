@@ -156,6 +156,61 @@
   gap: 12px;
 }
 
+.alta-libro-portada-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.alta-libro-file-label {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #404040;
+  color: #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border: 1px solid #555;
+}
+
+.alta-libro-file-label:hover {
+  background: #505050;
+}
+
+.alta-libro-file-input {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.alta-libro-btn-subir-ol {
+  padding: 8px 14px;
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.alta-libro-btn-subir-ol:hover:not(:disabled) {
+  background: #0d47a1;
+}
+
+.alta-libro-btn-subir-ol:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.alta-libro-portada-url {
+  margin-top: 4px;
+}
+
 .alta-libro-portada-preview {
   margin-top: 8px;
 }

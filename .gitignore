@@ -32,3 +32,6 @@ dist-ssr
 !public/placeholder.jpg
 public/img/
 public/images/
+
+#Carpeta que no debe subirse a Github
+docs/

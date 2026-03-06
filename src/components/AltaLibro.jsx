@@ -6,6 +6,7 @@ import {
   createBook,
   fetchOpenLibraryByIsbn,
 } from '../services/tursoService';
+import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
 import './AltaLibro.css';
 
 function AltaLibro({ onClose, onSuccess, getToken }) {
@@ -32,6 +33,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
   const [observaciones, setObservaciones] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const loadCombos = useCallback(async () => {
     try {
@@ -84,6 +86,47 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
       setError(err?.message ?? 'Error al buscar por ISBN');
     } finally {
       setIsbnSearching(false);
+    }
+  };
+
+  const handleUploadFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) {
+      setError('Selecciona un archivo de imagen (JPG, PNG, etc.).');
+      return;
+    }
+    if (!isCloudinaryConfigured()) {
+      setError('Cloudinary no está configurado. Añade VITE_CLOUDINARY_CLOUD_NAME y VITE_CLOUDINARY_UPLOAD_PRESET.');
+      return;
+    }
+    setError('');
+    setUploadingCover(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setPortada_cloudinary(url);
+    } catch (err) {
+      setError(err?.message ?? 'Error al subir la imagen');
+    } finally {
+      setUploadingCover(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleUploadFromOpenLibrary = async () => {
+    if (!portadaPreviewUrl) return;
+    if (!isCloudinaryConfigured()) {
+      setError('Cloudinary no está configurado. Añade VITE_CLOUDINARY_CLOUD_NAME y VITE_CLOUDINARY_UPLOAD_PRESET.');
+      return;
+    }
+    setError('');
+    setUploadingCover(true);
+    try {
+      const url = await uploadToCloudinary(portadaPreviewUrl);
+      setPortada_cloudinary(url);
+    } catch (err) {
+      setError(err?.message ?? 'Error al subir la portada desde Open Library');
+    } finally {
+      setUploadingCover(false);
     }
   };
 
@@ -324,14 +367,49 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
           </div>
 
           <div className="alta-libro-field">
-            <label htmlFor="alta-portada">URL portada (Cloudinary)</label>
-            <input
-              id="alta-portada"
-              type="url"
-              value={portada_cloudinary}
-              onChange={(e) => setPortada_cloudinary(e.target.value)}
-              placeholder="https://res.cloudinary.com/..."
-            />
+            <label htmlFor="alta-portada">Portada (Cloudinary)</label>
+            {isCloudinaryConfigured() ? (
+              <>
+                <div className="alta-libro-portada-upload">
+                  <label className="alta-libro-file-label">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadFile}
+                      disabled={uploadingCover}
+                      className="alta-libro-file-input"
+                    />
+                    {uploadingCover ? 'Subiendo…' : 'Elegir imagen'}
+                  </label>
+                  {portadaPreviewUrl && (
+                    <button
+                      type="button"
+                      className="alta-libro-btn-subir-ol"
+                      onClick={handleUploadFromOpenLibrary}
+                      disabled={uploadingCover}
+                    >
+                      {uploadingCover ? 'Subiendo…' : 'Subir portada desde Open Library'}
+                    </button>
+                  )}
+                </div>
+                <input
+                  id="alta-portada"
+                  type="url"
+                  value={portada_cloudinary}
+                  onChange={(e) => setPortada_cloudinary(e.target.value)}
+                  placeholder="URL tras subir, o pega una URL de Cloudinary"
+                  className="alta-libro-portada-url"
+                />
+              </>
+            ) : (
+              <input
+                id="alta-portada"
+                type="url"
+                value={portada_cloudinary}
+                onChange={(e) => setPortada_cloudinary(e.target.value)}
+                placeholder="Pega la URL de Cloudinary (configura VITE_CLOUDINARY_* para subir)"
+              />
+            )}
             {(portadaPreviewUrl || portada_cloudinary) && (
               <div className="alta-libro-portada-preview">
                 <img
