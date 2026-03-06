@@ -216,3 +216,62 @@ export async function fetchOpenLibraryByIsbn(isbn) {
     sinopsis: sinopsis || null,
   };
 }
+
+const GOOGLE_BOOKS_VOLUMES = 'https://www.googleapis.com/books/v1/volumes';
+
+/**
+ * Busca datos de un libro por ISBN en Google Books (sin API key; cuota limitada).
+ * Devuelve el mismo formato que fetchOpenLibraryByIsbn para poder usarlo como fallback.
+ */
+export async function fetchGoogleBooksByIsbn(isbn) {
+  const clean = String(isbn).replace(/-/g, '').trim();
+  if (!clean) return null;
+  const url = `${GOOGLE_BOOKS_VOLUMES}?q=isbn:${encodeURIComponent(clean)}`;
+  const response = await fetch(url, { method: 'GET' });
+  if (!response.ok) return null;
+  const data = await response.json().catch(() => null);
+  if (!data?.items?.length) return null;
+  const vol = data.items[0];
+  const info = vol?.volumeInfo;
+  if (!info || typeof info !== 'object') return null;
+  const titulo = info.title ?? null;
+  const authors = Array.isArray(info.authors) ? info.authors : [];
+  const primerAutor = authors[0] ?? null;
+  const restoAutores = authors.length > 1 ? authors.slice(1) : [];
+  const observaciones = restoAutores.length > 0 ? `Otros autores: ${restoAutores.join(', ')}` : null;
+  const editorial = info.publisher ?? null;
+  let anyoEdicion = null;
+  const pubDate = info.publishedDate?.trim();
+  if (pubDate) {
+    const match = pubDate.match(/\d{4}/);
+    if (match) anyoEdicion = parseInt(match[0], 10);
+  }
+  const sinopsis = info.description ?? null;
+  let portadaUrl = null;
+  const links = info.imageLinks;
+  if (links && typeof links === 'object') {
+    const raw = links.extraLarge || links.large || links.medium || links.small || links.thumbnail || null;
+    if (raw && typeof raw === 'string') portadaUrl = raw.replace(/^http:\/\//i, 'https://');
+  }
+  return {
+    titulo: titulo || null,
+    tituloOriginal: titulo || null,
+    autor: primerAutor || null,
+    observaciones: observaciones || null,
+    editorial: editorial || null,
+    anyoEdicion,
+    portadaUrl: portadaUrl || null,
+    sinopsis: sinopsis || null,
+  };
+}
+
+/**
+ * Busca datos del libro por ISBN: primero Open Library, si no hay resultado prueba Google Books.
+ * Así no se ralentiza cuando Open Library encuentra el libro (1 petición); solo se hace la segunda
+ * cuando la primera no devuelve nada.
+ */
+export async function fetchBookMetadataByIsbn(isbn) {
+  const fromOpenLibrary = await fetchOpenLibraryByIsbn(isbn);
+  if (fromOpenLibrary != null) return fromOpenLibrary;
+  return fetchGoogleBooksByIsbn(isbn);
+}

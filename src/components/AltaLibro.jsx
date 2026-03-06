@@ -4,7 +4,7 @@ import {
   getAuthors,
   getPublishers,
   createBook,
-  fetchOpenLibraryByIsbn,
+  fetchBookMetadataByIsbn,
 } from '../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
 import './AltaLibro.css';
@@ -61,9 +61,9 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
     setError('');
     setIsbnSearching(true);
     try {
-      const data = await fetchOpenLibraryByIsbn(isbn);
+      const data = await fetchBookMetadataByIsbn(isbn);
       if (!data) {
-        setError('No se encontraron datos para este ISBN en Open Library.');
+        setError('No se encontraron datos para este ISBN (Open Library ni Google Books).');
         return;
       }
       if (data.titulo) setTitulo(data.titulo);
