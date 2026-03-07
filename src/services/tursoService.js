@@ -266,9 +266,8 @@ export async function fetchGoogleBooksByIsbn(isbn) {
 }
 
 /**
- * Busca datos del libro por ISBN: primero Open Library, si no hay resultado prueba Google Books.
- * Así no se ralentiza cuando Open Library encuentra el libro (1 petición); solo se hace la segunda
- * cuando la primera no devuelve nada.
+ * Busca datos del libro por ISBN: Open Library y, si no hay resultado, Google Books.
+ * (Opcional para documentación futura: WorldCat Search API v2 como tercer fallback con VITE_WORLDCAT_WSKEY.)
  */
 export async function fetchBookMetadataByIsbn(isbn) {
   const fromOpenLibrary = await fetchOpenLibraryByIsbn(isbn);
