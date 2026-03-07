@@ -47,8 +47,17 @@ export const QUERIES = {
     WHERE t.id = ?
   `,
 
-  /** Para validar EAN duplicado antes de crear autor/editorial en altas */
+  /** Para validar EAN duplicado antes de crear/autor/editorial en altas; en edición excluir el propio id */
   GET_BOOK_ID_BY_EAN: `SELECT id FROM core_titulos WHERE EAN = ? LIMIT 1`,
+
+  /** Actualizar libro por id (updated = datetime('now') para sincronización LWW) */
+  UPDATE_BOOK: `
+    UPDATE core_titulos SET
+      EAN = ?, titulo = ?, tituloOriginal = ?, anyoEdicion = ?, numeroEdicion = ?, numeroPaginas = ?, numeroEjemplares = ?,
+      portada_cloudinary = ?, sinopsis = ?, observaciones = ?, coleccion = ?, serie = ?,
+      codiAutor_id = ?, codiEditorial_id = ?, updated = datetime('now')
+    WHERE id = ?
+  `,
 
   /** Buscar autor por nombre exacto (evitar duplicados en altas) */
   GET_AUTHOR_ID_BY_NAME: `SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1`,

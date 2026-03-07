@@ -171,6 +171,27 @@ export async function createBook(body, token) {
   return apiPost('/api/media/books', body, token);
 }
 
+/**
+ * Actualiza un libro por id. Requiere token de staff.
+ * Los cambios se guardan en Turso; la app de escritorio los recibe al sincronizar.
+ * body: mismos campos que createBook.
+ */
+export async function updateBook(id, body, token) {
+  const url = `${API_BASE}/api/media/books/${id}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
+  if (!response.ok) {
+    throw await apiError(response, `Error ${response.status} al actualizar el libro`);
+  }
+  const ct = response.headers.get('content-type');
+  if (!ct || !ct.includes('application/json')) throw new Error('La API no devolvió JSON');
+  return response.json();
+}
+
 const OPEN_LIBRARY_BOOKS = 'https://openlibrary.org/api/books';
 
 /**

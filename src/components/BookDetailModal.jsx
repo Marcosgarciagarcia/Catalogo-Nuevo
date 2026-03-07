@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import './BookDetailModal.css';
 
-function BookDetailModal({ libro, onClose }) {
+function BookDetailModal({ libro, onClose, canEdit, onEdit }) {
   if (!libro) return null;
 
   const handleBackdropClick = (e) => {
@@ -72,6 +72,14 @@ function BookDetailModal({ libro, onClose }) {
                 </div>
               </div>
             )}
+
+            {canEdit && onEdit && (
+              <div className="modal-actions">
+                <button type="button" className="modal-btn-edit" onClick={() => onEdit(libro)}>
+                  Editar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -81,6 +89,7 @@ function BookDetailModal({ libro, onClose }) {
 
 BookDetailModal.propTypes = {
   libro: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     EAN: PropTypes.string,
     titulo: PropTypes.string.isRequired,
     tituloOriginal: PropTypes.string,
@@ -90,7 +99,9 @@ BookDetailModal.propTypes = {
     sinopsis: PropTypes.string,
     portada_cloudinary: PropTypes.string
   }),
-  onClose: PropTypes.func.isRequired
+  onClose: PropTypes.func.isRequired,
+  canEdit: PropTypes.bool,
+  onEdit: PropTypes.func
 };
 
 export default BookDetailModal;

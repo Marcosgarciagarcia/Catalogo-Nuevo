@@ -23,6 +23,12 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
+.alta-libro-loading {
+  padding: 24px;
+  text-align: center;
+  color: #aaa;
+}
+
 .alta-libro-close {
   position: absolute;
   top: 12px;

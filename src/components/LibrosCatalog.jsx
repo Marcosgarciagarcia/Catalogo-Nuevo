@@ -5,6 +5,7 @@ import BookList from './BookList';
 import Pagination from './Pagination';
 import BookDetailModal from './BookDetailModal';
 import AltaLibro from './AltaLibro';
+import EditarLibro from './EditarLibro';
 import { useAuth } from '../contexts/AuthContext';
 
 const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
@@ -20,7 +21,8 @@ export default function LibrosCatalog() {
   const [error, setError] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
   const [showAltaLibro, setShowAltaLibro] = useState(false);
-  const { getToken } = useAuth();
+  const [bookToEdit, setBookToEdit] = useState(null);
+  const { getToken, isStaff, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -170,6 +172,19 @@ export default function LibrosCatalog() {
         <BookDetailModal
           libro={selectedBook}
           onClose={() => setSelectedBook(null)}
+          canEdit={isStaff || isAdmin}
+          onEdit={(libro) => {
+            setSelectedBook(null);
+            setBookToEdit(libro);
+          }}
+        />
+      )}
+      {bookToEdit && (
+        <EditarLibro
+          libro={bookToEdit}
+          onClose={() => setBookToEdit(null)}
+          onSuccess={refreshBooks}
+          getToken={getToken}
         />
       )}
     </div>

@@ -168,6 +168,26 @@
   background: #868e96;
 }
 
+.modal-actions {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.modal-btn-edit {
+  padding: 10px 20px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-btn-edit:hover {
+  background: #1976d2;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .modal-body {

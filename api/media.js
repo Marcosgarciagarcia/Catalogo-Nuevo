@@ -155,6 +155,92 @@ export default async function handler(req, res) {
       }
     }
 
+    // ---------- PUT (edición): solo books con id; requiere staff; se sincroniza en Turso (LWW en app escritorio) ----------
+    if (req.method === 'PUT' && segment === 'books' && id) {
+      const user = requireStaff(req);
+      if (!user) {
+        return res.status(401).json({ error: 'No autorizado. Se requiere sesión de staff.' });
+      }
+      const bookId = Number(id);
+      if (!Number.isInteger(bookId)) return res.status(404).json({ error: 'Book not found' });
+
+      const existingBooks = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
+      if (!existingBooks?.length) return res.status(404).json({ error: 'Book not found' });
+
+      const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
+      const EAN = (body.EAN || '').replace(/-/g, '').trim();
+      if (!EAN) return res.status(400).json({ error: 'EAN es obligatorio' });
+
+      const existingByEan = await executeQuery(QUERIES.GET_BOOK_ID_BY_EAN, [EAN]);
+      if (existingByEan?.length > 0 && Number(existingByEan[0].id) !== bookId) {
+        return res.status(400).json({ error: 'Ya existe otro libro con este ISBN/EAN' });
+      }
+
+      const authorNameBody = (body.authorName || '').trim();
+      const publisherNameBody = (body.publisherName || '').trim();
+      const codiAutor_id = body.codiAutor_id != null ? Number(body.codiAutor_id) : null;
+      const codiEditorial_id = body.codiEditorial_id != null ? Number(body.codiEditorial_id) : null;
+      const addNewAuthor = Boolean(body.addNewAuthor);
+      const addNewPublisher = Boolean(body.addNewPublisher);
+
+      let authorId = null;
+      let publisherId = null;
+
+      if (codiAutor_id && !authorNameBody) {
+        const authorRow = await executeQuery(QUERIES.GET_AUTHOR_BY_ID, [codiAutor_id]);
+        if (!authorRow?.length) return res.status(400).json({ error: 'Autor no encontrado' });
+        authorId = codiAutor_id;
+      } else if (authorNameBody) {
+        const existingAuthor = await executeQuery(QUERIES.GET_AUTHOR_ID_BY_NAME, [authorNameBody]);
+        if (existingAuthor?.length > 0) {
+          authorId = existingAuthor[0].id;
+        } else {
+          if (!addNewAuthor) return res.status(400).json({ error: 'Se requiere codiAutor_id o authorName (o marcar "Añadir como nuevo")' });
+          const insertAuthor = await executeQuery(QUERIES.INSERT_AUTHOR, [authorNameBody, null, null]);
+          authorId = insertAuthor?.[0]?.id ?? null;
+          if (authorId == null) return res.status(500).json({ error: 'Error al crear autor' });
+        }
+      }
+      if (authorId == null) return res.status(400).json({ error: 'Se requiere codiAutor_id o authorName' });
+
+      if (codiEditorial_id && !publisherNameBody) {
+        const publisherRow = await executeQuery(QUERIES.GET_PUBLISHER_BY_ID, [codiEditorial_id]);
+        if (!publisherRow?.length) return res.status(400).json({ error: 'Editorial no encontrada' });
+        publisherId = codiEditorial_id;
+      } else if (publisherNameBody) {
+        const existingPublisher = await executeQuery(QUERIES.GET_PUBLISHER_ID_BY_NAME, [publisherNameBody]);
+        if (existingPublisher?.length > 0) {
+          publisherId = existingPublisher[0].id;
+        } else {
+          if (!addNewPublisher) return res.status(400).json({ error: 'Se requiere codiEditorial_id o publisherName (o marcar "Añadir como nuevo")' });
+          const insertPublisher = await executeQuery(QUERIES.INSERT_PUBLISHER, [publisherNameBody]);
+          publisherId = insertPublisher?.[0]?.id ?? null;
+          if (publisherId == null) return res.status(500).json({ error: 'Error al crear editorial' });
+        }
+      }
+      if (publisherId == null) return res.status(400).json({ error: 'Se requiere codiEditorial_id o publisherName' });
+
+      const titulo = (body.titulo || '').trim() || '';
+      const tituloOriginal = (body.tituloOriginal || '').trim() || null;
+      const anyoEdicion = body.anyoEdicion != null && body.anyoEdicion !== '' ? Number(body.anyoEdicion) : null;
+      const numeroEdicion = body.numeroEdicion != null && body.numeroEdicion !== '' ? Number(body.numeroEdicion) : 1;
+      const numeroPaginas = body.numeroPaginas != null && body.numeroPaginas !== '' ? Number(body.numeroPaginas) : 0;
+      const numeroEjemplares = body.numeroEjemplares != null && body.numeroEjemplares !== '' ? Number(body.numeroEjemplares) : 1;
+      const portada_cloudinary = (body.portada_cloudinary || '').trim() || null;
+      const sinopsis = (body.sinopsis || '').trim() || null;
+      const observaciones = (body.observaciones || '').trim() || null;
+      const coleccion = (body.coleccion || '').trim() || null;
+      const serie = (body.serie || '').trim() || null;
+
+      await executeQuery(QUERIES.UPDATE_BOOK, [
+        EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
+        portada_cloudinary, sinopsis, observaciones, coleccion, serie,
+        authorId, publisherId, bookId,
+      ]);
+      const updated = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
+      return res.status(200).json(sanitizeBook(updated[0]));
+    }
+
     if (req.method !== 'GET') {
       return res.status(405).json({ error: 'Method not allowed' });
     }
