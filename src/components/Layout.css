@@ -1,0 +1,128 @@
+.layout {
+  position: relative;
+  min-height: 100vh;
+}
+
+.layout-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #1976d2;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.layout-header__home {
+  font-weight: 700;
+  font-size: 1.2em;
+  color: #fff;
+  text-decoration: none;
+}
+
+.layout-header__home:hover {
+  text-decoration: underline;
+}
+
+.layout-header__hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #fff;
+  border-radius: 6px;
+}
+
+.layout-header__hamburger:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.layout-header__hamburger-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.layout-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.layout-nav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 102;
+  width: min(280px, 85vw);
+  padding: 60px 0 24px 0;
+  background: #fff;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.layout-nav__item {
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  font-size: 1em;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.layout-nav__item:hover,
+.layout-nav__item--active {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.layout-nav__item--button {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  color: #c62828;
+}
+
+.layout-nav__item--button:hover {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.layout-nav__user {
+  font-weight: 400;
+  color: #666;
+}
+
+.layout-main {
+  padding: 16px;
+  padding-top: 20px;
+}
+
+@media (min-width: 600px) {
+  .layout-main {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}

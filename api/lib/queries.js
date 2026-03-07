@@ -4,6 +4,16 @@
  */
 
 export const QUERIES = {
+  // ==================== TIPOS DE COLECCIÓN (menú dinámico) ====================
+
+  /** Tipos de colección activos para el selector inicial, ordenados */
+  GET_TIPOS_COLECCION: `
+    SELECT id, slug, nombre, orden, descripcion
+    FROM core_tipos_coleccion
+    WHERE activo = 1
+    ORDER BY orden ASC, nombre ASC
+  `,
+
   // ==================== LIBROS ====================
   
   GET_ALL_BOOKS: `

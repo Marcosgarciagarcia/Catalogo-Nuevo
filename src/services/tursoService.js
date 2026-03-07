@@ -48,6 +48,14 @@ async function apiGet(path, params = {}) {
 }
 
 /**
+ * Tipos de colección para el selector inicial (menú dinámico).
+ */
+export async function getCollectionTypes() {
+  const json = await apiGet('/api/catalog-types');
+  return json.data ?? [];
+}
+
+/**
  * Obtiene todos los libros con información de autor y editorial
  */
 export async function getAllBooks() {
