@@ -7,9 +7,10 @@ export default function Proximamente() {
 
   return (
     <div className="proximamente">
-      <h2 className="proximamente__title">Próximamente</h2>
+      <p className="proximamente__badge">En desarrollo</p>
+      <h2 className="proximamente__title">Esta opción está en desarrollo</h2>
       <p className="proximamente__text">
-        El catálogo de <strong>{slugLabel}</strong> estará disponible en futuras versiones.
+        El catálogo de <strong>{slugLabel}</strong> se está implementando y estará disponible próximamente.
       </p>
     </div>
   );

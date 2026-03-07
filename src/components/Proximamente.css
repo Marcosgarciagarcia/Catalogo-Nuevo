@@ -3,6 +3,17 @@
   padding: 48px 24px;
 }
 
+.proximamente__badge {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 6px 14px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #1565c0;
+  background: #e3f2fd;
+  border-radius: 20px;
+}
+
 .proximamente__title {
   margin: 0 0 16px;
   font-size: 1.5em;
