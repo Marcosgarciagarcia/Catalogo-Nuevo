@@ -1,8 +1,10 @@
 /**
  * Crea la tabla core_tipos_coleccion e inserta el tipo "Libros" en ambas BDs:
- * - Turso (TURSO_DATABASE_URL + TURSO_AUTH_TOKEN)
- * - Local (LOCAL_DATABASE_URL, ej. file:./data/catalogo.db)
- * Uso: node scripts/init-tipos-coleccion.js   (desde la raíz, con .env.local)
+ * - Turso: TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (.env.local)
+ * - Local: la misma SQLite que usa catalogo_manager (app de escritorio).
+ *   Se usa LOCAL_DATABASE_URL (file:...) si está definido; si no, se intenta
+ *   leer la ruta de ../catalogo_manager/config.py (DATABASE_CONFIG['local']['path']).
+ * Uso: node scripts/init-tipos-coleccion.js   (desde la raíz del proyecto Catalogo)
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -31,6 +33,23 @@ function loadEnv() {
       }
     }
   }
+}
+
+/** Resuelve la ruta de la base local: env LOCAL_DATABASE_URL o config de catalogo_manager */
+function getLocalDbUrl() {
+  const fromEnv = process.env.LOCAL_DATABASE_URL;
+  if (fromEnv && fromEnv.startsWith('file:')) return fromEnv;
+
+  const configPath = path.join(rootDir, '..', 'catalogo_manager', 'config.py');
+  if (!existsSync(configPath)) return null;
+
+  const content = readFileSync(configPath, 'utf8');
+  const match = content.match(/'path':\s*r?['"]([^'"]+)['"]/);
+  if (!match) return null;
+
+  const winPath = match[1].trim();
+  const fileUrl = 'file:' + winPath.replace(/\\/g, '/');
+  return fileUrl;
 }
 
 loadEnv();
@@ -75,7 +94,7 @@ async function runInitTurso() {
 }
 
 async function runInitLocal() {
-  const url = process.env.LOCAL_DATABASE_URL;
+  const url = getLocalDbUrl();
   if (!url || !url.startsWith('file:')) return false;
 
   const db = createClient({ url });
@@ -104,11 +123,12 @@ async function main() {
     console.log('TURSO_DATABASE_URL o TURSO_AUTH_TOKEN no definidos. Se omite Turso.');
   }
 
-  if (process.env.LOCAL_DATABASE_URL?.startsWith('file:')) {
+  const localUrl = getLocalDbUrl();
+  if (localUrl) {
     await runInitLocal();
     ok = true;
   } else {
-    console.log('LOCAL_DATABASE_URL (file:...) no definido. Se omite base local.');
+    console.log('Base local no encontrada (LOCAL_DATABASE_URL o ../catalogo_manager/config.py). Se omite.');
   }
 
   if (!ok) {
