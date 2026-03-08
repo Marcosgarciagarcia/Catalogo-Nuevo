@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getAllBooks, searchBooks, filterBooksByLetter } from '../services/tursoService';
+import { getAllBooks, searchBooks, filterBooksByLetter, syncFromLocal } from '../services/tursoService';
 import BookList from './BookList';
 import Pagination from './Pagination';
 import BookDetailModal from './BookDetailModal';
@@ -22,8 +22,13 @@ export default function LibrosCatalog() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [showAltaLibro, setShowAltaLibro] = useState(false);
   const [bookToEdit, setBookToEdit] = useState(null);
+  const [syncDone, setSyncDone] = useState(false);
   const { getToken, isStaff, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    syncFromLocal().then(() => setSyncDone(true));
+  }, []);
 
   useEffect(() => {
     if (searchParams.get('openAlta') === '1') {
@@ -33,6 +38,7 @@ export default function LibrosCatalog() {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
+    if (!syncDone) return;
     const fetchBooks = async () => {
       try {
         setLoading(true);
@@ -56,7 +62,7 @@ export default function LibrosCatalog() {
       }
     };
     fetchBooks();
-  }, [filtroLetra, filtrarPor, busqueda]);
+  }, [syncDone, filtroLetra, filtrarPor, busqueda]);
 
   const refreshBooks = useCallback(async () => {
     try {

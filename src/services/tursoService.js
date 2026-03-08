@@ -56,6 +56,20 @@ export async function getCollectionTypes() {
 }
 
 /**
+ * Sincroniza pendientes de la base local a Turso (altas/actualizaciones).
+ * La API solo hace algo si LOCAL_DATABASE_URL está configurado (misma SQLite que catalogo_manager).
+ * Llamar al arrancar la webapp (p. ej. al entrar en el catálogo) para que Turso tenga lo último.
+ */
+export async function syncFromLocal() {
+  try {
+    const json = await apiGet('/api/sync-from-local');
+    return { synced: !!json.synced, pushed: json.pushed ?? 0 };
+  } catch {
+    return { synced: false, pushed: 0 };
+  }
+}
+
+/**
  * Obtiene todos los libros con información de autor y editorial
  */
 export async function getAllBooks() {
