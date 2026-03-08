@@ -11,6 +11,14 @@ function cors(res) {
   return res.status(200).json({});
 }
 
+/** Añade # al inicio de cada palabra si no empieza por almohadilla (ASC 35) */
+function normalizarHastag(texto) {
+  if (texto == null || typeof texto !== 'string') return null;
+  const t = texto.trim();
+  if (!t) return null;
+  return t.split(/\s+/).map((w) => (w.charAt(0) === '#' ? w : '#' + w)).join(' ');
+}
+
 function sanitizeBook(book) {
   return {
     ...book,
@@ -22,6 +30,7 @@ function sanitizeBook(book) {
     observaciones: book.observaciones ?? null,
     coleccion: book.coleccion ?? null,
     serie: book.serie ?? null,
+    hastag: book.hastag ?? null,
   };
 }
 
@@ -129,10 +138,11 @@ export default async function handler(req, res) {
         const observaciones = (body.observaciones || '').trim() || null;
         const coleccion = (body.coleccion || '').trim() || null;
         const serie = (body.serie || '').trim() || null;
+        const hastag = normalizarHastag(body.hastag);
 
         const bookParams = [
           EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
-          portada_cloudinary, sinopsis, observaciones, coleccion, serie,
+          portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
           authorNameForBook, publisherNameForBook,
         ];
 
@@ -231,10 +241,11 @@ export default async function handler(req, res) {
       const observaciones = (body.observaciones || '').trim() || null;
       const coleccion = (body.coleccion || '').trim() || null;
       const serie = (body.serie || '').trim() || null;
+      const hastag = normalizarHastag(body.hastag);
 
       await executeQuery(QUERIES.UPDATE_BOOK, [
         EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
-        portada_cloudinary, sinopsis, observaciones, coleccion, serie,
+        portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
         authorId, publisherId, bookId,
       ]);
       const updated = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
@@ -258,9 +269,16 @@ export default async function handler(req, res) {
         if (!books?.length) return res.status(404).json({ error: 'Book not found' });
         return res.status(200).json(sanitizeBook(books[0]));
       }
-      const { search, searchBy = 'titulo', letter, filterBy = 'titulo' } = req.query;
+      const { search, searchBy = 'titulo', letter, filterBy = 'titulo', hastag: hastagParam } = req.query;
       let query, params = [];
-      if (search) {
+      const hastagTag = hastagParam != null && String(hastagParam).trim() !== ''
+        ? '#' + String(hastagParam).trim().replace(/^#+/, '')
+        : null;
+
+      if (hastagTag) {
+        query = QUERIES.GET_BOOKS_BY_HASTAG;
+        params = [hastagTag];
+      } else if (search) {
         const searchPattern = `%${search}%`;
         query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR : QUERIES.SEARCH_BOOKS_BY_TITLE;
         params = [searchPattern];
@@ -276,7 +294,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,
-        filters: { search: search || null, searchBy, letter: letter || null, filterBy },
+        filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null },
       });
     }
 
@@ -310,9 +328,15 @@ export default async function handler(req, res) {
 
     // Sin segmento o segmento desconocido: por defecto listar libros (compatibilidad con /api/media/books)
     if (!segment || segment === '') {
-      const { search, searchBy = 'titulo', letter, filterBy = 'titulo' } = req.query;
+      const { search, searchBy = 'titulo', letter, filterBy = 'titulo', hastag: hastagParam } = req.query;
       let query, params = [];
-      if (search) {
+      const hastagTag = hastagParam != null && String(hastagParam).trim() !== ''
+        ? '#' + String(hastagParam).trim().replace(/^#+/, '')
+        : null;
+      if (hastagTag) {
+        query = QUERIES.GET_BOOKS_BY_HASTAG;
+        params = [hastagTag];
+      } else if (search) {
         query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR : QUERIES.SEARCH_BOOKS_BY_TITLE;
         params = [`%${search}%`];
       } else if (letter) {
@@ -326,7 +350,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,
-        filters: { search: search || null, searchBy, letter: letter || null, filterBy },
+        filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null },
       });
     }
 

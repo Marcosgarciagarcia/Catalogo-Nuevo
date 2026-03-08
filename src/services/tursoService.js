@@ -78,6 +78,16 @@ export async function getAllBooks() {
 }
 
 /**
+ * Libros que contienen el hastag (palabra completa). tag puede ser "novela" o "#novela"
+ */
+export async function getBooksByHastag(tag) {
+  const t = tag != null ? String(tag).trim().replace(/^#+/, '') : '';
+  if (!t) return [];
+  const json = await apiGet('/api/media/books', { hastag: t });
+  return json.data ?? [];
+}
+
+/**
  * Busca libros por título o autor
  */
 export async function searchBooks(searchTerm, searchBy = 'titulo') {

@@ -31,6 +31,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [numeroPaginas, setNumeroPaginas] = useState('');
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
+  const [hastag, setHastag] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -67,6 +68,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setNumeroPaginas(full.numeroPaginas != null ? String(full.numeroPaginas) : '');
         setSinopsis(full.sinopsis || '');
         setObservaciones(full.observaciones || '');
+        setHastag(full.hastag || '');
         setPortada_cloudinary(full.portada_cloudinary || '');
         if (full.codiAutor_id != null) {
           setCodiAutor_id(String(full.codiAutor_id));
@@ -143,6 +145,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         numeroPaginas: numeroPaginas === '' ? null : Number(numeroPaginas),
         sinopsis: sinopsis.trim() || null,
         observaciones: observaciones.trim() || null,
+        hastag: hastag.trim() || null,
         portada_cloudinary: portada_cloudinary.trim() || null,
       };
       if (addNewAuthor && authorName.trim()) {
@@ -334,6 +337,16 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
                 rows={2}
+              />
+            </div>
+            <div className="alta-libro-field">
+              <label htmlFor="editar-hastag">Hastags</label>
+              <input
+                id="editar-hastag"
+                type="text"
+                value={hastag}
+                onChange={(e) => setHastag(e.target.value)}
+                placeholder="palabra1 palabra2 (se añadirá # si no empieza por #)"
               />
             </div>
 

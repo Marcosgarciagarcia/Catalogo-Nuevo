@@ -31,10 +31,6 @@ export const SYNC_TABLE_CONFIG = {
     id_field: 'codiEstante',
     fields: ['descriEstante', 'observaciones', 'codiUbicacion_id', 'created', 'updated'],
   },
-  core_hastags: {
-    id_field: 'id',
-    fields: ['hastag'],
-  },
   core_titulos: {
     id_field: 'id',
     fields: [
@@ -42,12 +38,8 @@ export const SYNC_TABLE_CONFIG = {
       'tituloOriginal', 'portada', 'numeroEjemplares', 'codiAutor_id',
       'codiGenero_id', 'codiSoporte_id', 'codiUbicacion_id', 'coleccion',
       'contraportada', 'codiEstante_id', 'serie', 'codiEditorial_id',
-      'sinopsis', 'observaciones', 'portada_cloudinary', 'created', 'updated',
+      'sinopsis', 'observaciones', 'portada_cloudinary', 'hastag', 'created', 'updated',
     ],
-  },
-  core_tituloshastags: {
-    id_field: 'id',
-    fields: ['codiHastag_id', 'codiTitulo_id'],
   },
   auth_user: {
     id_field: 'id',

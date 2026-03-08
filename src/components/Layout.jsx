@@ -49,48 +49,57 @@ export default function Layout({ children }) {
             aria-hidden="true"
           />
           <nav className="layout-nav" aria-label="Menú principal">
-            <Link to="/" className="layout-nav__item" onClick={closeMenu}>
-              Inicio
-            </Link>
-            {catalogTypes.map((t) => (
-              <Link
-                key={t.id}
-                to={`/${t.slug}`}
-                className={`layout-nav__item ${location.pathname === `/${t.slug}` ? 'layout-nav__item--active' : ''}`}
-                onClick={closeMenu}
-              >
-                {t.nombre}
+            <div className="layout-nav__section">
+              <span className="layout-nav__section-title">Navegación</span>
+              <Link to="/" className="layout-nav__item" onClick={closeMenu}>
+                Inicio
               </Link>
-            ))}
+              {catalogTypes.map((t) => (
+                <Link
+                  key={t.id}
+                  to={`/${t.slug}`}
+                  className={`layout-nav__item ${location.pathname === `/${t.slug}` ? 'layout-nav__item--active' : ''}`}
+                  onClick={closeMenu}
+                >
+                  {t.nombre}
+                </Link>
+              ))}
+            </div>
             {user && (isStaff || isAdmin) && (
-              <Link
-                to="/libros?openAlta=1"
-                className="layout-nav__item"
-                onClick={closeMenu}
-              >
-                Alta de libro
-              </Link>
+              <div className="layout-nav__section">
+                <span className="layout-nav__section-title">Acciones</span>
+                <Link
+                  to="/libros?openAlta=1"
+                  className="layout-nav__item"
+                  onClick={closeMenu}
+                >
+                  Alta de libro
+                </Link>
+              </div>
             )}
-            {user ? (
-              <button
-                type="button"
-                className="layout-nav__item layout-nav__item--button"
-                onClick={() => { closeMenu(); logout(); }}
-              >
-                Cerrar sesión
-                {user.username && (
-                  <span className="layout-nav__user"> ({user.username})</span>
-                )}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="layout-nav__item layout-nav__item--button"
-                onClick={() => { closeMenu(); setShowLogin(true); }}
-              >
-                Iniciar sesión
-              </button>
-            )}
+            <div className="layout-nav__section layout-nav__section--last">
+              <span className="layout-nav__section-title">Sesión</span>
+              {user ? (
+                <button
+                  type="button"
+                  className="layout-nav__item layout-nav__item--button"
+                  onClick={() => { closeMenu(); logout(); }}
+                >
+                  Cerrar sesión
+                  {user.username && (
+                    <span className="layout-nav__user"> ({user.username})</span>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="layout-nav__item layout-nav__item--button"
+                  onClick={() => { closeMenu(); setShowLogin(true); }}
+                >
+                  Iniciar sesión
+                </button>
+              )}
+            </div>
           </nav>
         </>
       )}

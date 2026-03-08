@@ -33,6 +33,26 @@ export const QUERIES = {
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
     ORDER BY t.titulo
   `,
+
+  /** Libros que contienen el hastag (palabra completa, con #). Param ej: #novela */
+  GET_BOOKS_BY_HASTAG: `
+    SELECT 
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE (' ' || COALESCE(t.hastag, '') || ' ') LIKE '% ' || ? || ' %'
+    ORDER BY t.titulo
+  `,
   
   GET_BOOK_BY_ID: `
     SELECT 
@@ -54,7 +74,7 @@ export const QUERIES = {
   UPDATE_BOOK: `
     UPDATE core_titulos SET
       EAN = ?, titulo = ?, tituloOriginal = ?, anyoEdicion = ?, numeroEdicion = ?, numeroPaginas = ?, numeroEjemplares = ?,
-      portada_cloudinary = ?, sinopsis = ?, observaciones = ?, coleccion = ?, serie = ?,
+      portada_cloudinary = ?, sinopsis = ?, observaciones = ?, coleccion = ?, serie = ?, hastag = ?,
       codiAutor_id = ?, codiEditorial_id = ?, updated = datetime('now')
     WHERE id = ?
   `,
@@ -239,19 +259,19 @@ export const QUERIES = {
   INSERT_BOOK: `
     INSERT INTO core_titulos (
       EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
-      portada_cloudinary, sinopsis, observaciones, coleccion, serie,
+      portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
       codiAutor_id, codiEditorial_id, created, updated
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id
   `,
 
   /** Para uso en transacción: codiAutor_id y codiEditorial_id por subconsulta por nombre (evita pasar ids entre sentencias) */
   INSERT_BOOK_BY_AUTHOR_AND_PUBLISHER_NAME: `
     INSERT INTO core_titulos (
       EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
-      portada_cloudinary, sinopsis, observaciones, coleccion, serie,
+      portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
       codiAutor_id, codiEditorial_id, created, updated
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
       (SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1),
       (SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1),
       datetime('now'), datetime('now')

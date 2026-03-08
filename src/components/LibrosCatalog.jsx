@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getAllBooks, searchBooks, filterBooksByLetter, syncFromLocal } from '../services/tursoService';
+import { getAllBooks, searchBooks, filterBooksByLetter, getBooksByHastag, syncFromLocal } from '../services/tursoService';
 import BookList from './BookList';
 import Pagination from './Pagination';
 import BookDetailModal from './BookDetailModal';
@@ -37,6 +37,8 @@ export default function LibrosCatalog() {
     }
   }, [searchParams, setSearchParams]);
 
+  const hastagFromUrl = searchParams.get('hastag');
+
   useEffect(() => {
     if (!syncDone) return;
     const fetchBooks = async () => {
@@ -44,7 +46,9 @@ export default function LibrosCatalog() {
         setLoading(true);
         setError(null);
         let resultado;
-        if (busqueda) {
+        if (hastagFromUrl) {
+          resultado = await getBooksByHastag(hastagFromUrl);
+        } else if (busqueda) {
           resultado = await searchBooks(busqueda, filtrarPor);
         } else if (filtroLetra) {
           resultado = await filterBooksByLetter(filtroLetra, filtrarPor);
@@ -62,19 +66,20 @@ export default function LibrosCatalog() {
       }
     };
     fetchBooks();
-  }, [syncDone, filtroLetra, filtrarPor, busqueda]);
+  }, [syncDone, hastagFromUrl, filtroLetra, filtrarPor, busqueda]);
 
   const refreshBooks = useCallback(async () => {
     try {
       let resultado;
-      if (busqueda) resultado = await searchBooks(busqueda, filtrarPor);
+      if (hastagFromUrl) resultado = await getBooksByHastag(hastagFromUrl);
+      else if (busqueda) resultado = await searchBooks(busqueda, filtrarPor);
       else if (filtroLetra) resultado = await filterBooksByLetter(filtroLetra, filtrarPor);
       else resultado = await getAllBooks();
       setLibros(resultado);
     } catch {
       // ignorar
     }
-  }, [busqueda, filtrarPor, filtroLetra]);
+  }, [hastagFromUrl, busqueda, filtrarPor, filtroLetra]);
 
   const cambiarTipoDeFiltro = () => {
     setFiltrarPor(filtrarPor === 'titulo' ? 'autor' : 'titulo');
@@ -87,6 +92,11 @@ export default function LibrosCatalog() {
     setFiltroLetra(null);
     setBusqueda('');
     setPaginaActual(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('hastag');
+      return next;
+    }, { replace: true });
   };
 
   return (
@@ -107,7 +117,7 @@ export default function LibrosCatalog() {
               setPaginaActual(1);
             }}
           />
-          {(busqueda || filtroLetra) && (
+          {(busqueda || filtroLetra || hastagFromUrl) && (
             <button onClick={limpiarFiltros} type="button">
               Limpiar Filtros
             </button>
@@ -144,9 +154,28 @@ export default function LibrosCatalog() {
 
       {!loading && !error && (
         <>
+          {hastagFromUrl && (
+            <div className="filtro-hastag-chip">
+              <span>Filtro: #{hastagFromUrl.replace(/^#+/, '')}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setSearchParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.delete('hastag');
+                    return next;
+                  }, { replace: true })
+                }
+                aria-label="Quitar filtro por hastag"
+              >
+                Quitar
+              </button>
+            </div>
+          )}
           <div className="resultados-info">
             <p>
               {libros.length} libro(s) encontrado(s)
+              {hastagFromUrl ? ` con hastag #${hastagFromUrl.replace(/^#+/, '')}` : ''}
               {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
               {busqueda ? ` que contienen "${busqueda}"` : ''}
             </p>

@@ -31,6 +31,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
   const [numeroPaginas, setNumeroPaginas] = useState('');
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
+  const [hastag, setHastag] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -154,6 +155,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
         numeroPaginas: numeroPaginas === '' ? null : Number(numeroPaginas),
         sinopsis: sinopsis.trim() || null,
         observaciones: observaciones.trim() || null,
+        hastag: hastag.trim() || null,
         portada_cloudinary: portada_cloudinary.trim() || null,
       };
       if (addNewAuthor && authorName.trim()) {
@@ -185,6 +187,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
         setNumeroPaginas('');
         setSinopsis('');
         setObservaciones('');
+        setHastag('');
         setPortada_cloudinary('');
         setPortadaPreviewUrl('');
         setSuccessMsg('');
@@ -363,6 +366,16 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               rows={2}
+            />
+          </div>
+          <div className="alta-libro-field">
+            <label htmlFor="alta-hastag">Hastags</label>
+            <input
+              id="alta-hastag"
+              type="text"
+              value={hastag}
+              onChange={(e) => setHastag(e.target.value)}
+              placeholder="palabra1 palabra2 (se añadirá # si no empieza por #)"
             />
           </div>
 

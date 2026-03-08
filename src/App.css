@@ -171,6 +171,37 @@
   margin-top: 10px;
 }
 
+.filtro-hastag-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 8px 12px;
+  background: #e8f0fe;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.filtro-hastag-chip span {
+  font-weight: 500;
+  color: #1a73e8;
+}
+
+.filtro-hastag-chip button {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid #1a73e8;
+  color: #1a73e8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.filtro-hastag-chip button:hover {
+  background: #1a73e8;
+  color: white;
+}
+
 .alfabeto {
   display: flex;
   flex-wrap: wrap;

@@ -75,8 +75,34 @@
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
   overflow-y: auto;
+}
+
+.layout-nav__section {
+  padding: 12px 0 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.layout-nav__section:first-of-type {
+  padding-top: 4px;
+}
+
+.layout-nav__section--last {
+  margin-top: auto;
+  border-bottom: none;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.layout-nav__section-title {
+  display: block;
+  padding: 0 20px 8px 20px;
+  font-size: 0.7em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
 }
 
 .layout-nav__item {
@@ -98,9 +124,6 @@
 }
 
 .layout-nav__item--button {
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
   color: #c62828;
 }
 
