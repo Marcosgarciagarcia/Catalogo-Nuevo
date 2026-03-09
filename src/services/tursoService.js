@@ -136,6 +136,22 @@ export async function getBookById(id) {
 }
 
 /**
+ * Lista de ubicaciones (para selector en edición de libro)
+ */
+export async function getUbicaciones() {
+  const json = await apiGet('/api/media/ubicaciones');
+  return json.data ?? [];
+}
+
+/**
+ * Lista de estantes (para selector en edición de libro)
+ */
+export async function getEstantes() {
+  const json = await apiGet('/api/media/estantes');
+  return json.data ?? [];
+}
+
+/**
  * Lista de autores (para combos en altas)
  */
 export async function getAuthors(search = '') {

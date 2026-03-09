@@ -51,10 +51,17 @@ export default function Layout({ children }) {
           <nav className="layout-nav" aria-label="Menú principal">
             <div className="layout-nav__section">
               <span className="layout-nav__section-title">Navegación</span>
-              <Link to="/" className="layout-nav__item" onClick={closeMenu}>
+              <Link to="/" className={`layout-nav__item ${location.pathname === '/' ? 'layout-nav__item--active' : ''}`} onClick={closeMenu}>
                 Inicio
               </Link>
-              {catalogTypes.map((t) => (
+              <Link
+                to="/libros"
+                className={`layout-nav__item ${location.pathname === '/libros' ? 'layout-nav__item--active' : ''}`}
+                onClick={closeMenu}
+              >
+                Libros
+              </Link>
+              {catalogTypes.filter((t) => t.slug !== 'libros').map((t) => (
                 <Link
                   key={t.id}
                   to={`/${t.slug}`}

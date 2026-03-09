@@ -31,6 +31,8 @@ function sanitizeBook(book) {
     coleccion: book.coleccion ?? null,
     serie: book.serie ?? null,
     hastag: book.hastag ?? null,
+    ubicacionDesc: book.ubicacionDesc ?? null,
+    estanteDesc: book.estanteDesc ?? null,
   };
 }
 
@@ -242,10 +244,13 @@ export default async function handler(req, res) {
       const coleccion = (body.coleccion || '').trim() || null;
       const serie = (body.serie || '').trim() || null;
       const hastag = normalizarHastag(body.hastag);
+      const codiUbicacion_id = body.codiUbicacion_id != null && body.codiUbicacion_id !== '' ? Number(body.codiUbicacion_id) : null;
+      const codiEstante_id = body.codiEstante_id != null && body.codiEstante_id !== '' ? Number(body.codiEstante_id) : null;
 
       await executeQuery(QUERIES.UPDATE_BOOK, [
         EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
         portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
+        codiUbicacion_id, codiEstante_id,
         authorId, publisherId, bookId,
       ]);
       const updated = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
@@ -324,6 +329,18 @@ export default async function handler(req, res) {
       const params = search ? [`%${search}%`] : [];
       const publishers = await executeQuery(query, params);
       return res.status(200).json({ data: publishers, total: publishers.length, filters: { search: search || null } });
+    }
+
+    // GET /api/media/ubicaciones (lista para selector en edición)
+    if (segment === 'ubicaciones') {
+      const rows = await executeQuery(QUERIES.GET_UBICACIONES);
+      return res.status(200).json({ data: rows || [], total: (rows || []).length });
+    }
+
+    // GET /api/media/estantes (lista para selector en edición)
+    if (segment === 'estantes') {
+      const rows = await executeQuery(QUERIES.GET_ESTANTES);
+      return res.status(200).json({ data: rows || [], total: (rows || []).length });
     }
 
     // Sin segmento o segmento desconocido: por defecto listar libros (compatibilidad con /api/media/books)

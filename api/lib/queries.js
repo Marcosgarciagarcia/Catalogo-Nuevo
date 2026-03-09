@@ -60,10 +60,14 @@ export const QUERIES = {
       a.nombreAutor,
       a.enlaceWiki as autorWiki,
       a.enlaceWiki2 as autorWiki2,
-      e.descriEditorial as editorial
+      e.descriEditorial as editorial,
+      u.descriUbicacion as ubicacionDesc,
+      s.descriEstante as estanteDesc
     FROM core_titulos t
     LEFT JOIN core_autores a ON t.codiAutor_id = a.id
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    LEFT JOIN core_ubicaciones u ON t.codiUbicacion_id = u.id
+    LEFT JOIN core_ubicaciones_sub s ON t.codiEstante_id = s.codiEstante
     WHERE t.id = ?
   `,
 
@@ -75,6 +79,7 @@ export const QUERIES = {
     UPDATE core_titulos SET
       EAN = ?, titulo = ?, tituloOriginal = ?, anyoEdicion = ?, numeroEdicion = ?, numeroPaginas = ?, numeroEjemplares = ?,
       portada_cloudinary = ?, sinopsis = ?, observaciones = ?, coleccion = ?, serie = ?, hastag = ?,
+      codiUbicacion_id = ?, codiEstante_id = ?,
       codiAutor_id = ?, codiEditorial_id = ?, updated = datetime('now')
     WHERE id = ?
   `,
@@ -84,7 +89,13 @@ export const QUERIES = {
 
   /** Buscar editorial por nombre exacto (evitar duplicados en altas) */
   GET_PUBLISHER_ID_BY_NAME: `SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1`,
-  
+
+  /** Ubicaciones para selector en edición de libro */
+  GET_UBICACIONES: `SELECT id, descriUbicacion FROM core_ubicaciones ORDER BY descriUbicacion ASC`,
+
+  /** Estantes para selector en edición de libro */
+  GET_ESTANTES: `SELECT codiEstante as id, descriEstante, codiUbicacion_id FROM core_ubicaciones_sub ORDER BY descriEstante ASC`,
+
   SEARCH_BOOKS_BY_TITLE: `
     SELECT 
       t.id,

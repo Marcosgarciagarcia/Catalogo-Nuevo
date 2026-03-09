@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import {
   getAuthors,
   getPublishers,
+  getUbicaciones,
+  getEstantes,
   getBookById,
   updateBook,
 } from '../services/tursoService';
@@ -12,6 +14,8 @@ import './AltaLibro.css';
 function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [authors, setAuthors] = useState([]);
   const [publishers, setPublishers] = useState([]);
+  const [ubicaciones, setUbicaciones] = useState([]);
+  const [estantes, setEstantes] = useState([]);
   const [loadingCombos, setLoadingCombos] = useState(true);
   const [loadingBook, setLoadingBook] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,6 +36,8 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [hastag, setHastag] = useState('');
+  const [codiUbicacion_id, setCodiUbicacion_id] = useState('');
+  const [codiEstante_id, setCodiEstante_id] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -39,11 +45,18 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const loadCombos = useCallback(async () => {
     try {
       setLoadingCombos(true);
-      const [a, p] = await Promise.all([getAuthors(), getPublishers()]);
+      const [a, p, u, e] = await Promise.all([
+        getAuthors(),
+        getPublishers(),
+        getUbicaciones(),
+        getEstantes(),
+      ]);
       setAuthors(a);
       setPublishers(p);
+      setUbicaciones(u);
+      setEstantes(e);
     } catch (err) {
-      setError(err?.message ?? 'Error al cargar autores y editoriales');
+      setError(err?.message ?? 'Error al cargar autores, editoriales y ubicaciones');
     } finally {
       setLoadingCombos(false);
     }
@@ -69,6 +82,8 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setSinopsis(full.sinopsis || '');
         setObservaciones(full.observaciones || '');
         setHastag(full.hastag || '');
+        setCodiUbicacion_id(full.codiUbicacion_id != null ? String(full.codiUbicacion_id) : '');
+        setCodiEstante_id(full.codiEstante_id != null ? String(full.codiEstante_id) : '');
         setPortada_cloudinary(full.portada_cloudinary || '');
         if (full.codiAutor_id != null) {
           setCodiAutor_id(String(full.codiAutor_id));
@@ -160,6 +175,10 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
       } else if (codiEditorial_id) {
         body.codiEditorial_id = Number(codiEditorial_id);
       }
+      if (codiUbicacion_id !== '') body.codiUbicacion_id = Number(codiUbicacion_id);
+      else body.codiUbicacion_id = null;
+      if (codiEstante_id !== '') body.codiEstante_id = Number(codiEstante_id);
+      else body.codiEstante_id = null;
       await updateBook(libro.id, body, token);
       setSuccessMsg('Libro actualizado correctamente.');
       if (onSuccess) onSuccess();
@@ -348,6 +367,39 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 onChange={(e) => setHastag(e.target.value)}
                 placeholder="palabra1 palabra2 (se añadirá # si no empieza por #)"
               />
+            </div>
+
+            <div className="alta-libro-row-2">
+              <div className="alta-libro-field">
+                <label htmlFor="editar-ubicacion">Ubicación</label>
+                <select
+                  id="editar-ubicacion"
+                  value={codiUbicacion_id}
+                  onChange={(e) => setCodiUbicacion_id(e.target.value)}
+                >
+                  <option value="">— Sin ubicación —</option>
+                  {ubicaciones.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.descriUbicacion || u.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="alta-libro-field">
+                <label htmlFor="editar-estante">Estante</label>
+                <select
+                  id="editar-estante"
+                  value={codiEstante_id}
+                  onChange={(e) => setCodiEstante_id(e.target.value)}
+                >
+                  <option value="">— Sin estante —</option>
+                  {estantes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.descriEstante || s.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="alta-libro-field">

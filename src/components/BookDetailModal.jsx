@@ -95,9 +95,13 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit }) {
               </Block>
             )}
 
+            <Block title="Ubicación" twoCols>
+              <DetailRow label="Ubicación" value={libro.ubicacionDesc} />
+              <DetailRow label="Estante" value={libro.estanteDesc} />
+            </Block>
+
             <Block title="Otros datos" twoCols>
               <DetailRow label="Contraportada" value={libro.contraportada} />
-              <DetailRow label="Estante" value={libro.codiEstante_id} />
               {libro.autorWiki && (
                 <div className="detail-row">
                   <span className="detail-label">Enlaces autor</span>
@@ -108,13 +112,15 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit }) {
               )}
             </Block>
 
-            {canEdit && onEdit && (
-              <div className="modal-actions">
+            <div className="modal-actions">
+              {canEdit && onEdit ? (
                 <button type="button" className="modal-btn-edit" onClick={() => onEdit(libro)}>
-                  Editar
+                  Editar libro
                 </button>
-              </div>
-            )}
+              ) : (
+                <p className="modal-actions-hint">Inicia sesión como staff para poder editar este libro.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -140,7 +146,10 @@ BookDetailModal.propTypes = {
     serie: PropTypes.string,
     hastag: PropTypes.string,
     contraportada: PropTypes.string,
-    codiEstante_id: PropTypes.string,
+    codiEstante_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    codiUbicacion_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    ubicacionDesc: PropTypes.string,
+    estanteDesc: PropTypes.string,
     autorWiki: PropTypes.string,
     autorWiki2: PropTypes.string,
     portada_cloudinary: PropTypes.string,

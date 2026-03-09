@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getAllBooks, searchBooks, filterBooksByLetter, getBooksByHastag, syncFromLocal } from '../services/tursoService';
+import { getAllBooks, searchBooks, filterBooksByLetter, getBooksByHastag, getBookById, syncFromLocal } from '../services/tursoService';
 import BookList from './BookList';
 import Pagination from './Pagination';
 import BookDetailModal from './BookDetailModal';
@@ -20,6 +20,7 @@ export default function LibrosCatalog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [detailBook, setDetailBook] = useState(null);
   const [showAltaLibro, setShowAltaLibro] = useState(false);
   const [bookToEdit, setBookToEdit] = useState(null);
   const [syncDone, setSyncDone] = useState(false);
@@ -38,6 +39,22 @@ export default function LibrosCatalog() {
   }, [searchParams, setSearchParams]);
 
   const hastagFromUrl = searchParams.get('hastag');
+
+  useEffect(() => {
+    if (!selectedBook?.id) {
+      setDetailBook(null);
+      return;
+    }
+    let cancelled = false;
+    getBookById(selectedBook.id)
+      .then((full) => {
+        if (!cancelled) setDetailBook(full);
+      })
+      .catch(() => {
+        if (!cancelled) setDetailBook(selectedBook);
+      });
+    return () => { cancelled = true; };
+  }, [selectedBook?.id]);
 
   useEffect(() => {
     if (!syncDone) return;
@@ -205,8 +222,8 @@ export default function LibrosCatalog() {
       )}
       {selectedBook && (
         <BookDetailModal
-          libro={selectedBook}
-          onClose={() => setSelectedBook(null)}
+          libro={detailBook || selectedBook}
+          onClose={() => { setSelectedBook(null); setDetailBook(null); }}
           canEdit={isStaff || isAdmin}
           onEdit={(libro) => {
             setSelectedBook(null);
