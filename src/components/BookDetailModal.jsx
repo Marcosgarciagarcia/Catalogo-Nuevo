@@ -35,8 +35,9 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit }) {
           ✕
         </button>
 
-        <div className="modal-body">
-          <div className="modal-image-section">
+        <div className="modal-scroll">
+          <div className="modal-body">
+            <div className="modal-image-section">
             <img
               src={libro.portada_cloudinary || '/placeholder.jpg'}
               alt={libro.titulo}
@@ -122,6 +123,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit }) {
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
