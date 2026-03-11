@@ -1,7 +1,8 @@
 /**
  * Añade la columna hastag (TEXT) a core_titulos en Turso y en la base local.
- * Elimina la dependencia de tablas core_hastags / core_tituloshastags para títulos.
- * Uso: node scripts/add-hastag-column.js   (desde la raíz, con .env.local)
+ * Si al guardar cambios en un libro ves "SQLite error: no such column: hastag",
+ * ejecuta: npm run add-hastag-column
+ * (con TURSO_DATABASE_URL y TURSO_AUTH_TOKEN en .env.local o .env, las mismas que usa Vercel)
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -11,11 +12,13 @@ import { createClient } from '@libsql/client';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
-const envPath = path.join(rootDir, '.env.local');
 
 function loadEnv() {
+  const envPath = existsSync(path.join(rootDir, '.env.local'))
+    ? path.join(rootDir, '.env.local')
+    : path.join(rootDir, '.env');
   if (!existsSync(envPath)) {
-    console.error('No se encuentra .env.local.');
+    console.error('No se encuentra .env.local ni .env. Crea uno con TURSO_DATABASE_URL y TURSO_AUTH_TOKEN.');
     process.exit(1);
   }
   const content = readFileSync(envPath, 'utf8');
@@ -50,18 +53,20 @@ async function addColumnTurso() {
   const { executeQuery } = await import('../api/lib/turso.js');
   try {
     const info = await executeQuery("SELECT * FROM pragma_table_info('core_titulos')");
-    if (info.some((r) => r.name === 'hastag')) {
+    const hasHastag = Array.isArray(info) && info.some((r) => r && (r.name === 'hastag' || r[1] === 'hastag'));
+    if (hasHastag) {
       console.log('[Turso] Columna hastag ya existe.');
       return true;
     }
     await executeQuery(ADD_COLUMN);
-    console.log('[Turso] Columna hastag añadida.');
+    console.log('[Turso] Columna hastag añadida correctamente.');
     return true;
   } catch (e) {
     if (/duplicate column|already exists/i.test(String(e.message))) {
       console.log('[Turso] Columna hastag ya existe.');
       return true;
     }
+    console.error('[Turso] Error:', e.message);
     throw e;
   }
 }
@@ -105,5 +110,9 @@ loadEnv();
     await addColumnLocal();
     ok = true;
   }
-  if (!ok) console.error('Configura Turso o local en .env.local');
+  if (!ok) {
+    console.error('Configura TURSO_DATABASE_URL y TURSO_AUTH_TOKEN en .env.local o .env (las mismas que usa tu app en Vercel).');
+    process.exit(1);
+  }
+  console.log('\nListo. Vuelve a intentar guardar el libro en la web.');
 })();

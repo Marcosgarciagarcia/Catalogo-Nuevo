@@ -1,14 +1,16 @@
 /**
  * GET /api/sync-from-local
  *
- * Envía a Turso los pendientes de la base local (pending_pushes).
- * Misma idea que en la app de escritorio: al arrancar la webapp se llama este
- * endpoint para que los altas/actualizaciones hechos en local (y pendientes de
- * envío) se suban a Turso antes de cargar el listado.
+ * Envía a Turso los pendientes de la base local en este orden:
+ * 1. pending_deletes: solo borrados (DELETE en Turso).
+ * 2. pending_pushes: solo altas/actualizaciones (INSERT o UPDATE en Turso).
  *
- * Solo tiene efecto si LOCAL_DATABASE_URL está definido (ej. file:...)
- * y apunta a la misma SQLite que usa catalogo_manager. En producción
- * (Vercel) normalmente no está definido y se responde 200 sin hacer nada.
+ * Así se evita que un registro borrado en local se reinserte en Turso porque
+ * "no existía" allí; los deletes se aplican primero vía pending_deletes.
+ *
+ * Solo tiene efecto si LOCAL_DATABASE_URL está definido (file:...) y apunta
+ * a la misma SQLite que usa catalogo_manager. En producción (Vercel) no se
+ * suele definir y se responde 200 sin hacer nada.
  */
 
 import { createClient } from '@libsql/client';
@@ -21,6 +23,19 @@ function getLocalDbUrl() {
   return null;
 }
 
+/** Orden para aplicar deletes: primero tablas dependientes (ej. core_titulos), luego FKs */
+const DELETE_ORDER = [
+  'auth_user',
+  'core_titulos',
+  'core_ubicaciones_sub',
+  'core_ubicaciones',
+  'core_soportes',
+  'core_generos',
+  'core_editoriales',
+  'core_autores',
+  'core_tipos_coleccion',
+];
+
 export default async function handler(req, res) {
   try {
     if (req.method === 'OPTIONS') {
@@ -32,11 +47,50 @@ export default async function handler(req, res) {
 
     const localUrl = getLocalDbUrl();
     if (!localUrl) {
-      return res.status(200).json({ synced: false, message: 'No local DB configured', pushed: 0 });
+      return res.status(200).json({ synced: false, message: 'No local DB configured', pushed: 0, deleted: 0 });
     }
 
     const localDb = createClient({ url: localUrl });
+    const config = SYNC_TABLE_CONFIG;
 
+    // 1. Procesar pending_deletes (solo borrados)
+    let deleted = 0;
+    try {
+      const delResult = await localDb.execute(
+        'SELECT id, table_name, record_id FROM pending_deletes ORDER BY id'
+      );
+      const pendingDeletes = (delResult.rows || []).map((row) => {
+        if (Array.isArray(row)) return { id: row[0], table_name: row[1], record_id: row[2] };
+        return { id: row.id, table_name: row.table_name, record_id: row.record_id };
+      });
+
+      const priority = (t) => {
+        const i = DELETE_ORDER.indexOf(t);
+        return i === -1 ? 999 : i;
+      };
+      pendingDeletes.sort((a, b) => priority(a.table_name) - priority(b.table_name));
+
+      for (const { id: pendingId, table_name, record_id } of pendingDeletes) {
+        const tableConfig = config[table_name];
+        if (!tableConfig) continue;
+        const { id_field } = tableConfig;
+        try {
+          await executeQuery(`DELETE FROM ${table_name} WHERE ${id_field} = ?`, [record_id]);
+          await localDb.execute('DELETE FROM pending_deletes WHERE id = ?', [pendingId]);
+          deleted += 1;
+        } catch (err) {
+          // No limpiar de pending_deletes; se reintentará en la próxima sync
+        }
+      }
+    } catch (e) {
+      if (e && /no such table|pending_deletes/.test(String(e.message || e))) {
+        // Tabla inexistente: seguir con pending_pushes
+      } else {
+        throw e;
+      }
+    }
+
+    // 2. Procesar pending_pushes (solo INSERT / UPDATE)
     let pending;
     try {
       const result = await localDb.execute(
@@ -48,16 +102,14 @@ export default async function handler(req, res) {
       });
     } catch (e) {
       if (e && /no such table|pending_pushes/.test(String(e.message || e))) {
-        return res.status(200).json({ synced: false, message: 'No pending_pushes table', pushed: 0 });
+        return res.status(200).json({ synced: true, pushed: 0, deleted });
       }
       throw e;
     }
 
     if (pending.length === 0) {
-      return res.status(200).json({ synced: true, pushed: 0 });
+      return res.status(200).json({ synced: true, pushed: 0, deleted });
     }
-
-    const config = SYNC_TABLE_CONFIG;
     let pushed = 0;
 
     for (const { table_name, record_id } of pending) {
@@ -107,7 +159,7 @@ export default async function handler(req, res) {
       pushed += 1;
     }
 
-    return res.status(200).json({ synced: true, pushed });
+    return res.status(200).json({ synced: true, pushed, deleted });
   } catch (error) {
     console.error('Error in /api/sync-from-local:', error);
     return res.status(500).json({
