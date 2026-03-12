@@ -232,6 +232,23 @@ export async function updateBook(id, body, token) {
   return response.json();
 }
 
+/**
+ * Elimina un libro por id. Requiere token de staff.
+ */
+export async function deleteBook(id, token) {
+  const url = `${API_BASE}/api/media/books/${id}`;
+  const headers = {
+    Accept: 'application/json',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(url, { method: 'DELETE', headers });
+  if (response.status === 204) return true;
+  if (!response.ok) {
+    throw await apiError(response, `Error ${response.status} al eliminar el libro`);
+  }
+  return true;
+}
+
 const OPEN_LIBRARY_BOOKS = 'https://openlibrary.org/api/books';
 
 /**

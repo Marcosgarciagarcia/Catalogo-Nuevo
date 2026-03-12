@@ -257,6 +257,22 @@ export default async function handler(req, res) {
       return res.status(200).json(sanitizeBook(updated[0]));
     }
 
+    // ---------- DELETE (borrado): solo books con id; requiere staff ----------
+    if (req.method === 'DELETE' && segment === 'books' && id) {
+      const user = requireStaff(req);
+      if (!user) {
+        return res.status(401).json({ error: 'No autorizado. Se requiere sesión de staff.' });
+      }
+      const bookId = Number(id);
+      if (!Number.isInteger(bookId)) return res.status(404).json({ error: 'Book not found' });
+
+      const existingBooks = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
+      if (!existingBooks?.length) return res.status(404).json({ error: 'Book not found' });
+
+      await executeQuery('DELETE FROM core_titulos WHERE id = ?', [bookId]);
+      return res.status(204).end();
+    }
+
     if (req.method !== 'GET') {
       return res.status(405).json({ error: 'Method not allowed' });
     }

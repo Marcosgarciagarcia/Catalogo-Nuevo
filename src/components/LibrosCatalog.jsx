@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getAllBooks, searchBooks, filterBooksByLetter, getBooksByHastag, getBookById, syncFromLocal } from '../services/tursoService';
+import { getAllBooks, searchBooks, filterBooksByLetter, getBooksByHastag, getBookById, syncFromLocal, deleteBook } from '../services/tursoService';
 import BookList from './BookList';
 import Pagination from './Pagination';
 import BookDetailModal from './BookDetailModal';
@@ -97,6 +97,23 @@ export default function LibrosCatalog() {
       // ignorar
     }
   }, [hastagFromUrl, busqueda, filtrarPor, filtroLetra]);
+
+  const handleDeleteBook = async (libro) => {
+    if (!libro?.id) return;
+    // eslint-disable-next-line no-alert
+    const ok = window.confirm(`¿Seguro que quieres eliminar el libro "${libro.titulo}"?`);
+    if (!ok) return;
+    try {
+      const token = getToken?.();
+      await deleteBook(libro.id, token);
+      setSelectedBook(null);
+      setDetailBook(null);
+      await refreshBooks();
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(err?.message || 'Error al eliminar el libro');
+    }
+  };
 
   const cambiarTipoDeFiltro = () => {
     setFiltrarPor(filtrarPor === 'titulo' ? 'autor' : 'titulo');
@@ -229,6 +246,7 @@ export default function LibrosCatalog() {
             setSelectedBook(null);
             setBookToEdit(libro);
           }}
+          onDelete={handleDeleteBook}
         />
       )}
       {bookToEdit && (

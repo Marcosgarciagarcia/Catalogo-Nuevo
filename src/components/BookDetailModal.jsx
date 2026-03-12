@@ -21,7 +21,7 @@ function Block({ title, children, twoCols }) {
   );
 }
 
-function BookDetailModal({ libro, onClose, canEdit, onEdit }) {
+function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
   if (!libro) return null;
 
   const handleBackdropClick = (e) => {
@@ -114,10 +114,27 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit }) {
             </Block>
 
             <div className="modal-actions">
-              {canEdit && onEdit ? (
-                <button type="button" className="modal-btn-edit" onClick={() => onEdit(libro)}>
-                  Editar libro
-                </button>
+              {canEdit && (onEdit || onDelete) ? (
+                <>
+                  {onEdit && (
+                    <button
+                      type="button"
+                      className="modal-btn-edit"
+                      onClick={() => onEdit(libro)}
+                    >
+                      Editar libro
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      className="modal-btn-delete"
+                      onClick={() => onDelete(libro)}
+                    >
+                      Eliminar libro
+                    </button>
+                  )}
+                </>
               ) : (
                 <p className="modal-actions-hint">Inicia sesión como staff para poder editar este libro.</p>
               )}
@@ -159,6 +176,7 @@ BookDetailModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   canEdit: PropTypes.bool,
   onEdit: PropTypes.func,
+  onDelete: PropTypes.func,
 };
 
 export default BookDetailModal;
