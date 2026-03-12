@@ -228,6 +228,9 @@
   padding-bottom: 24px;
   border-top: 1px solid #eee;
   flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .modal-btn-edit {
@@ -242,6 +245,21 @@
 
 .modal-btn-edit:hover {
   background: #1976d2;
+}
+
+.modal-btn-delete {
+  padding: 10px 20px;
+  background: #e53935;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 12px;
+}
+
+.modal-btn-delete:hover {
+  background: #c62828;
 }
 
 .modal-actions-hint {
@@ -271,6 +289,8 @@
 
   .modal-actions {
     padding-bottom: 32px;
+    justify-content: center;
+    gap: 12px;
   }
 }
 
@@ -324,6 +344,14 @@
     width: 100%;
     min-height: 48px;
     padding: 12px 20px;
+  }
+
+  .modal-btn-delete {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 20px;
+    margin-left: 0;
+    margin-top: 8px;
   }
 
   .modal-actions-hint {
