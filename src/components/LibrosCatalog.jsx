@@ -30,13 +30,22 @@ export default function LibrosCatalog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const slugFromPath = pathname.replace(/^\//, '').trim() || null;
+  const rawSlug = pathname.replace(/^\//, '').trim() || null;
+  const slugFromPath = rawSlug
+    ? (() => {
+        try {
+          return decodeURIComponent(rawSlug);
+        } catch {
+          return rawSlug;
+        }
+      })()
+    : null;
 
   useEffect(() => {
     getCollectionTypes().then((data) => setTiposColeccion(Array.isArray(data) ? data : []));
   }, []);
 
-  // Sincronizar estado del botón de tipo con la ruta (/ = todos, /libros, /discoteca, etc.)
+  // Sincronizar estado del botón de tipo con la ruta (/ = todos, /libros, /música, etc.)
   useEffect(() => {
     setTipoSlug(pathname === '/' ? null : slugFromPath);
   }, [pathname, slugFromPath]);
