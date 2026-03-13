@@ -107,12 +107,14 @@ export const QUERIES = {
       a.enlaceWiki2 as autorWiki2,
       e.descriEditorial as editorial,
       u.descriUbicacion as ubicacionDesc,
-      s.descriEstante as estanteDesc
+      s.descriEstante as estanteDesc,
+      sop.descriSoporte as soporteDesc
     FROM core_titulos t
     LEFT JOIN core_autores a ON t.codiAutor_id = a.id
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
     LEFT JOIN core_ubicaciones u ON t.codiUbicacion_id = u.id
     LEFT JOIN core_ubicaciones_sub s ON t.codiEstante_id = s.codiEstante
+    LEFT JOIN core_soportes sop ON t.codiSoporte_id = sop.id
     WHERE t.id = ?
   `,
 
@@ -124,7 +126,7 @@ export const QUERIES = {
     UPDATE core_titulos SET
       EAN = ?, titulo = ?, tituloOriginal = ?, anyoEdicion = ?, numeroEdicion = ?, numeroPaginas = ?, numeroEjemplares = ?,
       portada_cloudinary = ?, sinopsis = ?, observaciones = ?, coleccion = ?, serie = ?, hastag = ?,
-      codiUbicacion_id = ?, codiEstante_id = ?,
+      codiUbicacion_id = ?, codiEstante_id = ?, codiSoporte_id = ?,
       codiAutor_id = ?, codiEditorial_id = ?, updated = datetime('now')
     WHERE id = ?
   `,
@@ -140,6 +142,9 @@ export const QUERIES = {
 
   /** Estantes para selector en edición de libro */
   GET_ESTANTES: `SELECT codiEstante as id, descriEstante, codiUbicacion_id FROM core_ubicaciones_sub ORDER BY descriEstante ASC`,
+
+  /** Soportes para selector en alta/edición de título */
+  GET_SOPORTES: `SELECT id, descriSoporte FROM core_soportes ORDER BY descriSoporte ASC`,
 
   SEARCH_BOOKS_BY_TITLE: `
     SELECT 
@@ -409,9 +414,11 @@ export const QUERIES = {
     INSERT INTO core_titulos (
       EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
       portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
+      codiSoporte_id,
       codiAutor_id, codiEditorial_id, created, updated
     ) VALUES (
       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      ?,
       (SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1),
       (SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1),
       datetime('now'), datetime('now')

@@ -33,6 +33,7 @@ function sanitizeBook(book) {
     hastag: book.hastag ?? null,
     ubicacionDesc: book.ubicacionDesc ?? null,
     estanteDesc: book.estanteDesc ?? null,
+    soporteDesc: book.soporteDesc ?? null,
   };
 }
 
@@ -141,10 +142,12 @@ export default async function handler(req, res) {
         const coleccion = (body.coleccion || '').trim() || null;
         const serie = (body.serie || '').trim() || null;
         const hastag = normalizarHastag(body.hastag);
+        const codiSoporte_id = body.codiSoporte_id != null && body.codiSoporte_id !== '' ? Number(body.codiSoporte_id) : null;
 
         const bookParams = [
           EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
           portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
+          codiSoporte_id,
           authorNameForBook, publisherNameForBook,
         ];
 
@@ -246,11 +249,12 @@ export default async function handler(req, res) {
       const hastag = normalizarHastag(body.hastag);
       const codiUbicacion_id = body.codiUbicacion_id != null && body.codiUbicacion_id !== '' ? Number(body.codiUbicacion_id) : null;
       const codiEstante_id = body.codiEstante_id != null && body.codiEstante_id !== '' ? Number(body.codiEstante_id) : null;
+      const codiSoporte_id = body.codiSoporte_id != null && body.codiSoporte_id !== '' ? Number(body.codiSoporte_id) : null;
 
       await executeQuery(QUERIES.UPDATE_BOOK, [
         EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
         portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
-        codiUbicacion_id, codiEstante_id,
+        codiUbicacion_id, codiEstante_id, codiSoporte_id,
         authorId, publisherId, bookId,
       ]);
       const updated = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
@@ -368,6 +372,12 @@ export default async function handler(req, res) {
     // GET /api/media/estantes (lista para selector en edición)
     if (segment === 'estantes') {
       const rows = await executeQuery(QUERIES.GET_ESTANTES);
+      return res.status(200).json({ data: rows || [], total: (rows || []).length });
+    }
+
+    // GET /api/media/soportes (lista para selector en alta/edición)
+    if (segment === 'soportes') {
+      const rows = await executeQuery(QUERIES.GET_SOPORTES);
       return res.status(200).json({ data: rows || [], total: (rows || []).length });
     }
 

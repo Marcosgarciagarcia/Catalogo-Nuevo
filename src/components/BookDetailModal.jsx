@@ -79,9 +79,10 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
               <DetailRow label="N.º ejemplares" value={libro.numeroEjemplares} />
             </Block>
 
-            <Block title="Colección" twoCols>
+            <Block title="Colección y soporte" twoCols>
               <DetailRow label="Colección" value={libro.coleccion} />
               <DetailRow label="Serie" value={libro.serie} />
+              <DetailRow label="Soporte" value={libro.soporteDesc} />
             </Block>
 
             {libro.sinopsis && (
@@ -182,6 +183,7 @@ BookDetailModal.propTypes = {
     codiUbicacion_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     ubicacionDesc: PropTypes.string,
     estanteDesc: PropTypes.string,
+    soporteDesc: PropTypes.string,
     autorWiki: PropTypes.string,
     autorWiki2: PropTypes.string,
     portada_cloudinary: PropTypes.string,

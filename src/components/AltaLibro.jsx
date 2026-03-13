@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
   getAuthors,
   getPublishers,
+  getSoportes,
   createBook,
   fetchBookMetadataByIsbn,
 } from '../services/tursoService';
@@ -12,6 +13,7 @@ import './AltaLibro.css';
 function AltaLibro({ onClose, onSuccess, getToken }) {
   const [authors, setAuthors] = useState([]);
   const [publishers, setPublishers] = useState([]);
+  const [soportes, setSoportes] = useState([]);
   const [loadingCombos, setLoadingCombos] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isbnSearching, setIsbnSearching] = useState(false);
@@ -32,6 +34,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [hastag, setHastag] = useState('');
+  const [codiSoporte_id, setCodiSoporte_id] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -39,11 +42,12 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
   const loadCombos = useCallback(async () => {
     try {
       setLoadingCombos(true);
-      const [a, p] = await Promise.all([getAuthors(), getPublishers()]);
+      const [a, p, sop] = await Promise.all([getAuthors(), getPublishers(), getSoportes()]);
       setAuthors(a);
       setPublishers(p);
+      setSoportes(sop);
     } catch (err) {
-      setError(err?.message ?? 'Error al cargar autores y editoriales');
+      setError(err?.message ?? 'Error al cargar autores, editoriales y soportes');
     } finally {
       setLoadingCombos(false);
     }
@@ -158,6 +162,8 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
         hastag: hastag.trim() || null,
         portada_cloudinary: portada_cloudinary.trim() || null,
       };
+      if (codiSoporte_id !== '') body.codiSoporte_id = Number(codiSoporte_id);
+      else body.codiSoporte_id = null;
       if (addNewAuthor && authorName.trim()) {
         body.authorName = authorName.trim();
         body.addNewAuthor = true;
@@ -188,6 +194,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
         setSinopsis('');
         setObservaciones('');
         setHastag('');
+        setCodiSoporte_id('');
         setPortada_cloudinary('');
         setPortadaPreviewUrl('');
         setSuccessMsg('');
@@ -377,6 +384,23 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
               onChange={(e) => setHastag(e.target.value)}
               placeholder="palabra1 palabra2 (se añadirá # si no empieza por #)"
             />
+          </div>
+
+          <div className="alta-libro-field">
+            <label htmlFor="alta-soporte">Soporte</label>
+            <select
+              id="alta-soporte"
+              value={codiSoporte_id}
+              onChange={(e) => setCodiSoporte_id(e.target.value)}
+              disabled={loadingCombos}
+            >
+              <option value="">— Seleccionar soporte —</option>
+              {soportes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.descriSoporte || s.id}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="alta-libro-field">

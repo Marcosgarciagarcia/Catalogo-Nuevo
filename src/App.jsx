@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom';
 import CatalogTypeSelector from './components/CatalogTypeSelector';
 import Layout from './components/Layout';
 import LibrosCatalog from './components/LibrosCatalog';
-import Proximamente from './components/Proximamente';
 import './App.css';
 
 function App() {
@@ -21,7 +20,7 @@ function App() {
         path="/:slug"
         element={
           <Layout>
-            <Proximamente />
+            <LibrosCatalog />
           </Layout>
         }
       />

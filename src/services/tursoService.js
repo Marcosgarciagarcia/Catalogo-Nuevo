@@ -158,6 +158,14 @@ export async function getEstantes() {
 }
 
 /**
+ * Soportes para selector en alta/edición de título
+ */
+export async function getSoportes() {
+  const json = await apiGet('/api/media/soportes');
+  return json.data ?? [];
+}
+
+/**
  * Lista de autores (para combos en altas)
  */
 export async function getAuthors(search = '') {

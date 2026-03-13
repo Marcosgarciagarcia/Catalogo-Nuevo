@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { getCollectionTypes, getAllBooks, searchBooks, filterBooksByLetter, getBooksByHastag, getBookById, syncFromLocal, deleteBook } from '../services/tursoService';
 import BookList from './BookList';
 import Pagination from './Pagination';
@@ -28,10 +28,17 @@ export default function LibrosCatalog() {
   const [syncDone, setSyncDone] = useState(false);
   const { getToken, isStaff, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  const slugFromPath = pathname.replace(/^\//, '').trim() || null;
 
   useEffect(() => {
     getCollectionTypes().then((data) => setTiposColeccion(Array.isArray(data) ? data : []));
   }, []);
+
+  // Sincronizar filtro con la ruta: /libros, /discoteca, /video, etc.
+  useEffect(() => {
+    setTipoSlug(slugFromPath);
+  }, [slugFromPath]);
 
   useEffect(() => {
     syncFromLocal().then(() => setSyncDone(true));

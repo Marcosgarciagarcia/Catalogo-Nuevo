@@ -5,6 +5,7 @@ import {
   getPublishers,
   getUbicaciones,
   getEstantes,
+  getSoportes,
   getBookById,
   updateBook,
 } from '../services/tursoService';
@@ -16,6 +17,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [publishers, setPublishers] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [estantes, setEstantes] = useState([]);
+  const [soportes, setSoportes] = useState([]);
   const [loadingCombos, setLoadingCombos] = useState(true);
   const [loadingBook, setLoadingBook] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,6 +40,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [hastag, setHastag] = useState('');
   const [codiUbicacion_id, setCodiUbicacion_id] = useState('');
   const [codiEstante_id, setCodiEstante_id] = useState('');
+  const [codiSoporte_id, setCodiSoporte_id] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -45,18 +48,20 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const loadCombos = useCallback(async () => {
     try {
       setLoadingCombos(true);
-      const [a, p, u, e] = await Promise.all([
+      const [a, p, u, e, sop] = await Promise.all([
         getAuthors(),
         getPublishers(),
         getUbicaciones(),
         getEstantes(),
+        getSoportes(),
       ]);
       setAuthors(a);
       setPublishers(p);
       setUbicaciones(u);
       setEstantes(e);
+      setSoportes(sop);
     } catch (err) {
-      setError(err?.message ?? 'Error al cargar autores, editoriales y ubicaciones');
+      setError(err?.message ?? 'Error al cargar autores, editoriales, ubicaciones y soportes');
     } finally {
       setLoadingCombos(false);
     }
@@ -84,6 +89,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setHastag(full.hastag || '');
         setCodiUbicacion_id(full.codiUbicacion_id != null ? String(full.codiUbicacion_id) : '');
         setCodiEstante_id(full.codiEstante_id != null ? String(full.codiEstante_id) : '');
+        setCodiSoporte_id(full.codiSoporte_id != null ? String(full.codiSoporte_id) : '');
         setPortada_cloudinary(full.portada_cloudinary || '');
         if (full.codiAutor_id != null) {
           setCodiAutor_id(String(full.codiAutor_id));
@@ -179,6 +185,8 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
       else body.codiUbicacion_id = null;
       if (codiEstante_id !== '') body.codiEstante_id = Number(codiEstante_id);
       else body.codiEstante_id = null;
+      if (codiSoporte_id !== '') body.codiSoporte_id = Number(codiSoporte_id);
+      else body.codiSoporte_id = null;
       await updateBook(libro.id, body, token);
       setSuccessMsg('Libro actualizado correctamente.');
       if (onSuccess) onSuccess();
@@ -367,6 +375,23 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 onChange={(e) => setHastag(e.target.value)}
                 placeholder="palabra1 palabra2 (se añadirá # si no empieza por #)"
               />
+            </div>
+
+            <div className="alta-libro-field">
+              <label htmlFor="editar-soporte">Soporte</label>
+              <select
+                id="editar-soporte"
+                value={codiSoporte_id}
+                onChange={(e) => setCodiSoporte_id(e.target.value)}
+                disabled={loadingCombos}
+              >
+                <option value="">— Seleccionar soporte —</option>
+                {soportes.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.descriSoporte || s.id}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="alta-libro-row-2">
