@@ -26,6 +26,8 @@ export default async function handler(req, res) {
       descripcion: r.descripcion ?? null,
     }));
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
     return res.status(200).json({ data });
   } catch (error) {
     console.error('Error in /api/catalog-types:', error);

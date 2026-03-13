@@ -333,6 +333,8 @@ export default async function handler(req, res) {
       };
       const books = await executeQuery(query, params);
       const sanitized = books.map(sanitizeBook);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,
@@ -427,6 +429,8 @@ export default async function handler(req, res) {
       };
       const books = await executeQuery(query, params);
       const sanitized = books.map(sanitizeBook);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,

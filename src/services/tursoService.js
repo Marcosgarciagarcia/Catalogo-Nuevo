@@ -32,6 +32,7 @@ async function apiGet(path, params = {}) {
   const response = await fetch(url, {
     method: 'GET',
     headers: { Accept: 'application/json' },
+    cache: 'no-store',
   });
   if (!response.ok) {
     throw await apiError(response, `Error ${response.status} al cargar datos`);
