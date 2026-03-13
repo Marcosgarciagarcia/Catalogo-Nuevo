@@ -103,11 +103,24 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
 
             <Block title="Otros datos" twoCols>
               <DetailRow label="Contraportada" value={libro.contraportada} />
-              {libro.autorWiki && (
+              {(libro.autorWiki || libro.autorWiki2) && (
                 <div className="detail-row">
                   <span className="detail-label">Enlaces autor</span>
                   <span className="detail-value">
-                    {[libro.autorWiki, libro.autorWiki2].filter(Boolean).join(' · ')}
+                    {[libro.autorWiki, libro.autorWiki2]
+                      .filter(Boolean)
+                      .map((url) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ marginRight: '0.5rem' }}
+                        >
+                          {url}
+                        </a>
+                      ))}
                   </span>
                 </div>
               )}
