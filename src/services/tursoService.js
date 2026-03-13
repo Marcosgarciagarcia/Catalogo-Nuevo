@@ -76,7 +76,7 @@ export async function syncFromLocal() {
 export async function getAllBooks(tipoSlug = null) {
   const params = tipoSlug ? { tipo: tipoSlug } : {};
   const json = await apiGet('/api/media/books', params);
-  return json.data ?? [];
+  return { data: json.data ?? [], filterApplied: json.filterApplied ?? null };
 }
 
 /**
@@ -86,11 +86,11 @@ export async function getAllBooks(tipoSlug = null) {
  */
 export async function getBooksByHastag(tag, tipoSlug = null) {
   const t = tag != null ? String(tag).trim().replace(/^#+/, '') : '';
-  if (!t) return [];
+  if (!t) return { data: [], filterApplied: null };
   const params = { hastag: t };
   if (tipoSlug) params.tipo = tipoSlug;
   const json = await apiGet('/api/media/books', params);
-  return json.data ?? [];
+  return { data: json.data ?? [], filterApplied: json.filterApplied ?? null };
 }
 
 /**
@@ -101,7 +101,7 @@ export async function searchBooks(searchTerm, searchBy = 'titulo', tipoSlug = nu
   const params = { search: searchTerm, searchBy };
   if (tipoSlug) params.tipo = tipoSlug;
   const json = await apiGet('/api/media/books', params);
-  return json.data ?? [];
+  return { data: json.data ?? [], filterApplied: json.filterApplied ?? null };
 }
 
 /**
@@ -112,7 +112,7 @@ export async function filterBooksByLetter(letter, filterBy = 'titulo', tipoSlug 
   const params = { letter, filterBy };
   if (tipoSlug) params.tipo = tipoSlug;
   const json = await apiGet('/api/media/books', params);
-  return json.data ?? [];
+  return { data: json.data ?? [], filterApplied: json.filterApplied ?? null };
 }
 
 /**

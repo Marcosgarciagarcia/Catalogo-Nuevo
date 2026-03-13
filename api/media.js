@@ -326,12 +326,18 @@ export default async function handler(req, res) {
         query = tipoSlug ? QUERIES.GET_ALL_BOOKS_BY_TIPO : QUERIES.GET_ALL_BOOKS;
         params = tipoSlug ? [tipoSlug] : [];
       }
+      const filterApplied = {
+        sqlCondition: tipoSlug ? 'WHERE tc.slug = ? (JOIN core_soportes + core_tipos_coleccion)' : 'Sin filtro por tipo',
+        tipoParam: tipoSlug,
+        params,
+      };
       const books = await executeQuery(query, params);
       const sanitized = books.map(sanitizeBook);
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,
         filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null, tipo: tipoSlug || null },
+        filterApplied,
       });
     }
 
@@ -414,12 +420,18 @@ export default async function handler(req, res) {
         query = tipoSlug ? QUERIES.GET_ALL_BOOKS_BY_TIPO : QUERIES.GET_ALL_BOOKS;
         params = tipoSlug ? [tipoSlug] : [];
       }
+      const filterApplied = {
+        sqlCondition: tipoSlug ? 'WHERE tc.slug = ? (JOIN core_soportes + core_tipos_coleccion)' : 'Sin filtro por tipo',
+        tipoParam: tipoSlug,
+        params,
+      };
       const books = await executeQuery(query, params);
       const sanitized = books.map(sanitizeBook);
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,
         filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null, tipo: tipoSlug || null },
+        filterApplied,
       });
     }
 

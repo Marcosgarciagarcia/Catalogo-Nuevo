@@ -19,6 +19,7 @@ export default function LibrosCatalog() {
   const [busqueda, setBusqueda] = useState('');
   const [paginaActual, setPaginaActual] = useState(1);
   const [libros, setLibros] = useState([]);
+  const [filterApplied, setFilterApplied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -98,7 +99,10 @@ export default function LibrosCatalog() {
         } else {
           resultado = await getAllBooks(tipoSlugActive);
         }
-        setLibros(resultado);
+        const data = resultado?.data ?? resultado;
+        const list = Array.isArray(data) ? data : [];
+        setLibros(list);
+        setFilterApplied(resultado?.filterApplied ?? null);
       } catch (err) {
         console.error('Error cargando libros:', err);
         const msg = err?.message ?? err?.error;
@@ -118,7 +122,9 @@ export default function LibrosCatalog() {
       else if (busqueda) resultado = await searchBooks(busqueda, filtrarPor, tipoSlugActive);
       else if (filtroLetra) resultado = await filterBooksByLetter(filtroLetra, filtrarPor, tipoSlugActive);
       else resultado = await getAllBooks(tipoSlugActive);
-      setLibros(resultado);
+      const data = resultado?.data ?? resultado;
+      setLibros(Array.isArray(data) ? data : []);
+      setFilterApplied(resultado?.filterApplied ?? null);
     } catch {
       // ignorar
     }
@@ -270,6 +276,17 @@ export default function LibrosCatalog() {
               {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
               {busqueda ? ` que contienen "${busqueda}"` : ''}
             </p>
+            {filterApplied && (
+              <p className="filtro-aplicado-debug" style={{ fontSize: '0.85rem', color: '#666', marginTop: '6px' }}>
+                Filtro aplicado: {filterApplied.sqlCondition}
+                {filterApplied.tipoParam != null && (
+                  <> · tipoParam = &quot;{String(filterApplied.tipoParam)}&quot;</>
+                )}
+                {filterApplied.params?.length > 0 && (
+                  <> · params = [{filterApplied.params.map((x) => `"${String(x)}"`).join(', ')}]</>
+                )}
+              </p>
+            )}
           </div>
           <BookList
             libros={libros.slice(
