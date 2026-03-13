@@ -202,6 +202,38 @@
   color: white;
 }
 
+.filtro-tipo-coleccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filtro-tipo-coleccion .filtro-tipo-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.filtro-tipo-coleccion button {
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  color: #333;
+  border-radius: 4px;
+}
+
+.filtro-tipo-coleccion button:hover {
+  background-color: #e0e0e0;
+}
+
+.filtro-tipo-coleccion button.activo {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
 .alfabeto {
   display: flex;
   flex-wrap: wrap;

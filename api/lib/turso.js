@@ -21,27 +21,29 @@ function toPipelineArg(value) {
  * Ejecuta varias sentencias en una sola petición (transacción implícita en pipeline).
  * Usa el endpoint /v2/pipeline de Turso. Si una sentencia falla, ninguna se aplica.
  * @param {{ sql: string, params?: unknown[] }[]} statements - Lista de { sql, params }
+ * @param {{ noWrap?: boolean }} options - Si noWrap: true, no se añade BEGIN/COMMIT (para usar PRAGMA antes de BEGIN).
  * @returns {Promise<{ rows: unknown[][], last_insert_rowid: number | null }[]>} Resultado por sentencia
  */
-export async function executePipeline(statements) {
+export async function executePipeline(statements, options = {}) {
   if (!TURSO_URL || !TURSO_TOKEN) {
     throw new Error('TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in environment');
   }
   const base = TURSO_URL.replace(/\/$/, '');
   const pipelineUrl = base.startsWith('http') ? `${base}/v2/pipeline` : `https://${base}/v2/pipeline`;
 
-  const requests = [
-    { type: 'execute', stmt: { sql: 'BEGIN' } },
-    ...statements.map(({ sql, params = [] }) => ({
-      type: 'execute',
-      stmt: {
-        sql,
-        args: params.map(toPipelineArg),
-      },
-    })),
-    { type: 'execute', stmt: { sql: 'COMMIT' } },
-    { type: 'close' },
-  ];
+  const stmtRequests = statements.map(({ sql, params = [] }) => ({
+    type: 'execute',
+    stmt: { sql, args: params.map(toPipelineArg) },
+  }));
+
+  const requests = options.noWrap
+    ? [...stmtRequests, { type: 'close' }]
+    : [
+        { type: 'execute', stmt: { sql: 'BEGIN' } },
+        ...stmtRequests,
+        { type: 'execute', stmt: { sql: 'COMMIT' } },
+        { type: 'close' },
+      ];
 
   const response = await fetch(pipelineUrl, {
     method: 'POST',

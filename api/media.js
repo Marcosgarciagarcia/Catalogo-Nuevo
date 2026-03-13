@@ -290,32 +290,44 @@ export default async function handler(req, res) {
         if (!books?.length) return res.status(404).json({ error: 'Book not found' });
         return res.status(200).json(sanitizeBook(books[0]));
       }
-      const { search, searchBy = 'titulo', letter, filterBy = 'titulo', hastag: hastagParam } = req.query;
+      const { search, searchBy = 'titulo', letter, filterBy = 'titulo', hastag: hastagParam, tipo: tipoParam } = req.query;
       let query, params = [];
       const hastagTag = hastagParam != null && String(hastagParam).trim() !== ''
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
+      const tipoSlug = tipoParam != null && String(tipoParam).trim() !== '' ? String(tipoParam).trim() : null;
 
       if (hastagTag) {
-        query = QUERIES.GET_BOOKS_BY_HASTAG;
-        params = [hastagTag];
+        query = tipoSlug ? QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO : QUERIES.GET_BOOKS_BY_HASTAG;
+        params = tipoSlug ? [tipoSlug, hastagTag] : [hastagTag];
       } else if (search) {
         const searchPattern = `%${search}%`;
-        query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR : QUERIES.SEARCH_BOOKS_BY_TITLE;
-        params = [searchPattern];
+        if (tipoSlug) {
+          query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO;
+          params = [tipoSlug, searchPattern];
+        } else {
+          query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR : QUERIES.SEARCH_BOOKS_BY_TITLE;
+          params = [searchPattern];
+        }
       } else if (letter) {
         const letterPattern = `${letter}%`;
-        query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE;
-        params = [letterPattern];
+        if (tipoSlug) {
+          query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO;
+          params = [tipoSlug, letterPattern];
+        } else {
+          query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE;
+          params = [letterPattern];
+        }
       } else {
-        query = QUERIES.GET_ALL_BOOKS;
+        query = tipoSlug ? QUERIES.GET_ALL_BOOKS_BY_TIPO : QUERIES.GET_ALL_BOOKS;
+        params = tipoSlug ? [tipoSlug] : [];
       }
       const books = await executeQuery(query, params);
       const sanitized = books.map(sanitizeBook);
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,
-        filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null },
+        filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null, tipo: tipoSlug || null },
       });
     }
 
@@ -361,29 +373,43 @@ export default async function handler(req, res) {
 
     // Sin segmento o segmento desconocido: por defecto listar libros (compatibilidad con /api/media/books)
     if (!segment || segment === '') {
-      const { search, searchBy = 'titulo', letter, filterBy = 'titulo', hastag: hastagParam } = req.query;
+      const { search, searchBy = 'titulo', letter, filterBy = 'titulo', hastag: hastagParam, tipo: tipoParam } = req.query;
       let query, params = [];
       const hastagTag = hastagParam != null && String(hastagParam).trim() !== ''
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
+      const tipoSlug = tipoParam != null && String(tipoParam).trim() !== '' ? String(tipoParam).trim() : null;
       if (hastagTag) {
-        query = QUERIES.GET_BOOKS_BY_HASTAG;
-        params = [hastagTag];
+        query = tipoSlug ? QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO : QUERIES.GET_BOOKS_BY_HASTAG;
+        params = tipoSlug ? [tipoSlug, hastagTag] : [hastagTag];
       } else if (search) {
-        query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR : QUERIES.SEARCH_BOOKS_BY_TITLE;
-        params = [`%${search}%`];
+        const searchPattern = `%${search}%`;
+        if (tipoSlug) {
+          query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO;
+          params = [tipoSlug, searchPattern];
+        } else {
+          query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR : QUERIES.SEARCH_BOOKS_BY_TITLE;
+          params = [searchPattern];
+        }
       } else if (letter) {
-        query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE;
-        params = [`${letter}%`];
+        const letterPattern = `${letter}%`;
+        if (tipoSlug) {
+          query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO;
+          params = [tipoSlug, letterPattern];
+        } else {
+          query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE;
+          params = [letterPattern];
+        }
       } else {
-        query = QUERIES.GET_ALL_BOOKS;
+        query = tipoSlug ? QUERIES.GET_ALL_BOOKS_BY_TIPO : QUERIES.GET_ALL_BOOKS;
+        params = tipoSlug ? [tipoSlug] : [];
       }
       const books = await executeQuery(query, params);
       const sanitized = books.map(sanitizeBook);
       return res.status(200).json({
         data: sanitized,
         total: sanitized.length,
-        filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null },
+        filters: { search: search || null, searchBy, letter: letter || null, filterBy, hastag: hastagTag || null, tipo: tipoSlug || null },
       });
     }
 

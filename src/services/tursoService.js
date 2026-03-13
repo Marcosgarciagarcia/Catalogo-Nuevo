@@ -70,42 +70,48 @@ export async function syncFromLocal() {
 }
 
 /**
- * Obtiene todos los libros con información de autor y editorial
+ * Obtiene todos los títulos (o filtrados por tipo de colección).
+ * @param {string|null} tipoSlug - Slug del tipo (libros, audio, video) o null para todos
  */
-export async function getAllBooks() {
-  const json = await apiGet('/api/media/books');
+export async function getAllBooks(tipoSlug = null) {
+  const params = tipoSlug ? { tipo: tipoSlug } : {};
+  const json = await apiGet('/api/media/books', params);
   return json.data ?? [];
 }
 
 /**
  * Libros que contienen el hastag (palabra completa). tag puede ser "novela" o "#novela"
+ * @param {string} tag
+ * @param {string|null} tipoSlug - Slug del tipo de colección o null para todos
  */
-export async function getBooksByHastag(tag) {
+export async function getBooksByHastag(tag, tipoSlug = null) {
   const t = tag != null ? String(tag).trim().replace(/^#+/, '') : '';
   if (!t) return [];
-  const json = await apiGet('/api/media/books', { hastag: t });
+  const params = { hastag: t };
+  if (tipoSlug) params.tipo = tipoSlug;
+  const json = await apiGet('/api/media/books', params);
   return json.data ?? [];
 }
 
 /**
  * Busca libros por título o autor
+ * @param {string|null} tipoSlug - Slug del tipo de colección o null para todos
  */
-export async function searchBooks(searchTerm, searchBy = 'titulo') {
-  const json = await apiGet('/api/media/books', {
-    search: searchTerm,
-    searchBy,
-  });
+export async function searchBooks(searchTerm, searchBy = 'titulo', tipoSlug = null) {
+  const params = { search: searchTerm, searchBy };
+  if (tipoSlug) params.tipo = tipoSlug;
+  const json = await apiGet('/api/media/books', params);
   return json.data ?? [];
 }
 
 /**
  * Filtra libros por letra inicial
+ * @param {string|null} tipoSlug - Slug del tipo de colección o null para todos
  */
-export async function filterBooksByLetter(letter, filterBy = 'titulo') {
-  const json = await apiGet('/api/media/books', {
-    letter,
-    filterBy,
-  });
+export async function filterBooksByLetter(letter, filterBy = 'titulo', tipoSlug = null) {
+  const params = { letter, filterBy };
+  if (tipoSlug) params.tipo = tipoSlug;
+  const json = await apiGet('/api/media/books', params);
   return json.data ?? [];
 }
 

@@ -15,7 +15,8 @@ export const QUERIES = {
   `,
 
   // ==================== LIBROS ====================
-  
+  // Filtro por tipo de colección: t → core_soportes → core_tipos_coleccion (slug = libros|audio|video)
+
   GET_ALL_BOOKS: `
     SELECT 
       t.id,
@@ -31,6 +32,28 @@ export const QUERIES = {
     FROM core_titulos t
     LEFT JOIN core_autores a ON t.codiAutor_id = a.id
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    ORDER BY t.titulo
+  `,
+
+  /** Como GET_ALL_BOOKS pero solo títulos del tipo de colección (slug). Param: slug (ej. 'libros', 'audio', 'video') */
+  GET_ALL_BOOKS_BY_TIPO: `
+    SELECT 
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.slug = ?
     ORDER BY t.titulo
   `,
 
@@ -51,6 +74,28 @@ export const QUERIES = {
     LEFT JOIN core_autores a ON t.codiAutor_id = a.id
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
     WHERE (' ' || COALESCE(t.hastag, '') || ' ') LIKE '% ' || ? || ' %'
+    ORDER BY t.titulo
+  `,
+
+  /** GET_BOOKS_BY_HASTAG filtrado por tipo. Params: slug, hastag */
+  GET_BOOKS_BY_HASTAG_BY_TIPO: `
+    SELECT 
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.slug = ? AND (' ' || COALESCE(t.hastag, '') || ' ') LIKE '% ' || ? || ' %'
     ORDER BY t.titulo
   `,
   
@@ -114,6 +159,27 @@ export const QUERIES = {
     WHERE t.titulo LIKE ?
     ORDER BY t.titulo
   `,
+
+  SEARCH_BOOKS_BY_TITLE_BY_TIPO: `
+    SELECT 
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.slug = ? AND t.titulo LIKE ?
+    ORDER BY t.titulo
+  `,
   
   SEARCH_BOOKS_BY_AUTHOR: `
     SELECT 
@@ -131,6 +197,27 @@ export const QUERIES = {
     LEFT JOIN core_autores a ON t.codiAutor_id = a.id
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
     WHERE a.nombreAutor LIKE ?
+    ORDER BY a.nombreAutor, t.titulo
+  `,
+
+  SEARCH_BOOKS_BY_AUTHOR_BY_TIPO: `
+    SELECT 
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.slug = ? AND a.nombreAutor LIKE ?
     ORDER BY a.nombreAutor, t.titulo
   `,
   
@@ -152,6 +239,27 @@ export const QUERIES = {
     WHERE UPPER(t.titulo) LIKE UPPER(?)
     ORDER BY t.titulo
   `,
+
+  FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO: `
+    SELECT 
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.slug = ? AND UPPER(t.titulo) LIKE UPPER(?)
+    ORDER BY t.titulo
+  `,
   
   FILTER_BOOKS_BY_LETTER_AUTHOR: `
     SELECT 
@@ -169,6 +277,27 @@ export const QUERIES = {
     LEFT JOIN core_autores a ON t.codiAutor_id = a.id
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
     WHERE UPPER(a.nombreAutor) LIKE UPPER(?)
+    ORDER BY a.nombreAutor, t.titulo
+  `,
+
+  FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO: `
+    SELECT 
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.slug = ? AND UPPER(a.nombreAutor) LIKE UPPER(?)
     ORDER BY a.nombreAutor, t.titulo
   `,
   
