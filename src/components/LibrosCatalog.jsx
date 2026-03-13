@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { getCollectionTypes, getAllBooks, searchBooks, filterBooksByLetter, getBooksByHastag, getBookById, syncFromLocal, deleteBook } from '../services/tursoService';
 import BookList from './BookList';
 import Pagination from './Pagination';
@@ -29,16 +29,17 @@ export default function LibrosCatalog() {
   const { getToken, isStaff, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const slugFromPath = pathname.replace(/^\//, '').trim() || null;
 
   useEffect(() => {
     getCollectionTypes().then((data) => setTiposColeccion(Array.isArray(data) ? data : []));
   }, []);
 
-  // Sincronizar filtro con la ruta: /libros, /discoteca, /video, etc.
+  // Sincronizar estado del botón de tipo con la ruta (/ = todos, /libros, /discoteca, etc.)
   useEffect(() => {
-    setTipoSlug(slugFromPath);
-  }, [slugFromPath]);
+    setTipoSlug(pathname === '/' ? null : slugFromPath);
+  }, [pathname, slugFromPath]);
 
   useEffect(() => {
     syncFromLocal().then(() => setSyncDone(true));
@@ -69,6 +70,9 @@ export default function LibrosCatalog() {
     return () => { cancelled = true; };
   }, [selectedBook?.id]);
 
+  // Filtro activo: slug de la URL (pathname) para que /discoteca etc. filtren desde la primera carga
+  const tipoSlugActive = pathname === '/' ? null : slugFromPath;
+
   useEffect(() => {
     if (!syncDone) return;
     const fetchBooks = async () => {
@@ -77,13 +81,13 @@ export default function LibrosCatalog() {
         setError(null);
         let resultado;
         if (hastagFromUrl) {
-          resultado = await getBooksByHastag(hastagFromUrl, tipoSlug);
+          resultado = await getBooksByHastag(hastagFromUrl, tipoSlugActive);
         } else if (busqueda) {
-          resultado = await searchBooks(busqueda, filtrarPor, tipoSlug);
+          resultado = await searchBooks(busqueda, filtrarPor, tipoSlugActive);
         } else if (filtroLetra) {
-          resultado = await filterBooksByLetter(filtroLetra, filtrarPor, tipoSlug);
+          resultado = await filterBooksByLetter(filtroLetra, filtrarPor, tipoSlugActive);
         } else {
-          resultado = await getAllBooks(tipoSlug);
+          resultado = await getAllBooks(tipoSlugActive);
         }
         setLibros(resultado);
       } catch (err) {
@@ -96,20 +100,20 @@ export default function LibrosCatalog() {
       }
     };
     fetchBooks();
-  }, [syncDone, hastagFromUrl, filtroLetra, filtrarPor, busqueda, tipoSlug]);
+  }, [syncDone, hastagFromUrl, filtroLetra, filtrarPor, busqueda, tipoSlugActive]);
 
   const refreshBooks = useCallback(async () => {
     try {
       let resultado;
-      if (hastagFromUrl) resultado = await getBooksByHastag(hastagFromUrl, tipoSlug);
-      else if (busqueda) resultado = await searchBooks(busqueda, filtrarPor, tipoSlug);
-      else if (filtroLetra) resultado = await filterBooksByLetter(filtroLetra, filtrarPor, tipoSlug);
-      else resultado = await getAllBooks(tipoSlug);
+      if (hastagFromUrl) resultado = await getBooksByHastag(hastagFromUrl, tipoSlugActive);
+      else if (busqueda) resultado = await searchBooks(busqueda, filtrarPor, tipoSlugActive);
+      else if (filtroLetra) resultado = await filterBooksByLetter(filtroLetra, filtrarPor, tipoSlugActive);
+      else resultado = await getAllBooks(tipoSlugActive);
       setLibros(resultado);
     } catch {
       // ignorar
     }
-  }, [hastagFromUrl, busqueda, filtrarPor, filtroLetra, tipoSlug]);
+  }, [hastagFromUrl, busqueda, filtrarPor, filtroLetra, tipoSlugActive]);
 
   const handleDeleteBook = async (libro) => {
     if (!libro?.id) return;
@@ -155,8 +159,8 @@ export default function LibrosCatalog() {
           <span className="filtro-tipo-label">Tipo:</span>
           <button
             type="button"
-            onClick={() => setTipoSlug(null)}
-            className={tipoSlug === null ? 'activo' : ''}
+            onClick={() => navigate('/')}
+            className={tipoSlugActive === null ? 'activo' : ''}
           >
             Todos
           </button>
@@ -164,8 +168,8 @@ export default function LibrosCatalog() {
             <button
               key={tc.id}
               type="button"
-              onClick={() => setTipoSlug(tc.slug)}
-              className={tipoSlug === tc.slug ? 'activo' : ''}
+              onClick={() => navigate(`/${tc.slug}`)}
+              className={tipoSlugActive === tc.slug ? 'activo' : ''}
             >
               {tc.nombre}
             </button>
@@ -187,11 +191,12 @@ export default function LibrosCatalog() {
               setPaginaActual(1);
             }}
           />
-          {(busqueda || filtroLetra || hastagFromUrl || tipoSlug) && (
+          {(busqueda || filtroLetra || hastagFromUrl || tipoSlugActive) && (
             <button
               onClick={() => {
                 limpiarFiltros();
                 setTipoSlug(null);
+                navigate('/');
               }}
               type="button"
             >
@@ -251,7 +256,7 @@ export default function LibrosCatalog() {
           <div className="resultados-info">
             <p>
               {libros.length} título(s) encontrado(s)
-              {tipoSlug ? ` en ${tiposColeccion.find((tc) => tc.slug === tipoSlug)?.nombre ?? tipoSlug}` : ''}
+              {tipoSlugActive ? ` en ${tiposColeccion.find((tc) => tc.slug === tipoSlugActive)?.nombre ?? tipoSlugActive}` : ''}
               {hastagFromUrl ? ` con hastag #${hastagFromUrl.replace(/^#+/, '')}` : ''}
               {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
               {busqueda ? ` que contienen "${busqueda}"` : ''}
