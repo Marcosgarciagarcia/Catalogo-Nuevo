@@ -11,6 +11,29 @@ function cors(res) {
   return res.status(200).json({});
 }
 
+/**
+ * Normaliza el slug de tipo de colección: decodifica si viene codificado y unifica a NFC (Unicode).
+ * Así coincidimos con el valor almacenado en core_tipos_coleccion.slug (ej. "música").
+ */
+function normalizarTipoSlug(val) {
+  if (val == null || String(val).trim() === '') return null;
+  let s = String(val).trim();
+  try {
+    if (s.includes('%')) s = decodeURIComponent(s);
+  } catch (_) {}
+  s = s.normalize('NFC').trim();
+  return s || null;
+}
+
+/** Slug sin tildes/ñ para fallback si en BD está guardado así (ej. "musica" en vez de "música"). */
+function slugSinAcentos(slug) {
+  if (!slug || typeof slug !== 'string') return slug;
+  return slug
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/ñ/gi, 'n');
+}
+
 /** Añade # al inicio de cada palabra si no empieza por almohadilla (ASC 35) */
 function normalizarHastag(texto) {
   if (texto == null || typeof texto !== 'string') return null;
@@ -299,7 +322,7 @@ export default async function handler(req, res) {
       const hastagTag = hastagParam != null && String(hastagParam).trim() !== ''
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
-      const tipoSlug = tipoParam != null && String(tipoParam).trim() !== '' ? String(tipoParam).trim() : null;
+      const tipoSlug = normalizarTipoSlug(tipoParam);
 
       if (hastagTag) {
         query = tipoSlug ? QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO : QUERIES.GET_BOOKS_BY_HASTAG;
@@ -331,7 +354,15 @@ export default async function handler(req, res) {
         tipoParam: tipoSlug,
         params,
       };
-      const books = await executeQuery(query, params);
+      let books = await executeQuery(query, params);
+      // Fallback: si filtro por tipo y no hay resultados, probar slug sin tildes (p. ej. "musica" en BD)
+      if (tipoSlug && books.length === 0 && !hastagTag && !search && !letter) {
+        const slugAlt = slugSinAcentos(tipoSlug);
+        if (slugAlt && slugAlt !== tipoSlug) {
+          const paramsAlt = [slugAlt];
+          books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, paramsAlt);
+        }
+      }
       const sanitized = books.map(sanitizeBook);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
@@ -396,7 +427,7 @@ export default async function handler(req, res) {
       const hastagTag = hastagParam != null && String(hastagParam).trim() !== ''
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
-      const tipoSlug = tipoParam != null && String(tipoParam).trim() !== '' ? String(tipoParam).trim() : null;
+      const tipoSlug = normalizarTipoSlug(tipoParam);
       if (hastagTag) {
         query = tipoSlug ? QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO : QUERIES.GET_BOOKS_BY_HASTAG;
         params = tipoSlug ? [tipoSlug, hastagTag] : [hastagTag];
@@ -427,7 +458,13 @@ export default async function handler(req, res) {
         tipoParam: tipoSlug,
         params,
       };
-      const books = await executeQuery(query, params);
+      let books = await executeQuery(query, params);
+      if (tipoSlug && books.length === 0 && !hastagTag && !search && !letter) {
+        const slugAlt = slugSinAcentos(tipoSlug);
+        if (slugAlt && slugAlt !== tipoSlug) {
+          books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, [slugAlt]);
+        }
+      }
       const sanitized = books.map(sanitizeBook);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
