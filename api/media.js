@@ -34,6 +34,23 @@ function slugSinAcentos(slug) {
     .replace(/ñ/gi, 'n');
 }
 
+/**
+ * Resuelve slug de tipo → id cargando todos los tipos y emparejando en JS (normalizado).
+ * Así siempre filtramos por id y evitamos desajustes por encoding o slug distinto en BD.
+ */
+async function resolveTipoSlugToId(tipoSlug) {
+  if (!tipoSlug || typeof tipoSlug !== 'string') return null;
+  const tipos = await executeQuery(QUERIES.GET_TIPOS_COLECCION);
+  if (!Array.isArray(tipos) || tipos.length === 0) return null;
+  const slugNorm = tipoSlug.normalize('NFC').trim();
+  const slugAlt = slugSinAcentos(tipoSlug);
+  const found = tipos.find((tc) => {
+    const s = (tc.slug ?? '').normalize('NFC').trim();
+    return s === slugNorm || slugSinAcentos(s) === slugAlt;
+  });
+  return found?.id != null ? found.id : null;
+}
+
 /** Añade # al inicio de cada palabra si no empieza por almohadilla (ASC 35) */
 function normalizarHastag(texto) {
   if (texto == null || typeof texto !== 'string') return null;
@@ -323,13 +340,8 @@ export default async function handler(req, res) {
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
       const tipoSlug = normalizarTipoSlug(tipoParam);
-      // Resolver slug → id para filtrar por id (evita desajuste si el slug en BD es distinto, ej. "discoteca" vs "música")
-      let tipoId = null;
-      if (tipoSlug) {
-        const slugAlt = slugSinAcentos(tipoSlug);
-        const rows = await executeQuery(QUERIES.GET_TIPO_ID_BY_SLUG, [tipoSlug, slugAlt || tipoSlug]);
-        if (rows?.[0]?.id != null) tipoId = rows[0].id;
-      }
+      // Siempre resolver slug → id cargando tipos y emparejando en JS (así filtramos siempre por id)
+      const tipoId = tipoSlug ? await resolveTipoSlugToId(tipoSlug) : null;
 
       if (hastagTag) {
         if (tipoId != null) {
@@ -385,7 +397,6 @@ export default async function handler(req, res) {
         params,
       };
       let books = await executeQuery(query, params);
-      // Fallback: si filtro por slug y no hubo tipoId (slug no encontrado) y no hay resultados, probar slug sin tildes
       if (tipoSlug && tipoId == null && books.length === 0 && !hastagTag && !search && !letter) {
         const slugAlt = slugSinAcentos(tipoSlug);
         if (slugAlt && slugAlt !== tipoSlug) {
@@ -457,12 +468,7 @@ export default async function handler(req, res) {
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
       const tipoSlug = normalizarTipoSlug(tipoParam);
-      let tipoId = null;
-      if (tipoSlug) {
-        const slugAlt = slugSinAcentos(tipoSlug);
-        const rows = await executeQuery(QUERIES.GET_TIPO_ID_BY_SLUG, [tipoSlug, slugAlt || tipoSlug]);
-        if (rows?.[0]?.id != null) tipoId = rows[0].id;
-      }
+      const tipoId = tipoSlug ? await resolveTipoSlugToId(tipoSlug) : null;
       if (hastagTag) {
         if (tipoId != null) {
           query = QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO_ID;

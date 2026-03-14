@@ -179,16 +179,19 @@ export default function LibrosCatalog() {
           >
             Todos
           </button>
-          {tiposColeccion.map((tc) => (
-            <button
-              key={tc.id}
-              type="button"
-              onClick={() => navigate(`/${tc.slug}`)}
-              className={tipoSlugActive === tc.slug ? 'activo' : ''}
-            >
-              {tc.nombre}
-            </button>
-          ))}
+          {tiposColeccion.map((tc) => {
+            const isActive = tipoSlugActive === tc.slug || (filterApplied?.tipoId != null && Number(filterApplied.tipoId) === Number(tc.id));
+            return (
+              <button
+                key={tc.id}
+                type="button"
+                onClick={() => navigate(`/${tc.slug}`)}
+                className={isActive ? 'activo' : ''}
+              >
+                {tc.nombre}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -271,7 +274,9 @@ export default function LibrosCatalog() {
           <div className="resultados-info">
             <p>
               {libros.length} título(s) encontrado(s)
-              {tipoSlugActive ? ` en ${tiposColeccion.find((tc) => tc.slug === tipoSlugActive)?.nombre ?? tipoSlugActive}` : ''}
+              {tipoSlugActive || filterApplied?.tipoId != null
+                ? ` en ${tiposColeccion.find((tc) => tc.slug === tipoSlugActive || Number(tc.id) === Number(filterApplied?.tipoId))?.nombre ?? tipoSlugActive ?? ''}`
+                : ''}
               {hastagFromUrl ? ` con hastag #${hastagFromUrl.replace(/^#+/, '')}` : ''}
               {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
               {busqueda ? ` que contienen "${busqueda}"` : ''}
