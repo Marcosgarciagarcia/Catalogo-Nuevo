@@ -323,13 +323,31 @@ export default async function handler(req, res) {
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
       const tipoSlug = normalizarTipoSlug(tipoParam);
+      // Resolver slug → id para filtrar por id (evita desajuste si el slug en BD es distinto, ej. "discoteca" vs "música")
+      let tipoId = null;
+      if (tipoSlug) {
+        const slugAlt = slugSinAcentos(tipoSlug);
+        const rows = await executeQuery(QUERIES.GET_TIPO_ID_BY_SLUG, [tipoSlug, slugAlt || tipoSlug]);
+        if (rows?.[0]?.id != null) tipoId = rows[0].id;
+      }
 
       if (hastagTag) {
-        query = tipoSlug ? QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO : QUERIES.GET_BOOKS_BY_HASTAG;
-        params = tipoSlug ? [tipoSlug, hastagTag] : [hastagTag];
+        if (tipoId != null) {
+          query = QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO_ID;
+          params = [tipoId, hastagTag];
+        } else if (tipoSlug) {
+          query = QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO;
+          params = [tipoSlug, hastagTag];
+        } else {
+          query = QUERIES.GET_BOOKS_BY_HASTAG;
+          params = [hastagTag];
+        }
       } else if (search) {
         const searchPattern = `%${search}%`;
-        if (tipoSlug) {
+        if (tipoId != null) {
+          query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO_ID : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO_ID;
+          params = [tipoId, searchPattern];
+        } else if (tipoSlug) {
           query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO;
           params = [tipoSlug, searchPattern];
         } else {
@@ -338,7 +356,10 @@ export default async function handler(req, res) {
         }
       } else if (letter) {
         const letterPattern = `${letter}%`;
-        if (tipoSlug) {
+        if (tipoId != null) {
+          query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO_ID : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO_ID;
+          params = [tipoId, letterPattern];
+        } else if (tipoSlug) {
           query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO;
           params = [tipoSlug, letterPattern];
         } else {
@@ -346,21 +367,29 @@ export default async function handler(req, res) {
           params = [letterPattern];
         }
       } else {
-        query = tipoSlug ? QUERIES.GET_ALL_BOOKS_BY_TIPO : QUERIES.GET_ALL_BOOKS;
-        params = tipoSlug ? [tipoSlug] : [];
+        if (tipoId != null) {
+          query = QUERIES.GET_ALL_BOOKS_BY_TIPO_ID;
+          params = [tipoId];
+        } else if (tipoSlug) {
+          query = QUERIES.GET_ALL_BOOKS_BY_TIPO;
+          params = [tipoSlug];
+        } else {
+          query = QUERIES.GET_ALL_BOOKS;
+          params = [];
+        }
       }
       const filterApplied = {
-        sqlCondition: tipoSlug ? 'WHERE tc.slug = ? (JOIN core_soportes + core_tipos_coleccion)' : 'Sin filtro por tipo',
+        sqlCondition: tipoSlug ? (tipoId != null ? 'WHERE tc.id = ? (JOIN core_soportes + core_tipos_coleccion)' : 'WHERE tc.slug = ? (JOIN core_soportes + core_tipos_coleccion)') : 'Sin filtro por tipo',
         tipoParam: tipoSlug,
+        tipoId: tipoId ?? undefined,
         params,
       };
       let books = await executeQuery(query, params);
-      // Fallback: si filtro por tipo y no hay resultados, probar slug sin tildes (p. ej. "musica" en BD)
-      if (tipoSlug && books.length === 0 && !hastagTag && !search && !letter) {
+      // Fallback: si filtro por slug y no hubo tipoId (slug no encontrado) y no hay resultados, probar slug sin tildes
+      if (tipoSlug && tipoId == null && books.length === 0 && !hastagTag && !search && !letter) {
         const slugAlt = slugSinAcentos(tipoSlug);
         if (slugAlt && slugAlt !== tipoSlug) {
-          const paramsAlt = [slugAlt];
-          books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, paramsAlt);
+          books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, [slugAlt]);
         }
       }
       const sanitized = books.map(sanitizeBook);
@@ -428,12 +457,29 @@ export default async function handler(req, res) {
         ? '#' + String(hastagParam).trim().replace(/^#+/, '')
         : null;
       const tipoSlug = normalizarTipoSlug(tipoParam);
+      let tipoId = null;
+      if (tipoSlug) {
+        const slugAlt = slugSinAcentos(tipoSlug);
+        const rows = await executeQuery(QUERIES.GET_TIPO_ID_BY_SLUG, [tipoSlug, slugAlt || tipoSlug]);
+        if (rows?.[0]?.id != null) tipoId = rows[0].id;
+      }
       if (hastagTag) {
-        query = tipoSlug ? QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO : QUERIES.GET_BOOKS_BY_HASTAG;
-        params = tipoSlug ? [tipoSlug, hastagTag] : [hastagTag];
+        if (tipoId != null) {
+          query = QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO_ID;
+          params = [tipoId, hastagTag];
+        } else if (tipoSlug) {
+          query = QUERIES.GET_BOOKS_BY_HASTAG_BY_TIPO;
+          params = [tipoSlug, hastagTag];
+        } else {
+          query = QUERIES.GET_BOOKS_BY_HASTAG;
+          params = [hastagTag];
+        }
       } else if (search) {
         const searchPattern = `%${search}%`;
-        if (tipoSlug) {
+        if (tipoId != null) {
+          query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO_ID : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO_ID;
+          params = [tipoId, searchPattern];
+        } else if (tipoSlug) {
           query = searchBy === 'autor' ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO;
           params = [tipoSlug, searchPattern];
         } else {
@@ -442,7 +488,10 @@ export default async function handler(req, res) {
         }
       } else if (letter) {
         const letterPattern = `${letter}%`;
-        if (tipoSlug) {
+        if (tipoId != null) {
+          query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO_ID : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO_ID;
+          params = [tipoId, letterPattern];
+        } else if (tipoSlug) {
           query = filterBy === 'autor' ? QUERIES.FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO : QUERIES.FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO;
           params = [tipoSlug, letterPattern];
         } else {
@@ -450,16 +499,25 @@ export default async function handler(req, res) {
           params = [letterPattern];
         }
       } else {
-        query = tipoSlug ? QUERIES.GET_ALL_BOOKS_BY_TIPO : QUERIES.GET_ALL_BOOKS;
-        params = tipoSlug ? [tipoSlug] : [];
+        if (tipoId != null) {
+          query = QUERIES.GET_ALL_BOOKS_BY_TIPO_ID;
+          params = [tipoId];
+        } else if (tipoSlug) {
+          query = QUERIES.GET_ALL_BOOKS_BY_TIPO;
+          params = [tipoSlug];
+        } else {
+          query = QUERIES.GET_ALL_BOOKS;
+          params = [];
+        }
       }
       const filterApplied = {
-        sqlCondition: tipoSlug ? 'WHERE tc.slug = ? (JOIN core_soportes + core_tipos_coleccion)' : 'Sin filtro por tipo',
+        sqlCondition: tipoSlug ? (tipoId != null ? 'WHERE tc.id = ? (JOIN core_soportes + core_tipos_coleccion)' : 'WHERE tc.slug = ? (JOIN core_soportes + core_tipos_coleccion)') : 'Sin filtro por tipo',
         tipoParam: tipoSlug,
+        tipoId: tipoId ?? undefined,
         params,
       };
       let books = await executeQuery(query, params);
-      if (tipoSlug && books.length === 0 && !hastagTag && !search && !letter) {
+      if (tipoSlug && tipoId == null && books.length === 0 && !hastagTag && !search && !letter) {
         const slugAlt = slugSinAcentos(tipoSlug);
         if (slugAlt && slugAlt !== tipoSlug) {
           books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, [slugAlt]);
