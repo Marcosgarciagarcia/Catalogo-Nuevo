@@ -115,64 +115,88 @@ function msToDuracion(ms) {
 }
 
 async function fetchMBReleaseByBarcode(ean) {
-  const clean = String(ean).replace(/\D/g, '').trim();
-  if (!clean) return null;
-  const res = await fetch(`${MUSICBRAINZ_BASE}/release?query=barcode:${encodeURIComponent(clean)}&fmt=json&limit=5`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
-  if (!res.ok) return null;
-  const data = await res.json().catch(() => null);
-  if (!data?.releases?.length) return null;
-  const r = data.releases[0];
-  const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
-  let year = null;
-  if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
-  return { releaseId: r.id, title: r.title ?? null, artist, date: r.date ?? null, year, barcode: r.barcode ?? null };
+  try {
+    const clean = String(ean).replace(/\D/g, '').trim();
+    if (!clean) return null;
+    const res = await fetch(`${MUSICBRAINZ_BASE}/release?query=barcode:${encodeURIComponent(clean)}&fmt=json&limit=5`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    if (!data?.releases?.length) return null;
+    const r = data.releases[0];
+    const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    let year = null;
+    if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
+    return { releaseId: r.id, title: r.title ?? null, artist, date: r.date ?? null, year, barcode: r.barcode ?? null };
+  } catch (_) {
+    return null;
+  }
 }
 
 async function fetchMBReleaseByQuery(artist, releaseTitle) {
-  const parts = [];
-  if (artist && String(artist).trim()) parts.push(`artist:${encodeURIComponent(String(artist).trim())}`);
-  if (releaseTitle && String(releaseTitle).trim()) parts.push(`release:${encodeURIComponent(String(releaseTitle).trim())}`);
-  if (parts.length === 0) return null;
-  const res = await fetch(`${MUSICBRAINZ_BASE}/release?query=${parts.join('+')}&fmt=json&limit=5`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
-  if (!res.ok) return null;
-  const data = await res.json().catch(() => null);
-  if (!data?.releases?.length) return null;
-  const r = data.releases[0];
-  const artistName = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
-  let year = null;
-  if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
-  return { releaseId: r.id, title: r.title ?? null, artist: artistName, date: r.date ?? null, year, barcode: r.barcode ?? null };
+  try {
+    const parts = [];
+    if (artist && String(artist).trim()) parts.push(`artist:${encodeURIComponent(String(artist).trim())}`);
+    if (releaseTitle && String(releaseTitle).trim()) parts.push(`release:${encodeURIComponent(String(releaseTitle).trim())}`);
+    if (parts.length === 0) return null;
+    const res = await fetch(`${MUSICBRAINZ_BASE}/release?query=${parts.join('+')}&fmt=json&limit=5`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    if (!data?.releases?.length) return null;
+    const r = data.releases[0];
+    const artistName = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    let year = null;
+    if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
+    return { releaseId: r.id, title: r.title ?? null, artist: artistName, date: r.date ?? null, year, barcode: r.barcode ?? null };
+  } catch (_) {
+    return null;
+  }
 }
 
 async function fetchMBReleaseWithTracks(releaseId) {
-  if (!releaseId) return null;
-  const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings+labels&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
-  if (!res.ok) return null;
-  const r = await res.json().catch(() => null);
-  if (!r || !r.id) return null;
-  const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
-  let year = null;
-  if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
-  const labelInfo = r['label-info'];
-  const editorial = (Array.isArray(labelInfo) && labelInfo[0]?.label?.name) ? labelInfo[0].label.name : null;
-  const temas = [];
-  for (const medium of r.media ?? []) {
-    for (const t of medium.tracks ?? []) {
-      const pos = t.position ?? temas.length + 1;
-      temas.push({ numero: pos, titulo: t.title ?? t.recording?.title ?? '', duracion: msToDuracion(t.length ?? t.recording?.length) });
+  try {
+    if (!releaseId) return null;
+    const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings+labels&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+    if (!res.ok) return null;
+    const r = await res.json().catch(() => null);
+    if (!r || !r.id) return null;
+    const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    let year = null;
+    if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
+    let editorial = null;
+    try {
+      const labelInfo = r['label-info'];
+      if (Array.isArray(labelInfo) && labelInfo[0]?.label?.name) editorial = labelInfo[0].label.name;
+    } catch (_) {}
+    const temas = [];
+    for (const medium of r.media ?? []) {
+      for (const t of medium.tracks ?? []) {
+        const pos = t.position ?? temas.length + 1;
+        temas.push({ numero: pos, titulo: t.title ?? t.recording?.title ?? '', duracion: msToDuracion(t.length ?? t.recording?.length) });
+      }
     }
+    return { title: r.title ?? null, artist, date: r.date ?? null, year, editorial, temas };
+  } catch (_) {
+    return null;
   }
-  return { title: r.title ?? null, artist, date: r.date ?? null, year, editorial: editorial ?? null, temas };
 }
 
 async function fetchCoverArt(mbid) {
-  if (!mbid) return null;
-  const res = await fetch(`${COVERART_BASE}/release/${mbid}`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
-  if (!res.ok) return null;
-  const data = await res.json().catch(() => null);
-  if (!data?.images?.length) return null;
-  const front = data.images.find((i) => i.front === true) ?? data.images[0];
-  return front?.image ?? null;
+  try {
+    if (!mbid) return null;
+    const res = await fetch(`${COVERART_BASE}/release/${mbid}`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    if (!data?.images?.length) return null;
+    const front = data.images.find((i) => i.front === true) ?? data.images[0];
+    return front?.image ?? null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store');
 }
 
 async function handleLookupDisc(req, res) {
@@ -182,61 +206,45 @@ async function handleLookupDisc(req, res) {
     return res.status(200).end();
   }
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  const ean = (req.query.ean || '').replace(/\D/g, '').trim();
-  const artist = (req.query.artist || '').trim();
-  const release = (req.query.release || req.query.title || '').trim();
-  let first = null;
-  if (ean) first = await fetchMBReleaseByBarcode(ean);
-  else if (artist || release) first = await fetchMBReleaseByQuery(artist, release);
-  if (!first) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'no-store');
+  try {
+    const ean = (req.query.ean || '').replace(/\D/g, '').trim();
+    const artist = (req.query.artist || '').trim();
+    const release = (req.query.release || req.query.title || '').trim();
+    let first = null;
+    if (ean) first = await fetchMBReleaseByBarcode(ean);
+    else if (artist || release) first = await fetchMBReleaseByQuery(artist, release);
+    if (!first) {
+      setCors(res);
+      return res.status(200).json(null);
+    }
+    await new Promise((r) => setTimeout(r, 1200));
+    const detail = await fetchMBReleaseWithTracks(first.releaseId);
+    if (!detail) {
+      setCors(res);
+      return res.status(200).json({ titulo: first.title, autor: first.artist, anyoEdicion: first.year, editorial: null, portadaUrl: null, temas: [] });
+    }
+    let portadaUrl = null;
+    try {
+      await new Promise((r) => setTimeout(r, 1200));
+      portadaUrl = await fetchCoverArt(first.releaseId);
+    } catch (_) {}
+    setCors(res);
+    return res.status(200).json({
+      titulo: detail.title,
+      autor: detail.artist,
+      anyoEdicion: detail.year,
+      editorial: detail.editorial ?? null,
+      portadaUrl: portadaUrl ?? null,
+      temas: detail.temas ?? [],
+    });
+  } catch (err) {
+    console.error('lookup-disc:', err);
+    setCors(res);
     return res.status(200).json(null);
   }
-  await new Promise((r) => setTimeout(r, 1200));
-  const detail = await fetchMBReleaseWithTracks(first.releaseId);
-  if (!detail) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ titulo: first.title, autor: first.artist, anyoEdicion: first.year, editorial: null, portadaUrl: null, temas: [] });
-  }
-  let portadaUrl = null;
-  try {
-    await new Promise((r) => setTimeout(r, 1200));
-    portadaUrl = await fetchCoverArt(first.releaseId);
-  } catch (_) {}
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'no-store');
-  return res.status(200).json({
-    titulo: detail.title,
-    autor: detail.artist,
-    anyoEdicion: detail.year,
-    editorial: detail.editorial ?? null,
-    portadaUrl: portadaUrl ?? null,
-    temas: detail.temas ?? [],
-  });
 }
 
-async function fetchMBReleaseWithTracks(releaseId) {
-  if (!releaseId) return null;
-  const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings+labels&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
-  if (!res.ok) return null;
-  const r = await res.json().catch(() => null);
-  if (!r || !r.id) return null;
-  const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
-  let year = null;
-  if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
-  const labelInfo = r['label-info'];
-  const editorial = (Array.isArray(labelInfo) && labelInfo[0]?.label?.name) ? labelInfo[0].label.name : null;
-  const temas = [];
-  for (const medium of r.media ?? []) {
-    for (const t of medium.tracks ?? []) {
-      const pos = t.position ?? temas.length + 1;
-      temas.push({ numero: pos, titulo: t.title ?? t.recording?.title ?? '', duracion: msToDuracion(t.length ?? t.recording?.length) });
-    }
-  }
-  return { title: r.title ?? null, artist, date: r.date ?? null, year, editorial: editorial ?? null, temas };
-}
+// (fetchMBReleaseWithTracks está definida más arriba; esta duplicada se elimina para evitar sobrescritura)
 
 // ---------- upload-cover (Cloudinary) ----------
 const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.VITE_CLOUDINARY_CLOUD_NAME;
