@@ -2,6 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/lookup-isbn", "destination": "/api/external?route=lookup-isbn" },
+    { "source": "/api/lookup-disc", "destination": "/api/external?route=lookup-disc" },
+    { "source": "/api/upload-cover", "destination": "/api/external?route=upload-cover" },
     { "source": "/api/media/:path*", "destination": "/api/media?path=:path*" },
     { "source": "/", "destination": "/index.html" },
     {
