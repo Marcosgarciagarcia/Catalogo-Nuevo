@@ -375,3 +375,212 @@ export async function fetchBookMetadataByIsbn(isbn) {
   if (fromOpenLibrary != null) return fromOpenLibrary;
   return fetchGoogleBooksByIsbn(isbn);
 }
+
+// ==================== Discoteca: MusicBrainz + Cover Art Archive (sin API key) ====================
+
+const MUSICBRAINZ_USER_AGENT = 'CatalogoDiscoteca/1.0 (https://github.com/catalogo)';
+const MUSICBRAINZ_BASE = 'https://musicbrainz.org/ws/2';
+const COVERART_BASE = 'https://coverartarchive.org';
+
+function msToDuracion(ms) {
+  if (ms == null || typeof ms !== 'number' || ms < 0) return null;
+  const totalSec = Math.round(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/**
+ * Busca un release (disco) en MusicBrainz por código de barras EAN.
+ * Respuesta: { releaseId, title, artist, date, barcode } o null.
+ * Límite: 1 petición por segundo (MusicBrainz).
+ */
+export async function fetchMusicBrainzReleaseByBarcode(ean) {
+  const clean = String(ean).replace(/\D/g, '').trim();
+  if (!clean) return null;
+  const url = `${MUSICBRAINZ_BASE}/release?query=barcode:${encodeURIComponent(clean)}&fmt=json&limit=5`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
+  });
+  if (!response.ok) return null;
+  const data = await response.json().catch(() => null);
+  if (!data?.releases?.length) return null;
+  const r = data.releases[0];
+  const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  let year = null;
+  if (r.date) {
+    const match = r.date.match(/\d{4}/);
+    if (match) year = parseInt(match[0], 10);
+  }
+  return {
+    releaseId: r.id,
+    title: r.title ?? null,
+    artist,
+    date: r.date ?? null,
+    year,
+    barcode: r.barcode ?? null,
+  };
+}
+
+/**
+ * Busca un release por artista y título (cuando no hay EAN).
+ * Respuesta: misma forma que fetchMusicBrainzReleaseByBarcode.
+ */
+export async function fetchMusicBrainzReleaseByQuery(artist, releaseTitle) {
+  const parts = [];
+  if (artist && String(artist).trim()) parts.push(`artist:${encodeURIComponent(String(artist).trim())}`);
+  if (releaseTitle && String(releaseTitle).trim()) parts.push(`release:${encodeURIComponent(String(releaseTitle).trim())}`);
+  if (parts.length === 0) return null;
+  const query = parts.join('+');
+  const url = `${MUSICBRAINZ_BASE}/release?query=${query}&fmt=json&limit=5`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
+  });
+  if (!response.ok) return null;
+  const data = await response.json().catch(() => null);
+  if (!data?.releases?.length) return null;
+  const r = data.releases[0];
+  const artistName = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  let year = null;
+  if (r.date) {
+    const match = r.date.match(/\d{4}/);
+    if (match) year = parseInt(match[0], 10);
+  }
+  return {
+    releaseId: r.id,
+    title: r.title ?? null,
+    artist: artistName,
+    date: r.date ?? null,
+    year,
+    barcode: r.barcode ?? null,
+  };
+}
+
+/**
+ * Obtiene el detalle de un release con la lista de temas (recordings).
+ * Respuesta: { title, artist, date, year, temas: [{ numero, titulo, duracion }] }.
+ */
+export async function fetchMusicBrainzReleaseWithTracks(releaseId) {
+  if (!releaseId) return null;
+  const url = `${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings&fmt=json`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
+  });
+  if (!response.ok) return null;
+  const r = await response.json().catch(() => null);
+  if (!r || !r.id) return null;
+  const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  let year = null;
+  if (r.date) {
+    const match = r.date.match(/\d{4}/);
+    if (match) year = parseInt(match[0], 10);
+  }
+  const temas = [];
+  const media = r.media ?? [];
+  for (const medium of media) {
+    const tracks = medium.tracks ?? [];
+    for (const t of tracks) {
+      const pos = t.position ?? temas.length + 1;
+      const titulo = t.title ?? t.recording?.title ?? '';
+      const lengthMs = t.length ?? t.recording?.length;
+      temas.push({
+        numero: pos,
+        titulo,
+        duracion: msToDuracion(lengthMs),
+      });
+    }
+  }
+  return {
+    title: r.title ?? null,
+    artist,
+    date: r.date ?? null,
+    year,
+    temas,
+  };
+}
+
+/**
+ * Portada de un release desde Cover Art Archive (sin API key).
+ * Devuelve la URL de la imagen frontal o null.
+ */
+export async function fetchCoverArtArchiveRelease(mbid) {
+  if (!mbid) return null;
+  const response = await fetch(`${COVERART_BASE}/release/${mbid}`, {
+    method: 'GET',
+    headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
+  });
+  if (!response.ok) return null;
+  const data = await response.json().catch(() => null);
+  if (!data?.images?.length) return null;
+  const front = data.images.find((i) => i.front === true) ?? data.images[0];
+  return front?.image ?? null;
+}
+
+/**
+ * Busca datos de un disco (álbum) por EAN: título, autor, año y listado de temas.
+ * Usa MusicBrainz (búsqueda por barcode + lookup con recordings) y Cover Art Archive para portada.
+ * Respuesta: { titulo, autor, anyoEdicion, portadaUrl?, temas: [{ numero, titulo, duracion }] } o null.
+ * MusicBrainz limita a 1 petición/segundo; se hace search + delay + lookup + opcional cover.
+ */
+export async function fetchAlbumMetadataByEan(ean) {
+  const first = await fetchMusicBrainzReleaseByBarcode(ean);
+  if (!first) return null;
+  await new Promise((r) => setTimeout(r, 1200));
+  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
+  if (!detail) {
+    return {
+      titulo: first.title,
+      autor: first.artist,
+      anyoEdicion: first.year,
+      portadaUrl: null,
+      temas: [],
+    };
+  }
+  let portadaUrl = null;
+  try {
+    await new Promise((r) => setTimeout(r, 1200));
+    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
+  } catch (_) {}
+  return {
+    titulo: detail.title,
+    autor: detail.artist,
+    anyoEdicion: detail.year,
+    portadaUrl: portadaUrl ?? null,
+    temas: detail.temas ?? [],
+  };
+}
+
+/**
+ * Busca datos de un disco por artista y título (sin EAN).
+ * Misma forma de respuesta que fetchAlbumMetadataByEan.
+ */
+export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
+  const first = await fetchMusicBrainzReleaseByQuery(artist, releaseTitle);
+  if (!first) return null;
+  await new Promise((r) => setTimeout(r, 1200));
+  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
+  if (!detail) {
+    return {
+      titulo: first.title,
+      autor: first.artist,
+      anyoEdicion: first.year,
+      portadaUrl: null,
+      temas: [],
+    };
+  }
+  let portadaUrl = null;
+  try {
+    await new Promise((r) => setTimeout(r, 1200));
+    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
+  } catch (_) {}
+  return {
+    titulo: detail.title,
+    autor: detail.artist,
+    anyoEdicion: detail.year,
+    portadaUrl: portadaUrl ?? null,
+    temas: detail.temas ?? [],
+  };
+}
