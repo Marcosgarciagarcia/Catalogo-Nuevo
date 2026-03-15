@@ -17,6 +17,28 @@ import { createClient } from '@libsql/client';
 import { executeQuery } from './lib/turso.js';
 import { SYNC_TABLE_CONFIG } from './lib/sync-config.js';
 
+/** Índice de codiEstante_id en el array de columnas de core_titulos (id + fields) */
+const CORE_TITULOS_CODIESTANTE_INDEX = 1 + SYNC_TABLE_CONFIG.core_titulos.fields.indexOf('codiEstante_id');
+
+/**
+ * Normaliza codiEstante_id para Turso: si la BD local tiene 106 (número) y en Turso
+ * el estante es "0106" (TEXT), la FK falla. Resolvemos buscando en Turso el codiEstante
+ * que coincida (exacto o por valor numérico) y usamos ese valor.
+ */
+async function normalizeCodiEstanteIdForTurso(val) {
+  if (val == null || val === '') return null;
+  try {
+    const asNum = Number(val);
+    const asStr = String(val).trim();
+    const rows = await executeQuery(
+      `SELECT codiEstante FROM core_ubicaciones_sub WHERE codiEstante = ? OR codiEstante = ? OR (CAST(codiEstante AS INTEGER) = ? AND ? IS NOT NULL) LIMIT 1`,
+      [val, asStr, asNum, asNum]
+    );
+    if (rows?.[0]?.codiEstante != null) return rows[0].codiEstante;
+  } catch (_) {}
+  return val;
+}
+
 function getLocalDbUrl() {
   const url = process.env.LOCAL_DATABASE_URL;
   if (url && typeof url === 'string' && url.startsWith('file:')) return url;
@@ -134,6 +156,11 @@ export default async function handler(req, res) {
       }
 
       const values = Array.isArray(row) ? [...row] : columns.map((c) => row[c]);
+
+      // Evitar error de FK en Turso: codiEstante_id puede ser TEXT "0106" en Turso y número 106 en local
+      if (table_name === 'core_titulos' && values[CORE_TITULOS_CODIESTANTE_INDEX] != null) {
+        values[CORE_TITULOS_CODIESTANTE_INDEX] = await normalizeCodiEstanteIdForTurso(values[CORE_TITULOS_CODIESTANTE_INDEX]);
+      }
 
       const insertSql = `INSERT INTO ${table_name} (${columns.join(', ')}) VALUES (${placeholders})`;
       const updateParts = fields.map((f) => `${f} = ?`).join(', ');

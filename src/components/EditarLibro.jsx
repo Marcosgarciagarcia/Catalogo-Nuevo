@@ -183,7 +183,8 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
       }
       if (codiUbicacion_id !== '') body.codiUbicacion_id = Number(codiUbicacion_id);
       else body.codiUbicacion_id = null;
-      if (codiEstante_id !== '') body.codiEstante_id = Number(codiEstante_id);
+      // codiEstante_id puede ser texto en BD (ej. "0106"). Enviar tal cual para no romper FK.
+      if (codiEstante_id !== '') body.codiEstante_id = codiEstante_id;
       else body.codiEstante_id = null;
       if (codiSoporte_id !== '') body.codiSoporte_id = Number(codiSoporte_id);
       else body.codiSoporte_id = null;

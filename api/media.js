@@ -288,8 +288,25 @@ export default async function handler(req, res) {
       const serie = (body.serie || '').trim() || null;
       const hastag = normalizarHastag(body.hastag);
       const codiUbicacion_id = body.codiUbicacion_id != null && body.codiUbicacion_id !== '' ? Number(body.codiUbicacion_id) : null;
-      const codiEstante_id = body.codiEstante_id != null && body.codiEstante_id !== '' ? Number(body.codiEstante_id) : null;
+      // codiEstante_id referencia core_ubicaciones_sub.codiEstante: puede ser TEXT (ej. "0106"). No convertir a Number para no romper FK.
+      const codiEstante_id = body.codiEstante_id != null && body.codiEstante_id !== ''
+        ? (typeof body.codiEstante_id === 'string' ? body.codiEstante_id.trim() : body.codiEstante_id)
+        : null;
       const codiSoporte_id = body.codiSoporte_id != null && body.codiSoporte_id !== '' ? Number(body.codiSoporte_id) : null;
+
+      // Validar FKs antes del UPDATE para devolver error claro si alguna no existe
+      if (codiUbicacion_id != null) {
+        const u = await executeQuery('SELECT 1 FROM core_ubicaciones WHERE id = ? LIMIT 1', [codiUbicacion_id]);
+        if (!u?.length) return res.status(400).json({ error: 'Ubicación seleccionada no existe en la base de datos.' });
+      }
+      if (codiEstante_id != null) {
+        const e = await executeQuery('SELECT 1 FROM core_ubicaciones_sub WHERE codiEstante = ? LIMIT 1', [codiEstante_id]);
+        if (!e?.length) return res.status(400).json({ error: 'Estante seleccionado no existe en la base de datos. Si el código es numérico (ej. 0106), no debe convertirse a número.' });
+      }
+      if (codiSoporte_id != null) {
+        const s = await executeQuery('SELECT 1 FROM core_soportes WHERE id = ? LIMIT 1', [codiSoporte_id]);
+        if (!s?.length) return res.status(400).json({ error: 'Soporte seleccionado no existe en la base de datos.' });
+      }
 
       await executeQuery(QUERIES.UPDATE_BOOK, [
         EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
