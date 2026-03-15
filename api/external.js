@@ -306,11 +306,42 @@ async function handleUploadCover(req, res) {
   }
 }
 
+// ---------- deezer-preview (proxy para evitar CORS en el navegador) ----------
+const DEEZER_SEARCH = 'https://api.deezer.com/search';
+
+async function handleDeezerPreview(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    return res.status(200).end();
+  }
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const q = (req.query.q || '').trim().slice(0, 200);
+  if (!q) return res.status(400).json({ error: 'Parámetro q es obligatorio' });
+  try {
+    const url = `${DEEZER_SEARCH}?q=${encodeURIComponent(q)}&limit=1`;
+    const deezerRes = await fetch(url, { method: 'GET' });
+    if (!deezerRes.ok) {
+      return res.status(502).json({ error: 'Deezer no disponible', preview: null });
+    }
+    const data = await deezerRes.json().catch(() => null);
+    const preview = data?.data?.[0]?.preview ?? null;
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.status(200).json({ preview });
+  } catch (err) {
+    console.error('deezer-preview:', err);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(500).json({ error: err?.message || 'Error al buscar preview', preview: null });
+  }
+}
+
 // ---------- router ----------
 export default async function handler(req, res) {
   const route = (req.query.route || '').toLowerCase();
   if (route === 'lookup-isbn') return handleLookupIsbn(req, res);
   if (route === 'lookup-disc') return handleLookupDisc(req, res);
   if (route === 'upload-cover') return handleUploadCover(req, res);
-  return res.status(404).json({ error: 'Ruta no encontrada. Use ?route=lookup-isbn|lookup-disc|upload-cover' });
+  if (route === 'deezer-preview') return handleDeezerPreview(req, res);
+  return res.status(404).json({ error: 'Ruta no encontrada. Use ?route=lookup-isbn|lookup-disc|upload-cover|deezer-preview' });
 }

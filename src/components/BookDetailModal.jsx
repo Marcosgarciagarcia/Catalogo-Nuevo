@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { getDeezerPreview } from '../services/tursoService';
 import './BookDetailModal.css';
 
 function DetailRow({ label, value }) {
@@ -35,9 +36,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
     if (!q) return;
     setPlayingTema(tituloTema);
     try {
-      const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=1`);
-      const data = await res.json();
-      const preview = data?.data?.[0]?.preview;
+      const preview = await getDeezerPreview(q);
       if (preview && audioRef.current) {
         audioRef.current.src = preview;
         audioRef.current.play().catch(() => {});

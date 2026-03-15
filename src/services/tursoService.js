@@ -49,6 +49,22 @@ async function apiGet(path, params = {}) {
 }
 
 /**
+ * Obtiene la URL de preview de un tema desde Deezer (vía proxy API para evitar CORS).
+ * @param {string} q - Búsqueda (ej. "Artist Song title")
+ * @returns {Promise<string|null>} URL del MP3 de preview (~30 s) o null
+ */
+export async function getDeezerPreview(q) {
+  const query = (q || '').trim().slice(0, 200);
+  if (!query) return null;
+  try {
+    const json = await apiGet('/api/external', { route: 'deezer-preview', q: query });
+    return json?.preview ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Tipos de colección para el selector inicial (menú dinámico).
  */
 export async function getCollectionTypes() {

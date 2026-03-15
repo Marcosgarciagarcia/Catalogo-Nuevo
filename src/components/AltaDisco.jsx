@@ -5,6 +5,7 @@ import {
   getPublishers,
   getSoportes,
   createBook,
+  getDeezerPreview,
   fetchAlbumMetadataByEan,
   fetchAlbumMetadataByQuery,
 } from '../services/tursoService';
@@ -190,9 +191,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     if (!q) return;
     setPlayingTema(tituloTema);
     try {
-      const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=1`);
-      const data = await res.json();
-      const preview = data?.data?.[0]?.preview;
+      const preview = await getDeezerPreview(q);
       if (preview && audioRef.current) {
         audioRef.current.src = preview;
         audioRef.current.play().catch(() => {});
