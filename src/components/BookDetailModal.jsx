@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import './BookDetailModal.css';
@@ -22,7 +23,31 @@ function Block({ title, children, twoCols }) {
 }
 
 function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
+  const [playingTema, setPlayingTema] = useState(null);
+  const audioRef = useRef(null);
+
   if (!libro) return null;
+
+  const playTemaPreview = async (tituloTema) => {
+    if (!tituloTema?.trim()) return;
+    const artist = (libro.nombreAutor || '').trim();
+    const q = [artist, tituloTema].filter(Boolean).join(' ').trim().slice(0, 100);
+    if (!q) return;
+    setPlayingTema(tituloTema);
+    try {
+      const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=1`);
+      const data = await res.json();
+      const preview = data?.data?.[0]?.preview;
+      if (preview && audioRef.current) {
+        audioRef.current.src = preview;
+        audioRef.current.play().catch(() => {});
+      } else {
+        setPlayingTema(null);
+      }
+    } catch {
+      setPlayingTema(null);
+    }
+  };
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
@@ -101,6 +126,31 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
               <DetailRow label="Ubicación" value={libro.ubicacionDesc} />
               <DetailRow label="Estante" value={libro.estanteDesc} />
             </Block>
+
+            {Array.isArray(libro.temas) && libro.temas.length > 0 && (
+              <Block title="Temas (pistas)">
+                <audio ref={audioRef} onEnded={() => setPlayingTema(null)} style={{ display: 'none' }} controls />
+                <ul className="modal-temas-list">
+                  {libro.temas.map((t, i) => (
+                    <li key={i} className="modal-tema-row">
+                      <span className="modal-tema-num">{t.numero}</span>
+                      <span className="modal-tema-titulo">{t.titulo || '—'}</span>
+                      {t.duracion && <span className="modal-tema-duracion">{t.duracion}</span>}
+                      <button
+                        type="button"
+                        className="modal-tema-play"
+                        onClick={() => playTemaPreview((t.titulo || '').trim())}
+                        disabled={!t.titulo?.trim() || playingTema !== null}
+                        title="Reproducir preview (Deezer)"
+                      >
+                        {playingTema === (t.titulo || '').trim() ? '⏸' : '▶'}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <p className="modal-temas-hint">La lista de temas y la reproducción son accesibles sin registro.</p>
+              </Block>
+            )}
 
             <Block title="Otros datos" twoCols>
               <DetailRow label="Contraportada" value={libro.contraportada} />
@@ -187,6 +237,11 @@ BookDetailModal.propTypes = {
     autorWiki: PropTypes.string,
     autorWiki2: PropTypes.string,
     portada_cloudinary: PropTypes.string,
+    temas: PropTypes.arrayOf(PropTypes.shape({
+      numero: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      titulo: PropTypes.string,
+      duracion: PropTypes.string,
+    })),
   }),
   onClose: PropTypes.func.isRequired,
   canEdit: PropTypes.bool,

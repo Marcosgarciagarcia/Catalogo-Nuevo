@@ -352,6 +352,9 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // GET (listado, detalle con temas, stats): accesible sin autenticación.
+    // La visualización de temas de cada disco y la reproducción (preview externa) son públicas.
+
     // GET /api/media/stats
     if (segment === 'stats') {
       const rows = await executeQuery(QUERIES.GET_BOOKS_STATS);
@@ -363,7 +366,18 @@ export default async function handler(req, res) {
       if (id) {
         const books = await executeQuery(QUERIES.GET_BOOK_BY_ID, [id]);
         if (!books?.length) return res.status(404).json({ error: 'Book not found' });
-        return res.status(200).json(sanitizeBook(books[0]));
+        const book = sanitizeBook(books[0]);
+        const temasRows = await executeQuery(QUERIES.GET_TEMAS_BY_TITULO_ID, [id]);
+        if (temasRows?.length) {
+          book.temas = temasRows.map((r) => ({
+            numero: r.numero,
+            titulo: r.nombreTema ?? '',
+            duracion: r.duracion ?? '',
+          }));
+        } else {
+          book.temas = [];
+        }
+        return res.status(200).json(book);
       }
       const { search, searchBy = 'titulo', letter, filterBy = 'titulo', hastag: hastagParam, tipo: tipoParam } = req.query;
       let query, params = [];
