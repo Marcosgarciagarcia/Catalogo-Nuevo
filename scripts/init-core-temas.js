@@ -50,10 +50,26 @@ const CREATE_TEMAS = `
   )
 `;
 
+/** Añade la columna numero si la tabla ya existía sin ella (migración). */
+async function ensureNumeroColumn() {
+  try {
+    const rows = await executeQuery('PRAGMA table_info(core_temas)');
+    const hasNumero = Array.isArray(rows) && rows.some((r) => (r.name || r.NAME) === 'numero');
+    if (!hasNumero && rows.length > 0) {
+      console.log('Añadiendo columna numero a core_temas...');
+      await executeQuery('ALTER TABLE core_temas ADD COLUMN numero INTEGER NOT NULL DEFAULT 1');
+      console.log('Columna numero añadida.');
+    }
+  } catch (e) {
+    console.warn('No se pudo comprobar/añadir columna numero:', e.message);
+  }
+}
+
 async function main() {
   console.log('Creando tabla core_temas en Turso...');
   await executeQuery(CREATE_TEMAS);
   console.log('Tabla core_temas creada o ya existía.');
+  await ensureNumeroColumn();
 }
 
 main().catch((err) => {
