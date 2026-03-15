@@ -5,6 +5,7 @@ import BookList from './BookList';
 import Pagination from './Pagination';
 import BookDetailModal from './BookDetailModal';
 import AltaLibro from './AltaLibro';
+import AltaDisco from './AltaDisco';
 import EditarLibro from './EditarLibro';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,6 +26,7 @@ export default function LibrosCatalog() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [detailBook, setDetailBook] = useState(null);
   const [showAltaLibro, setShowAltaLibro] = useState(false);
+  const [showAltaDisco, setShowAltaDisco] = useState(false);
   const [bookToEdit, setBookToEdit] = useState(null);
   const [syncDone, setSyncDone] = useState(false);
   const { getToken, isStaff, isAdmin } = useAuth();
@@ -57,10 +59,15 @@ export default function LibrosCatalog() {
 
   useEffect(() => {
     if (searchParams.get('openAlta') === '1') {
-      setShowAltaLibro(true);
+      const esDiscoteca = pathname !== '/' && (slugFromPath === 'discoteca' || pathname.replace(/^\//, '').startsWith('discoteca'));
+      if (esDiscoteca) {
+        setShowAltaDisco(true);
+      } else {
+        setShowAltaLibro(true);
+      }
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, pathname, slugFromPath]);
 
   const hastagFromUrl = searchParams.get('hastag');
 
@@ -312,6 +319,13 @@ export default function LibrosCatalog() {
       {showAltaLibro && (
         <AltaLibro
           onClose={() => setShowAltaLibro(false)}
+          onSuccess={refreshBooks}
+          getToken={getToken}
+        />
+      )}
+      {showAltaDisco && (
+        <AltaDisco
+          onClose={() => setShowAltaDisco(false)}
           onSuccess={refreshBooks}
           getToken={getToken}
         />

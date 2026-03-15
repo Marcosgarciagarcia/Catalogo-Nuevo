@@ -82,6 +82,13 @@ export default function Layout({ children }) {
                 >
                   Alta de libro
                 </Link>
+                <Link
+                  to="/discoteca?openAlta=1"
+                  className="layout-nav__item"
+                  onClick={closeMenu}
+                >
+                  Alta de disco
+                </Link>
               </div>
             )}
             <div className="layout-nav__section layout-nav__section--last">

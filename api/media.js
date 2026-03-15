@@ -168,7 +168,10 @@ export default async function handler(req, res) {
             needCreatePublisher = true;
           }
         }
-        if (!publisherNameForBook) return res.status(400).json({ error: 'Se requiere codiEditorial_id o publisherName' });
+        // Para discoteca (con temas) la editorial/sello puede ser opcional; se usa "— Sin editorial —" si no se envía
+        const isDisco = Array.isArray(body.temas) && body.temas.length > 0;
+        if (!publisherNameForBook && !isDisco) return res.status(400).json({ error: 'Se requiere codiEditorial_id o publisherName' });
+        if (isDisco && !publisherNameForBook) publisherNameForBook = '— Sin editorial —';
 
         const titulo = (body.titulo || '').trim() || '';
         const tituloOriginal = (body.tituloOriginal || '').trim() || null;
@@ -206,6 +209,17 @@ export default async function handler(req, res) {
         const idCell = bookResult?.rows?.[0]?.[0];
         const newId = idCell != null ? Number(idCell) : null;
         if (newId == null) return res.status(500).json({ error: 'Error al crear libro' });
+
+        // Si se envían temas (disco), insertar en core_temas
+        const temas = Array.isArray(body.temas) ? body.temas : [];
+        for (const t of temas) {
+          const num = t.numero != null ? Number(t.numero) : 0;
+          const tit = (t.titulo || '').trim() || '';
+          const dur = (t.duracion || '').trim() || null;
+          if (num > 0 && tit) {
+            await executeQuery(QUERIES.INSERT_TEMA, [newId, num, tit, dur]);
+          }
+        }
         return res.status(201).json({ id: newId });
       }
     }

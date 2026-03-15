@@ -513,7 +513,13 @@ export const QUERIES = {
       datetime('now'), datetime('now')
     ) RETURNING id
   `,
-  
+
+  /** Inserción de un tema (pista) de un disco. codiTitulo_id = id del título en core_titulos. */
+  INSERT_TEMA: `
+    INSERT INTO core_temas (codiTitulo_id, numero, titulo, duracion, created, updated)
+    VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+  `,
+
   // ==================== ESTADÍSTICAS ====================
   
   GET_BOOKS_STATS: `
