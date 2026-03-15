@@ -390,6 +390,19 @@ function msToDuracion(ms) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/** Extrae el nombre del artista desde artist-credit (puede ser uno o varios; join phrases). */
+function artistCreditToName(artistCredit) {
+  if (!Array.isArray(artistCredit) || artistCredit.length === 0) return null;
+  const parts = artistCredit
+    .map((c) => {
+      if (!c) return '';
+      const n = c.name ?? c.artist?.name ?? '';
+      return typeof n === 'string' ? n.trim() : '';
+    })
+    .filter(Boolean);
+  return parts.length ? parts.join(' ') : null;
+}
+
 /**
  * Busca un release (disco) en MusicBrainz por código de barras EAN.
  * Respuesta: { releaseId, title, artist, date, barcode } o null.
@@ -407,7 +420,7 @@ export async function fetchMusicBrainzReleaseByBarcode(ean) {
   const data = await response.json().catch(() => null);
   if (!data?.releases?.length) return null;
   const r = data.releases[0];
-  const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  const artist = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
   let year = null;
   if (r.date) {
     const match = r.date.match(/\d{4}/);
@@ -442,7 +455,7 @@ export async function fetchMusicBrainzReleaseByQuery(artist, releaseTitle) {
   const data = await response.json().catch(() => null);
   if (!data?.releases?.length) return null;
   const r = data.releases[0];
-  const artistName = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  const artistName = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
   let year = null;
   if (r.date) {
     const match = r.date.match(/\d{4}/);
@@ -472,7 +485,7 @@ export async function fetchMusicBrainzReleaseWithTracks(releaseId) {
   if (!response.ok) return null;
   const r = await response.json().catch(() => null);
   if (!r || !r.id) return null;
-  const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  const artist = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
   let year = null;
   if (r.date) {
     const match = r.date.match(/\d{4}/);
@@ -549,9 +562,9 @@ export async function fetchAlbumMetadataByEan(ean) {
     portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
   } catch (_) {}
   return {
-    titulo: detail.title,
-    autor: detail.artist,
-    anyoEdicion: detail.year,
+    titulo: detail.title ?? first.title,
+    autor: detail.artist ?? first.artist,
+    anyoEdicion: detail.year ?? first.year,
     editorial: detail.editorial ?? null,
     portadaUrl: portadaUrl ?? null,
     temas: detail.temas ?? [],
@@ -583,9 +596,9 @@ export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
     portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
   } catch (_) {}
   return {
-    titulo: detail.title,
-    autor: detail.artist,
-    anyoEdicion: detail.year,
+    titulo: detail.title ?? first.title,
+    autor: detail.artist ?? first.artist,
+    anyoEdicion: detail.year ?? first.year,
     editorial: detail.editorial ?? null,
     portadaUrl: portadaUrl ?? null,
     temas: detail.temas ?? [],

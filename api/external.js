@@ -114,6 +114,18 @@ function msToDuracion(ms) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+function artistCreditToName(artistCredit) {
+  if (!Array.isArray(artistCredit) || artistCredit.length === 0) return null;
+  const parts = artistCredit
+    .map((c) => {
+      if (!c) return '';
+      const n = c.name ?? c.artist?.name ?? '';
+      return typeof n === 'string' ? n.trim() : '';
+    })
+    .filter(Boolean);
+  return parts.length ? parts.join(' ') : null;
+}
+
 async function fetchMBReleaseByBarcode(ean) {
   try {
     const clean = String(ean).replace(/\D/g, '').trim();
@@ -123,7 +135,7 @@ async function fetchMBReleaseByBarcode(ean) {
     const data = await res.json().catch(() => null);
     if (!data?.releases?.length) return null;
     const r = data.releases[0];
-    const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    const artist = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
     let year = null;
     if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
     return { releaseId: r.id, title: r.title ?? null, artist, date: r.date ?? null, year, barcode: r.barcode ?? null };
@@ -143,7 +155,7 @@ async function fetchMBReleaseByQuery(artist, releaseTitle) {
     const data = await res.json().catch(() => null);
     if (!data?.releases?.length) return null;
     const r = data.releases[0];
-    const artistName = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    const artistName = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
     let year = null;
     if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
     return { releaseId: r.id, title: r.title ?? null, artist: artistName, date: r.date ?? null, year, barcode: r.barcode ?? null };
@@ -159,7 +171,7 @@ async function fetchMBReleaseWithTracks(releaseId) {
     if (!res.ok) return null;
     const r = await res.json().catch(() => null);
     if (!r || !r.id) return null;
-    const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    const artist = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
     let year = null;
     if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
     let editorial = null;
@@ -230,9 +242,9 @@ async function handleLookupDisc(req, res) {
     } catch (_) {}
     setCors(res);
     return res.status(200).json({
-      titulo: detail.title,
-      autor: detail.artist,
-      anyoEdicion: detail.year,
+      titulo: detail.title ?? first.title,
+      autor: detail.artist ?? first.artist,
+      anyoEdicion: detail.year ?? first.year,
       editorial: detail.editorial ?? null,
       portadaUrl: portadaUrl ?? null,
       temas: detail.temas ?? [],
