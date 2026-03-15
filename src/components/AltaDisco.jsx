@@ -71,6 +71,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         return;
       }
       setTitulo(data.titulo ?? '');
+      setArtistQuery(data.autor ?? '');
+      setReleaseQuery(data.titulo ?? '');
       setAuthorName(data.autor ?? '');
       setAddNewAuthor(true);
       setCodiAutor_id('');
@@ -103,6 +105,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         return;
       }
       setTitulo(data.titulo ?? '');
+      setArtistQuery(data.autor ?? '');
+      setReleaseQuery(data.titulo ?? '');
       setAuthorName(data.autor ?? '');
       setAddNewAuthor(true);
       setCodiAutor_id('');
