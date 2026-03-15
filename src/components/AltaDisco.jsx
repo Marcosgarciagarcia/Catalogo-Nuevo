@@ -201,24 +201,34 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     }
     setSaving(true);
     try {
+      const yearVal = anyoEdicion === '' ? null : Number(anyoEdicion);
       const body = {
         EAN: ean,
         titulo: titulo.trim(),
         tituloOriginal: null,
-        anyoEdicion: anyoEdicion === '' ? null : Number(anyoEdicion),
-        numeroPaginas: null,
+        anyoEdicion: yearVal != null && !Number.isNaN(yearVal) ? yearVal : null,
+        numeroEdicion: 1,
+        numeroPaginas: 0,
+        numeroEjemplares: 1,
         sinopsis: null,
         observaciones: null,
+        coleccion: null,
+        serie: null,
         hastag: null,
-        portada_cloudinary: portada_cloudinary.trim() || null,
-        temas: temas.filter((t) => t && (t.titulo || '').trim()).map((t) => ({
-          numero: t.numero || 0,
-          titulo: (t.titulo || '').trim(),
-          duracion: (t.duracion || '').trim() || null,
-        })),
+        portada_cloudinary: (portada_cloudinary || '').trim() || null,
+        temas: temas
+          .filter((t) => t && (t.titulo || '').trim())
+          .map((t) => ({
+            numero: Math.max(1, parseInt(t.numero, 10) || 1),
+            titulo: (t.titulo || '').trim(),
+            duracion: (t.duracion || '').trim() || null,
+          })),
       };
-      if (codiSoporte_id !== '') body.codiSoporte_id = Number(codiSoporte_id);
-      else body.codiSoporte_id = null;
+      if (codiSoporte_id !== '' && codiSoporte_id != null) {
+        body.codiSoporte_id = Number(codiSoporte_id);
+      } else {
+        body.codiSoporte_id = null;
+      }
       if (addNewAuthor && authorName.trim()) {
         body.authorName = authorName.trim();
         body.addNewAuthor = true;

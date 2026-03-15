@@ -514,9 +514,9 @@ export const QUERIES = {
     ) RETURNING id
   `,
 
-  /** Inserción de un tema (pista) de un disco. codiTitulo_id = id del título en core_titulos. */
+  /** Inserción de un tema (pista) de un disco. codiTitulo_id = FK a core_titulos.id; nombreTema = nombre de la pista. */
   INSERT_TEMA: `
-    INSERT INTO core_temas (codiTitulo_id, numero, titulo, duracion, created, updated)
+    INSERT INTO core_temas (codiTitulo_id, numero, nombreTema, duracion, created, updated)
     VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
   `,
 
