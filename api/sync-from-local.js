@@ -45,9 +45,10 @@ function getLocalDbUrl() {
   return null;
 }
 
-/** Orden para aplicar deletes: primero tablas dependientes (ej. core_titulos), luego FKs */
+/** Orden para aplicar deletes: primero tablas dependientes (core_temas → core_titulos), luego FKs */
 const DELETE_ORDER = [
   'auth_user',
+  'core_temas',
   'core_titulos',
   'core_ubicaciones_sub',
   'core_ubicaciones',

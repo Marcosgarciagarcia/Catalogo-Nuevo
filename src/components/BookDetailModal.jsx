@@ -1,7 +1,5 @@
-import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { getDeezerPreview } from '../services/tursoService';
 import './BookDetailModal.css';
 
 function DetailRow({ label, value }) {
@@ -24,28 +22,22 @@ function Block({ title, children, twoCols }) {
 }
 
 function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
-  const [playingTema, setPlayingTema] = useState(null);
-  const audioRef = useRef(null);
-
   if (!libro) return null;
 
-  const playTemaPreview = async (tituloTema) => {
+  const openDeezerTema = (tituloTema) => {
     if (!tituloTema?.trim()) return;
     const artist = (libro.nombreAutor || '').trim();
     const q = [artist, tituloTema].filter(Boolean).join(' ').trim().slice(0, 100);
     if (!q) return;
-    setPlayingTema(tituloTema);
-    try {
-      const preview = await getDeezerPreview(q);
-      if (preview && audioRef.current) {
-        audioRef.current.src = preview;
-        audioRef.current.play().catch(() => {});
-      } else {
-        setPlayingTema(null);
-      }
-    } catch {
-      setPlayingTema(null);
-    }
+    window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const openDeezerAlbum = () => {
+    const artist = (libro.nombreAutor || '').trim();
+    const album = (libro.titulo || '').trim();
+    const q = [artist, album].filter(Boolean).join(' ').trim().slice(0, 120);
+    if (!q) return;
+    window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleBackdropClick = (e) => {
@@ -128,7 +120,16 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
 
             {Array.isArray(libro.temas) && libro.temas.length > 0 && (
               <Block title="Temas (pistas)">
-                <audio ref={audioRef} onEnded={() => setPlayingTema(null)} style={{ display: 'none' }} controls />
+                <div className="modal-temas-actions">
+                  <button
+                    type="button"
+                    className="modal-tema-play-album"
+                    onClick={openDeezerAlbum}
+                    title="Abrir disco en Deezer (escuchar completo)"
+                  >
+                    ▶ Escuchar disco completo (Deezer)
+                  </button>
+                </div>
                 <ul className="modal-temas-list">
                   {libro.temas.map((t, i) => (
                     <li key={i} className="modal-tema-row">
@@ -138,16 +139,16 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                       <button
                         type="button"
                         className="modal-tema-play"
-                        onClick={() => playTemaPreview((t.titulo || '').trim())}
-                        disabled={!t.titulo?.trim() || playingTema !== null}
-                        title="Reproducir preview (Deezer)"
+                        onClick={() => openDeezerTema((t.titulo || '').trim())}
+                        disabled={!t.titulo?.trim()}
+                        title="Abrir tema en Deezer"
                       >
-                        {playingTema === (t.titulo || '').trim() ? '⏸' : '▶'}
+                        ▶
                       </button>
                     </li>
                   ))}
                 </ul>
-                <p className="modal-temas-hint">La lista de temas y la reproducción son accesibles sin registro.</p>
+                <p className="modal-temas-hint">Los botones abren Deezer en una nueva pestaña para escuchar el tema o el disco completo.</p>
               </Block>
             )}
 

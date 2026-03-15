@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import {
   getAuthors,
@@ -7,7 +7,6 @@ import {
   getEstantes,
   getSoportes,
   getBookById,
-  getDeezerPreview,
   updateBook,
 } from '../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
@@ -46,8 +45,6 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [temas, setTemas] = useState([]);
-  const [playingTema, setPlayingTema] = useState(null);
-  const audioRef = useRef(null);
 
   const loadCombos = useCallback(async () => {
     try {
@@ -208,23 +205,20 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
     if (e.target === e.currentTarget) onClose();
   };
 
-  const playTemaPreview = async (tituloTema) => {
+  const openDeezerTema = (tituloTema) => {
     if (!tituloTema?.trim()) return;
     const artist = addNewAuthor ? authorName : (authors.find((a) => String(a.id) === String(codiAutor_id))?.nombreAutor || '');
     const q = [artist, tituloTema].filter(Boolean).join(' ').trim().slice(0, 100);
     if (!q) return;
-    setPlayingTema(tituloTema);
-    try {
-      const preview = await getDeezerPreview(q);
-      if (preview && audioRef.current) {
-        audioRef.current.src = preview;
-        audioRef.current.play().catch(() => {});
-      } else {
-        setPlayingTema(null);
-      }
-    } catch {
-      setPlayingTema(null);
-    }
+    window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const openDeezerAlbum = () => {
+    const artist = addNewAuthor ? authorName : (authors.find((a) => String(a.id) === String(codiAutor_id))?.nombreAutor || '');
+    const album = (titulo || '').trim();
+    const q = [artist, album].filter(Boolean).join(' ').trim().slice(0, 120);
+    if (!q) return;
+    window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
   };
 
   if (!libro) return null;
@@ -488,7 +482,11 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
             {temas.length > 0 && (
               <div className="alta-libro-field">
                 <h3 className="modal-section-title">Temas (pistas)</h3>
-                <audio ref={audioRef} onEnded={() => setPlayingTema(null)} style={{ display: 'none' }} controls />
+                <div style={{ marginBottom: 8 }}>
+                  <button type="button" onClick={openDeezerAlbum} title="Abrir disco en Deezer" style={{ padding: '6px 12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.9rem' }}>
+                    ▶ Escuchar disco completo (Deezer)
+                  </button>
+                </div>
                 <ul className="modal-temas-list" style={{ marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
                   {temas.map((t, i) => (
                     <li key={i} className="modal-tema-row" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
@@ -498,11 +496,11 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                       <button
                         type="button"
                         className="modal-tema-play"
-                        onClick={() => playTemaPreview((t.titulo || '').trim())}
-                        disabled={!t.titulo?.trim() || playingTema !== null}
-                        title="Reproducir preview (Deezer)"
+                        onClick={() => openDeezerTema((t.titulo || '').trim())}
+                        disabled={!t.titulo?.trim()}
+                        title="Abrir tema en Deezer"
                       >
-                        {playingTema === (t.titulo || '').trim() ? '⏸' : '▶'}
+                        ▶
                       </button>
                     </li>
                   ))}

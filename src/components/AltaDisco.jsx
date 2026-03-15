@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import {
   getAuthors,
   getPublishers,
   getSoportes,
   createBook,
-  getDeezerPreview,
   fetchAlbumMetadataByEan,
   fetchAlbumMetadataByQuery,
 } from '../services/tursoService';
@@ -38,8 +37,6 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [temas, setTemas] = useState([]);
-  const [playingTema, setPlayingTema] = useState(null);
-  const audioRef = useRef(null);
 
   const loadCombos = useCallback(async () => {
     try {
@@ -184,24 +181,20 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '' }]);
   };
 
-  const playTemaPreview = async (tituloTema) => {
+  const openDeezerTema = (tituloTema) => {
     if (!tituloTema?.trim()) return;
     const artist = addNewAuthor ? authorName : (authors.find((a) => String(a.id) === String(codiAutor_id))?.nombreAutor || authorName || '');
     const q = [artist, tituloTema].filter(Boolean).join(' ').trim().slice(0, 100);
     if (!q) return;
-    setPlayingTema(tituloTema);
-    try {
-      const preview = await getDeezerPreview(q);
-      if (preview && audioRef.current) {
-        audioRef.current.src = preview;
-        audioRef.current.play().catch(() => {});
-      } else {
-        setError('No se encontró preview en Deezer para este tema.');
-      }
-    } catch (err) {
-      setError(err?.message || 'No se pudo cargar el preview.');
-      setPlayingTema(null);
-    }
+    window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const openDeezerAlbum = () => {
+    const artist = addNewAuthor ? authorName : (authors.find((a) => String(a.id) === String(codiAutor_id))?.nombreAutor || authorName || '');
+    const album = (titulo || '').trim();
+    const q = [artist, album].filter(Boolean).join(' ').trim().slice(0, 120);
+    if (!q) return;
+    window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleSubmit = async (e) => {
@@ -517,17 +510,21 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
           </div>
 
           <div className="alta-libro-field">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
               <label style={{ marginBottom: 0 }}>Temas (pistas)</label>
-              <button type="button" className="alta-libro-btn-buscar" style={{ padding: '4px 10px', fontSize: '0.85rem' }} onClick={addTema}>
-                + Añadir pista
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="alta-libro-btn-buscar" style={{ padding: '4px 10px', fontSize: '0.85rem' }} onClick={addTema}>
+                  + Añadir pista
+                </button>
+                <button type="button" onClick={openDeezerAlbum} title="Abrir disco en Deezer" style={{ padding: '4px 10px', fontSize: '0.85rem', background: '#2a5a2a', color: '#abffab', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                  ▶ Escuchar disco completo (Deezer)
+                </button>
+              </div>
             </div>
             {temas.length === 0 ? (
               <p style={{ color: '#999', fontSize: '0.9rem', margin: 0 }}>Usa «Buscar por EAN» o «Buscar» para cargar la lista, o añade pistas manualmente.</p>
             ) : (
               <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #555', borderRadius: 6, padding: 8, background: '#1a1a1a' }}>
-                <audio ref={audioRef} onEnded={() => setPlayingTema(null)} style={{ display: 'none' }} controls />
                 {temas.map((t, i) => (
                   <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                     <input
@@ -553,12 +550,12 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
                     />
                     <button
                       type="button"
-                      onClick={() => playTemaPreview((t.titulo || '').trim())}
-                      disabled={!t.titulo?.trim() || playingTema !== null}
-                      title="Reproducir preview (Deezer)"
+                      onClick={() => openDeezerTema((t.titulo || '').trim())}
+                      disabled={!t.titulo?.trim()}
+                      title="Abrir tema en Deezer"
                       style={{ padding: 4, background: '#2a5a2a', color: '#abffab', border: 'none', borderRadius: 4, cursor: 'pointer' }}
                     >
-                      {playingTema === (t.titulo || '').trim() ? '⏸' : '▶'}
+                      ▶
                     </button>
                     <button type="button" onClick={() => removeTema(i)} style={{ padding: 4, background: '#5a2a2a', color: '#ffabab', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
                       ✕

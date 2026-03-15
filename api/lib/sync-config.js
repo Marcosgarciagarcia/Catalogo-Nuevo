@@ -41,6 +41,10 @@ export const SYNC_TABLE_CONFIG = {
       'sinopsis', 'observaciones', 'portada_cloudinary', 'hastag', 'created', 'updated',
     ],
   },
+  core_temas: {
+    id_field: 'id',
+    fields: ['codiTitulo_id', 'numero', 'nombreTema', 'duracion', 'created', 'updated'],
+  },
   auth_user: {
     id_field: 'id',
     fields: [
