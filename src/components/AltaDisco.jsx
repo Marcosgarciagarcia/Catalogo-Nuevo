@@ -70,15 +70,16 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setError('No se encontraron datos para este EAN (MusicBrainz).');
         return;
       }
-      if (data.titulo) setTitulo(data.titulo);
-      if (data.autor) {
-        setAuthorName(data.autor);
-        setAddNewAuthor(true);
-        setCodiAutor_id('');
-      }
-      if (data.anyoEdicion != null) setAnyoEdicion(String(data.anyoEdicion));
-      if (data.portadaUrl) setPortadaPreviewUrl(data.portadaUrl);
-      if (Array.isArray(data.temas)) setTemas(data.temas);
+      setTitulo(data.titulo ?? '');
+      setAuthorName(data.autor ?? '');
+      setAddNewAuthor(true);
+      setCodiAutor_id('');
+      setPublisherName(data.editorial ?? '');
+      setAddNewPublisher(true);
+      setCodiEditorial_id('');
+      setAnyoEdicion(data.anyoEdicion != null ? String(data.anyoEdicion) : '');
+      setPortadaPreviewUrl(data.portadaUrl ?? '');
+      setTemas(Array.isArray(data.temas) ? data.temas : []);
     } catch (err) {
       setError(err?.message ?? 'Error al buscar por EAN');
     } finally {
@@ -101,15 +102,16 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setError('No se encontraron datos (MusicBrainz).');
         return;
       }
-      if (data.titulo) setTitulo(data.titulo);
-      if (data.autor) {
-        setAuthorName(data.autor);
-        setAddNewAuthor(true);
-        setCodiAutor_id('');
-      }
-      if (data.anyoEdicion != null) setAnyoEdicion(String(data.anyoEdicion));
-      if (data.portadaUrl) setPortadaPreviewUrl(data.portadaUrl);
-      if (Array.isArray(data.temas)) setTemas(data.temas);
+      setTitulo(data.titulo ?? '');
+      setAuthorName(data.autor ?? '');
+      setAddNewAuthor(true);
+      setCodiAutor_id('');
+      setPublisherName(data.editorial ?? '');
+      setAddNewPublisher(true);
+      setCodiEditorial_id('');
+      setAnyoEdicion(data.anyoEdicion != null ? String(data.anyoEdicion) : '');
+      setPortadaPreviewUrl(data.portadaUrl ?? '');
+      setTemas(Array.isArray(data.temas) ? data.temas : []);
     } catch (err) {
       setError(err?.message ?? 'Error al buscar');
     } finally {

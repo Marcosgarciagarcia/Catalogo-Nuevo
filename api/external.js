@@ -146,13 +146,15 @@ async function fetchMBReleaseByQuery(artist, releaseTitle) {
 
 async function fetchMBReleaseWithTracks(releaseId) {
   if (!releaseId) return null;
-  const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+  const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings+labels&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
   if (!res.ok) return null;
   const r = await res.json().catch(() => null);
   if (!r || !r.id) return null;
   const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
   let year = null;
   if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
+  const labelInfo = r['label-info'];
+  const editorial = (Array.isArray(labelInfo) && labelInfo[0]?.label?.name) ? labelInfo[0].label.name : null;
   const temas = [];
   for (const medium of r.media ?? []) {
     for (const t of medium.tracks ?? []) {
@@ -160,7 +162,7 @@ async function fetchMBReleaseWithTracks(releaseId) {
       temas.push({ numero: pos, titulo: t.title ?? t.recording?.title ?? '', duracion: msToDuracion(t.length ?? t.recording?.length) });
     }
   }
-  return { title: r.title ?? null, artist, date: r.date ?? null, year, temas };
+  return { title: r.title ?? null, artist, date: r.date ?? null, year, editorial: editorial ?? null, temas };
 }
 
 async function fetchCoverArt(mbid) {
@@ -196,7 +198,7 @@ async function handleLookupDisc(req, res) {
   if (!detail) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ titulo: first.title, autor: first.artist, anyoEdicion: first.year, portadaUrl: null, temas: [] });
+    return res.status(200).json({ titulo: first.title, autor: first.artist, anyoEdicion: first.year, editorial: null, portadaUrl: null, temas: [] });
   }
   let portadaUrl = null;
   try {
@@ -209,6 +211,7 @@ async function handleLookupDisc(req, res) {
     titulo: detail.title,
     autor: detail.artist,
     anyoEdicion: detail.year,
+    editorial: detail.editorial ?? null,
     portadaUrl: portadaUrl ?? null,
     temas: detail.temas ?? [],
   });
@@ -216,13 +219,15 @@ async function handleLookupDisc(req, res) {
 
 async function fetchMBReleaseWithTracks(releaseId) {
   if (!releaseId) return null;
-  const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+  const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings+labels&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
   if (!res.ok) return null;
   const r = await res.json().catch(() => null);
   if (!r || !r.id) return null;
   const artist = r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
   let year = null;
   if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
+  const labelInfo = r['label-info'];
+  const editorial = (Array.isArray(labelInfo) && labelInfo[0]?.label?.name) ? labelInfo[0].label.name : null;
   const temas = [];
   for (const medium of r.media ?? []) {
     for (const t of medium.tracks ?? []) {
@@ -230,7 +235,7 @@ async function fetchMBReleaseWithTracks(releaseId) {
       temas.push({ numero: pos, titulo: t.title ?? t.recording?.title ?? '', duracion: msToDuracion(t.length ?? t.recording?.length) });
     }
   }
-  return { title: r.title ?? null, artist, date: r.date ?? null, year, temas };
+  return { title: r.title ?? null, artist, date: r.date ?? null, year, editorial: editorial ?? null, temas };
 }
 
 // ---------- upload-cover (Cloudinary) ----------

@@ -464,7 +464,7 @@ export async function fetchMusicBrainzReleaseByQuery(artist, releaseTitle) {
  */
 export async function fetchMusicBrainzReleaseWithTracks(releaseId) {
   if (!releaseId) return null;
-  const url = `${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings&fmt=json`;
+  const url = `${MUSICBRAINZ_BASE}/release/${encodeURIComponent(releaseId)}?inc=recordings+labels&fmt=json`;
   const response = await fetch(url, {
     method: 'GET',
     headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
@@ -478,6 +478,8 @@ export async function fetchMusicBrainzReleaseWithTracks(releaseId) {
     const match = r.date.match(/\d{4}/);
     if (match) year = parseInt(match[0], 10);
   }
+  const labelInfo = r['label-info'];
+  const editorial = (Array.isArray(labelInfo) && labelInfo[0]?.label?.name) ? labelInfo[0].label.name : null;
   const temas = [];
   const media = r.media ?? [];
   for (const medium of media) {
@@ -498,6 +500,7 @@ export async function fetchMusicBrainzReleaseWithTracks(releaseId) {
     artist,
     date: r.date ?? null,
     year,
+    editorial: editorial ?? null,
     temas,
   };
 }
@@ -535,6 +538,7 @@ export async function fetchAlbumMetadataByEan(ean) {
       titulo: first.title,
       autor: first.artist,
       anyoEdicion: first.year,
+      editorial: null,
       portadaUrl: null,
       temas: [],
     };
@@ -548,6 +552,7 @@ export async function fetchAlbumMetadataByEan(ean) {
     titulo: detail.title,
     autor: detail.artist,
     anyoEdicion: detail.year,
+    editorial: detail.editorial ?? null,
     portadaUrl: portadaUrl ?? null,
     temas: detail.temas ?? [],
   };
@@ -567,6 +572,7 @@ export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
       titulo: first.title,
       autor: first.artist,
       anyoEdicion: first.year,
+      editorial: null,
       portadaUrl: null,
       temas: [],
     };
@@ -580,6 +586,7 @@ export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
     titulo: detail.title,
     autor: detail.artist,
     anyoEdicion: detail.year,
+    editorial: detail.editorial ?? null,
     portadaUrl: portadaUrl ?? null,
     temas: detail.temas ?? [],
   };
