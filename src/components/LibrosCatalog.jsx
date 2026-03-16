@@ -173,11 +173,14 @@ export default function LibrosCatalog() {
   };
 
   const tituloPagina = (() => {
-    if (tipoSlugActive === 'discoteca') return 'Catálogo de discos de casa';
-    if (tipoSlugActive && tipoSlugActive !== 'biblioteca') {
-      const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
-      if (tipo?.nombre) return `Catálogo de ${tipo.nombre.toLowerCase()} de casa`;
-    }
+    const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
+    const slugLower = (tipoSlugActive || '').toLowerCase();
+    const nombreLower = (tipo?.nombre || '').toLowerCase();
+    const esDiscoteca = ['discoteca', 'música', 'musica'].some(
+      (k) => slugLower.includes(k) || nombreLower.includes(k),
+    );
+    if (esDiscoteca) return 'Catálogo de discoteca de casa';
+    if (tipo) return `Catálogo de ${nombreLower || tipo.slug} de casa`;
     return 'Catálogo de libros de casa';
   })();
 
@@ -220,8 +223,12 @@ export default function LibrosCatalog() {
 
       <div className="filtro-container">
         <div className="opciones-busqueda">
-          <button onClick={cambiarTipoDeFiltro} type="button">
-            Buscar por: {filtrarPor === 'titulo' ? 'Título' : 'Autor'}
+          <button
+            onClick={cambiarTipoDeFiltro}
+            type="button"
+            aria-label={`Cambiar búsqueda por ${filtrarPor === 'titulo' ? 'autor' : 'título'}`}
+          >
+            🔍
           </button>
           <input
             type="text"
@@ -240,8 +247,9 @@ export default function LibrosCatalog() {
                 navigate('/');
               }}
               type="button"
+              aria-label="Limpiar filtros"
             >
-              Limpiar Filtros
+              ✖
             </button>
           )}
         </div>

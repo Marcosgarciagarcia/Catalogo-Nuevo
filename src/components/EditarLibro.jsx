@@ -489,10 +489,20 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 </div>
                 <ul className="modal-temas-list" style={{ marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
                   {temas.map((t, i) => (
-                    <li key={i} className="modal-tema-row" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <li
+                      key={i}
+                      className="modal-tema-row"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '0.25rem',
+                        color: '#e0e0e0',
+                      }}
+                    >
                       <span style={{ minWidth: '1.5rem' }}>{t.numero}</span>
                       <span style={{ flex: 1 }}>{t.titulo || '—'}</span>
-                      {t.duracion && <span style={{ color: '#666' }}>{t.duracion}</span>}
+                      {t.duracion && <span style={{ color: '#e0e0e0' }}>{t.duracion}</span>}
                       <button
                         type="button"
                         className="modal-tema-play"
