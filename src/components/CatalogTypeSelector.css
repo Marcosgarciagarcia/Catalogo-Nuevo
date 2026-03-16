@@ -55,6 +55,11 @@
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
+.catalog-type-card__icon {
+  font-size: 2.2em;
+  margin-bottom: 6px;
+}
+
 .catalog-type-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.25);

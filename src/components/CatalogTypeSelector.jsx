@@ -48,18 +48,32 @@ export default function CatalogTypeSelector() {
         Selecciona el tipo de catálogo que quieres ver. Después podrás iniciar sesión si necesitas dar de alta nuevos ejemplares.
       </p>
       <div className="catalog-type-selector__grid">
-        {types.map((t) => (
-          <Link
-            key={t.id}
-            to={`/${t.slug}`}
-            className="catalog-type-card"
-          >
-            <span className="catalog-type-card__name">{t.nombre}</span>
-            {t.descripcion && (
-              <span className="catalog-type-card__desc">{t.descripcion}</span>
-            )}
-          </Link>
-        ))}
+        {types.map((t) => {
+          const slugLower = (t.slug || '').toLowerCase();
+          const nombreLower = (t.nombre || '').toLowerCase();
+          const isDisco = ['discoteca', 'música', 'musica'].some(
+            (k) => slugLower.includes(k) || nombreLower.includes(k),
+          );
+          const isVideo = ['video', 'cine'].some(
+            (k) => slugLower.includes(k) || nombreLower.includes(k),
+          );
+          const icon = isDisco ? '🎵' : isVideo ? '🎬' : '📚';
+          return (
+            <Link
+              key={t.id}
+              to={`/${t.slug}`}
+              className="catalog-type-card"
+            >
+              <span className="catalog-type-card__icon" aria-hidden="true">
+                {icon}
+              </span>
+              <span className="catalog-type-card__name">{t.nombre}</span>
+              {t.descripcion && (
+                <span className="catalog-type-card__desc">{t.descripcion}</span>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

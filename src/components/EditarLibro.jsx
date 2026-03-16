@@ -256,6 +256,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 id="editar-titulo"
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
+                style={{ width: '100%' }}
               />
             </div>
             <div className="alta-libro-field">
@@ -264,6 +265,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 id="editar-titulo-original"
                 value={tituloOriginal}
                 onChange={(e) => setTituloOriginal(e.target.value)}
+                style={{ width: '100%' }}
               />
             </div>
 

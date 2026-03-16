@@ -246,6 +246,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
               id="alta-titulo"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
+              style={{ width: '100%' }}
             />
           </div>
           <div className="alta-libro-field">
@@ -254,6 +255,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
               id="alta-titulo-original"
               value={tituloOriginal}
               onChange={(e) => setTituloOriginal(e.target.value)}
+              style={{ width: '100%' }}
             />
           </div>
 
