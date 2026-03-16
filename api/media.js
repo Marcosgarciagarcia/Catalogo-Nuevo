@@ -344,6 +344,8 @@ export default async function handler(req, res) {
       const existingBooks = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
       if (!existingBooks?.length) return res.status(404).json({ error: 'Book not found' });
 
+      // Borrar primero los temas asociados para no violar la FK core_temas.codiTitulo_id → core_titulos.id
+      await executeQuery('DELETE FROM core_temas WHERE codiTitulo_id = ?', [bookId]);
       await executeQuery('DELETE FROM core_titulos WHERE id = ?', [bookId]);
       return res.status(204).end();
     }

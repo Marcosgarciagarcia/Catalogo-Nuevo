@@ -193,10 +193,16 @@ export default function LibrosCatalog() {
             onClick={() => navigate('/')}
             className={tipoSlugActive === null ? 'activo' : ''}
           >
-            Todos
+            <span role="img" aria-label="Todos">🏠</span>
+            <span className="tipo-label-text"> Todos</span>
           </button>
           {tiposColeccion.map((tc) => {
             const isActive = tipoSlugActive === tc.slug || (filterApplied?.tipoId != null && Number(filterApplied.tipoId) === Number(tc.id));
+            const icon = tc.slug === 'discoteca'
+              ? '🎵'
+              : tc.slug === 'videoteca'
+              ? '🎬'
+              : '📚';
             return (
               <button
                 key={tc.id}
@@ -204,7 +210,8 @@ export default function LibrosCatalog() {
                 onClick={() => navigate(`/${tc.slug}`)}
                 className={isActive ? 'activo' : ''}
               >
-                {tc.nombre}
+                <span role="img" aria-label={tc.nombre}>{icon}</span>
+                <span className="tipo-label-text"> {tc.nombre}</span>
               </button>
             );
           })}

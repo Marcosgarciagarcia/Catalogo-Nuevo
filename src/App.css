@@ -234,6 +234,20 @@
   border-color: #007bff;
 }
 
+@media (max-width: 600px) {
+  .filtro-tipo-coleccion {
+    justify-content: center;
+    gap: 6px;
+  }
+  .filtro-tipo-coleccion button {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+  .filtro-tipo-coleccion .tipo-label-text {
+    display: none;
+  }
+}
+
 .alfabeto {
   display: flex;
   flex-wrap: wrap;
