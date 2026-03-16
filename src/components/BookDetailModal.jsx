@@ -186,7 +186,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                       className="modal-btn-edit"
                       onClick={() => onEdit(libro)}
                     >
-                      Editar libro
+                      Editar ficha
                     </button>
                   )}
                   {onDelete && (

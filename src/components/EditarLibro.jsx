@@ -231,7 +231,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         <button type="button" className="alta-libro-close" onClick={onClose}>
           ✕
         </button>
-        <h2>Editar libro</h2>
+        <h2>Editar ficha</h2>
 
         {loading ? (
           <p className="alta-libro-loading">Cargando…</p>

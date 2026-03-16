@@ -172,9 +172,18 @@ export default function LibrosCatalog() {
     }, { replace: true });
   };
 
+  const tituloPagina = (() => {
+    if (tipoSlugActive === 'discoteca') return 'Catálogo de discos de casa';
+    if (tipoSlugActive && tipoSlugActive !== 'biblioteca') {
+      const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
+      if (tipo?.nombre) return `Catálogo de ${tipo.nombre.toLowerCase()} de casa`;
+    }
+    return 'Catálogo de libros de casa';
+  })();
+
   return (
     <div className="app-container">
-      <h2 className="page-title">Catálogo de libros de casa</h2>
+      <h2 className="page-title">{tituloPagina}</h2>
 
       {tiposColeccion.length > 0 && (
         <div className="filtro-tipo-coleccion">
@@ -288,17 +297,7 @@ export default function LibrosCatalog() {
               {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
               {busqueda ? ` que contienen "${busqueda}"` : ''}
             </p>
-            {filterApplied && (
-              <p className="filtro-aplicado-debug" style={{ fontSize: '0.85rem', color: '#666', marginTop: '6px' }}>
-                Filtro aplicado: {filterApplied.sqlCondition}
-                {filterApplied.tipoParam != null && (
-                  <> · tipoParam = &quot;{String(filterApplied.tipoParam)}&quot;</>
-                )}
-                {filterApplied.params?.length > 0 && (
-                  <> · params = [{filterApplied.params.map((x) => `"${String(x)}"`).join(', ')}]</>
-                )}
-              </p>
-            )}
+            {/* Detalle técnico del filtro (solo para depuración, oculto en producción) */}
           </div>
           <BookList
             libros={libros.slice(
