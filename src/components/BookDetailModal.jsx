@@ -156,7 +156,12 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                       </li>
                     ))}
                   </ul>
-                  <p className="modal-temas-hint">Si has añadido un enlace por pista, el título es clicable y ▶ abre ese enlace. Si no, ▶ busca en Deezer.</p>
+                  <p className="modal-temas-deezer-aviso">
+                    Sin estar registrado en Deezer solo se puede escuchar una preview del tema. Para el tema completo, inicia sesión en Deezer en este navegador o guarda un enlace a YouTube/Spotify en el campo URL al editar.
+                  </p>
+                  <p className="modal-temas-hint">
+                    Si has añadido un enlace por pista, el título es clicable y ▶ abre ese enlace. Si no, ▶ busca en Deezer.
+                  </p>
                 </Block>
               )}
 

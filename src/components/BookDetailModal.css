@@ -304,8 +304,18 @@
   cursor: not-allowed;
 }
 
-.modal-temas-hint {
+.modal-temas-deezer-aviso {
   margin: 8px 0 0;
+  padding: 8px 10px;
+  font-size: 0.85em;
+  color: #1a4d1a;
+  background: #e8f5e9;
+  border-left: 4px solid #2e7d32;
+  border-radius: 4px;
+}
+
+.modal-temas-hint {
+  margin: 6px 0 0;
   font-size: 0.85em;
   color: #666;
 }
