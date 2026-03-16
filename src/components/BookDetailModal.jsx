@@ -134,21 +134,27 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                     {libro.temas.map((t, i) => (
                       <li key={i} className="modal-tema-row">
                         <span className="modal-tema-num">{t.numero}</span>
-                        <span className="modal-tema-titulo">{t.titulo || '—'}</span>
+                        <span className="modal-tema-titulo">
+                          {t.enlace?.trim() ? (
+                            <a href={t.enlace.trim()} target="_blank" rel="noopener noreferrer" title="Abrir enlace">{t.titulo || '—'}</a>
+                          ) : (
+                            (t.titulo || '—')
+                          )}
+                        </span>
                         {t.duracion && <span className="modal-tema-duracion">{t.duracion}</span>}
                         <button
                           type="button"
                           className="modal-tema-play"
-                          onClick={() => openDeezerTema((t.titulo || '').trim())}
-                          disabled={!t.titulo?.trim()}
-                          title="Abrir tema en Deezer"
+                          onClick={() => (t.enlace?.trim() ? window.open(t.enlace.trim(), '_blank') : openDeezerTema((t.titulo || '').trim()))}
+                          disabled={!t.titulo?.trim() && !t.enlace?.trim()}
+                          title={t.enlace?.trim() ? 'Abrir enlace' : 'Abrir tema en Deezer'}
                         >
                           ▶
                         </button>
                       </li>
                     ))}
                   </ul>
-                  <p className="modal-temas-hint">Los botones abren Deezer en una nueva pestaña para escuchar el tema o el disco completo.</p>
+                  <p className="modal-temas-hint">Si has añadido un enlace por pista, el título es clicable y ▶ abre ese enlace. Si no, ▶ busca en Deezer.</p>
                 </Block>
               )}
 

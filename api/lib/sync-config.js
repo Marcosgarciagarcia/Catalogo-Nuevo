@@ -43,7 +43,7 @@ export const SYNC_TABLE_CONFIG = {
   },
   core_temas: {
     id_field: 'id',
-    fields: ['codiTitulo_id', 'numero', 'nombreTema', 'duracion', 'created', 'updated'],
+    fields: ['codiTitulo_id', 'numero', 'nombreTema', 'duracion', 'enlace', 'created', 'updated'],
   },
   auth_user: {
     id_field: 'id',

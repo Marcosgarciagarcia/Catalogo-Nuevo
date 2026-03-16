@@ -178,7 +178,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   };
 
   const addTema = () => {
-    setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '' }]);
+    setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '', enlace: '' }]);
   };
 
   const openDeezerTema = (tituloTema) => {
@@ -238,6 +238,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             numero: Math.max(1, parseInt(t.numero, 10) || 1),
             titulo: (t.titulo || '').trim(),
             duracion: (t.duracion || '').trim() || null,
+            enlace: (t.enlace || '').trim() || null,
           })),
       };
       if (codiSoporte_id !== '' && codiSoporte_id != null) {
@@ -527,7 +528,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             ) : (
               <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #555', borderRadius: 6, padding: 8, background: '#1a1a1a' }}>
                 {temas.map((t, i) => (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px minmax(120px, 1fr) 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                     <input
                       type="number"
                       min={1}
@@ -549,11 +550,18 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
                       placeholder="3:45"
                       style={{ padding: 4 }}
                     />
+                    <input
+                      type="url"
+                      value={t.enlace || ''}
+                      onChange={(e) => updateTema(i, 'enlace', e.target.value)}
+                      placeholder="URL (Deezer, Spotify…)"
+                      style={{ padding: 4, fontSize: '0.85rem' }}
+                    />
                     <button
                       type="button"
-                      onClick={() => openDeezerTema((t.titulo || '').trim())}
-                      disabled={!t.titulo?.trim()}
-                      title="Abrir tema en Deezer"
+                      onClick={() => (t.enlace?.trim() ? window.open(t.enlace.trim(), '_blank') : openDeezerTema((t.titulo || '').trim()))}
+                      disabled={!t.titulo?.trim() && !t.enlace?.trim()}
+                      title={t.enlace?.trim() ? 'Abrir enlace' : 'Abrir tema en Deezer'}
                       style={{ padding: 4, background: '#2a5a2a', color: '#abffab', border: 'none', borderRadius: 4, cursor: 'pointer' }}
                     >
                       ▶

@@ -44,6 +44,7 @@ const CREATE_TEMAS = `
     numero INTEGER NOT NULL DEFAULT 1,
     nombreTema TEXT NOT NULL DEFAULT '',
     duracion TEXT,
+    enlace TEXT,
     created TEXT DEFAULT (datetime('now')),
     updated TEXT DEFAULT (datetime('now')),
     UNIQUE(codiTitulo_id, numero)
@@ -57,6 +58,7 @@ async function ensureColumns() {
     const names = (r) => (r.name || r.NAME || '').toLowerCase();
     const hasNumero = Array.isArray(rows) && rows.some((r) => names(r) === 'numero');
     const hasNombreTema = Array.isArray(rows) && rows.some((r) => names(r) === 'nombretema');
+    const hasEnlace = Array.isArray(rows) && rows.some((r) => names(r) === 'enlace');
     if (rows.length > 0) {
       if (!hasNumero) {
         console.log('Añadiendo columna numero a core_temas...');
@@ -67,6 +69,11 @@ async function ensureColumns() {
         console.log('Añadiendo columna nombreTema a core_temas...');
         await executeQuery('ALTER TABLE core_temas ADD COLUMN nombreTema TEXT NOT NULL DEFAULT \'\'');
         console.log('Columna nombreTema añadida.');
+      }
+      if (!hasEnlace) {
+        console.log('Añadiendo columna enlace a core_temas...');
+        await executeQuery('ALTER TABLE core_temas ADD COLUMN enlace TEXT');
+        console.log('Columna enlace añadida.');
       }
     }
   } catch (e) {

@@ -271,6 +271,15 @@
   color: #ffffff;
 }
 
+.modal-tema-titulo a {
+  color: #81c784;
+  text-decoration: none;
+}
+
+.modal-tema-titulo a:hover {
+  text-decoration: underline;
+}
+
 .modal-tema-duracion {
   font-size: 0.9em;
   color: #e0e0e0;

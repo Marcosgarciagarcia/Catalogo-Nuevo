@@ -299,8 +299,9 @@ export default async function handler(req, res) {
           const num = t.numero != null ? Number(t.numero) : 0;
           const tit = (t.titulo || "").trim() || "";
           const dur = (t.duracion || "").trim() || null;
+          const enlace = (t.enlace || "").trim() || null;
           if (num > 0 && tit) {
-            await executeQuery(QUERIES.INSERT_TEMA, [newId, num, tit, dur]);
+            await executeQuery(QUERIES.INSERT_TEMA, [newId, num, tit, dur, enlace]);
           }
         }
         return res.status(201).json({ id: newId });
@@ -534,8 +535,9 @@ export default async function handler(req, res) {
         const num = t.numero != null ? Number(t.numero) : 0;
         const tit = (t.titulo || "").trim() || "";
         const dur = (t.duracion || "").trim() || null;
+        const enlace = (t.enlace || "").trim() || null;
         if (num > 0 && tit) {
-          await executeQuery(QUERIES.INSERT_TEMA, [bookId, num, tit, dur]);
+          await executeQuery(QUERIES.INSERT_TEMA, [bookId, num, tit, dur, enlace]);
         }
       }
       const updated = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
@@ -596,6 +598,7 @@ export default async function handler(req, res) {
             numero: r.numero,
             titulo: r.nombreTema ?? "",
             duracion: r.duracion ?? "",
+            enlace: r.enlace ?? "",
           }));
         } else {
           book.temas = [];

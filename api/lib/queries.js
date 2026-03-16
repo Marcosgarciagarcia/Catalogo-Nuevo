@@ -517,13 +517,13 @@ export const QUERIES = {
 
   /** Temas (pistas) de un título/disco por codiTitulo_id. Para GET book by id. */
   GET_TEMAS_BY_TITULO_ID: `
-    SELECT numero, nombreTema, duracion FROM core_temas WHERE codiTitulo_id = ? ORDER BY numero
+    SELECT numero, nombreTema, duracion, enlace FROM core_temas WHERE codiTitulo_id = ? ORDER BY numero
   `,
 
-  /** Inserción de un tema (pista) de un disco. codiTitulo_id = FK a core_titulos.id; nombreTema = nombre de la pista. */
+  /** Inserción de un tema (pista) de un disco. enlace = URL opcional (Deezer, Spotify, etc.). */
   INSERT_TEMA: `
-    INSERT INTO core_temas (codiTitulo_id, numero, nombreTema, duracion, created, updated)
-    VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+    INSERT INTO core_temas (codiTitulo_id, numero, nombreTema, duracion, enlace, created, updated)
+    VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `,
 
   // ==================== ESTADÍSTICAS ====================
