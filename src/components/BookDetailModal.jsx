@@ -27,7 +27,9 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
   const openDeezerTema = (tituloTema) => {
     if (!tituloTema?.trim()) return;
     const artist = (libro.nombreAutor || '').trim();
-    const q = [artist, tituloTema].filter(Boolean).join(' ').trim().slice(0, 100);
+    const album = (libro.titulo || '').trim();
+    // Incluir título del disco para que Deezer priorice la versión de este álbum
+    const q = [artist, album, tituloTema].filter(Boolean).join(' ').trim().slice(0, 120);
     if (!q) return;
     window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
   };

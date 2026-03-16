@@ -184,7 +184,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const openDeezerTema = (tituloTema) => {
     if (!tituloTema?.trim()) return;
     const artist = addNewAuthor ? authorName : (authors.find((a) => String(a.id) === String(codiAutor_id))?.nombreAutor || authorName || '');
-    const q = [artist, tituloTema].filter(Boolean).join(' ').trim().slice(0, 100);
+    const album = (titulo || '').trim();
+    const q = [artist, album, tituloTema].filter(Boolean).join(' ').trim().slice(0, 120);
     if (!q) return;
     window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
   };
