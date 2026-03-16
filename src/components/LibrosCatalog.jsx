@@ -36,12 +36,12 @@ export default function LibrosCatalog() {
   const rawSlug = pathname.replace(/^\//, '').trim() || null;
   const slugFromPath = rawSlug
     ? (() => {
-        try {
-          return decodeURIComponent(rawSlug);
-        } catch {
-          return rawSlug;
-        }
-      })()
+      try {
+        return decodeURIComponent(rawSlug);
+      } catch {
+        return rawSlug;
+      }
+    })()
     : null;
 
   useEffect(() => {
@@ -201,8 +201,8 @@ export default function LibrosCatalog() {
             const icon = tc.slug === 'discoteca'
               ? '🎵'
               : tc.slug === 'videoteca'
-              ? '🎬'
-              : '📚';
+                ? '🎬'
+                : '📚';
             return (
               <button
                 key={tc.id}

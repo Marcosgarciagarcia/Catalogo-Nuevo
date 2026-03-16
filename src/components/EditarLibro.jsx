@@ -8,7 +8,7 @@ import {
   getSoportes,
   getBookById,
   updateBook,
-} from '../services/tursoService';
+} from ' ../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
 import './AltaLibro.css';
 
