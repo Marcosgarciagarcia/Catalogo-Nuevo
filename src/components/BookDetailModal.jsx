@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import './BookDetailModal. css';
+import './BookDetailModal.css';
 
 function DetailRow({ label, value }) {
   if (value == null || value === '') return null;
