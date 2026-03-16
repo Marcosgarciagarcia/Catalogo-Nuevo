@@ -200,12 +200,18 @@ export default function LibrosCatalog() {
             <span className="tipo-label-text"> Todos</span>
           </button>
           {tiposColeccion.map((tc) => {
-            const isActive = tipoSlugActive === tc.slug || (filterApplied?.tipoId != null && Number(filterApplied.tipoId) === Number(tc.id));
-            const icon = tc.slug === 'discoteca'
-              ? '🎵'
-              : tc.slug === 'videoteca'
-                ? '🎬'
-                : '📚';
+            const slugLower = (tc.slug || '').toLowerCase();
+            const nombreLower = (tc.nombre || '').toLowerCase();
+            const isDisco = ['discoteca', 'música', 'musica'].some(
+              (k) => slugLower.includes(k) || nombreLower.includes(k),
+            );
+            const isVideo = ['video', 'cine'].some(
+              (k) => slugLower.includes(k) || nombreLower.includes(k),
+            );
+            const icon = isDisco ? '🎵' : isVideo ? '🎬' : '📚';
+            const isActive =
+              tipoSlugActive === tc.slug ||
+              (filterApplied?.tipoId != null && Number(filterApplied.tipoId) === Number(tc.id));
             return (
               <button
                 key={tc.id}
