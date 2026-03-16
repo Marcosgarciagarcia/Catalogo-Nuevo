@@ -6,6 +6,7 @@ import {
   getUbicaciones,
   getEstantes,
   getSoportes,
+  getCollectionTypes,
   getBookById,
   updateBook,
 } from '../services/tursoService';
@@ -45,22 +46,26 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [temas, setTemas] = useState([]);
+  const [tiposColeccion, setTiposColeccion] = useState([]);
+  const [bookCodiTipoSoporte_id, setBookCodiTipoSoporte_id] = useState(null);
 
   const loadCombos = useCallback(async () => {
     try {
       setLoadingCombos(true);
-      const [a, p, u, e, sop] = await Promise.all([
+      const [a, p, u, e, sop, tipos] = await Promise.all([
         getAuthors(),
         getPublishers(),
         getUbicaciones(),
         getEstantes(),
         getSoportes(),
+        getCollectionTypes(),
       ]);
       setAuthors(a);
       setPublishers(p);
       setUbicaciones(u);
       setEstantes(e);
       setSoportes(sop);
+      setTiposColeccion(Array.isArray(tipos) ? tipos : []);
     } catch (err) {
       setError(err?.message ?? 'Error al cargar autores, editoriales, ubicaciones y soportes');
     } finally {
@@ -93,6 +98,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setCodiSoporte_id(full.codiSoporte_id != null ? String(full.codiSoporte_id) : '');
         setPortada_cloudinary(full.portada_cloudinary || '');
         setTemas(Array.isArray(full.temas) ? full.temas : []);
+        setBookCodiTipoSoporte_id(full.codiTipoSoporte_id != null ? full.codiTipoSoporte_id : null);
         if (full.codiAutor_id != null) {
           setCodiAutor_id(String(full.codiAutor_id));
           setAuthorName('');
@@ -190,6 +196,18 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
       else body.codiEstante_id = null;
       if (codiSoporte_id !== '') body.codiSoporte_id = Number(codiSoporte_id);
       else body.codiSoporte_id = null;
+      const isDisco = bookCodiTipoSoporte_id != null && tiposColeccion.some(
+        (t) => Number(t.id) === Number(bookCodiTipoSoporte_id) && (t.slug === 'discoteca' || (t.nombre || '').toLowerCase().includes('discoteca'))
+      );
+      if (isDisco) {
+        body.temas = temas
+          .filter((t) => t && (t.titulo || '').trim())
+          .map((t) => ({
+            numero: Math.max(1, parseInt(t.numero, 10) || 1),
+            titulo: (t.titulo || '').trim(),
+            duracion: (t.duracion || '').trim() || null,
+          }));
+      }
       await updateBook(libro.id, body, token);
       setSuccessMsg('Libro actualizado correctamente.');
       if (onSuccess) onSuccess();
@@ -219,6 +237,25 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
     const q = [artist, album].filter(Boolean).join(' ').trim().slice(0, 120);
     if (!q) return;
     window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const isDisco = bookCodiTipoSoporte_id != null && tiposColeccion.some(
+    (t) => Number(t.id) === Number(bookCodiTipoSoporte_id) && (t.slug === 'discoteca' || (t.nombre || '').toLowerCase().includes('discoteca'))
+  );
+
+  const addTema = () => {
+    setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '' }]);
+  };
+  const updateTema = (index, field, value) => {
+    setTemas((prev) => {
+      const next = [...prev];
+      if (!next[index]) return next;
+      next[index] = { ...next[index], [field]: field === 'numero' ? (value === '' ? '' : Number(value)) : value };
+      return next;
+    });
+  };
+  const removeTema = (index) => {
+    setTemas((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (!libro) return null;
@@ -481,42 +518,63 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               )}
             </div>
 
-            {temas.length > 0 && (
+            {isDisco && (
               <div className="alta-libro-field">
                 <h3 className="modal-section-title">Temas (pistas)</h3>
-                <div style={{ marginBottom: 8 }}>
-                  <button type="button" onClick={openDeezerAlbum} title="Abrir disco en Deezer" style={{ padding: '6px 12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.9rem' }}>
-                    ▶ Escuchar disco completo (Deezer)
-                  </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
+                  <span />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="alta-libro-btn-buscar" style={{ padding: '4px 10px', fontSize: '0.85rem' }} onClick={addTema}>
+                      + Añadir pista
+                    </button>
+                    <button type="button" onClick={openDeezerAlbum} title="Abrir disco en Deezer" style={{ padding: '4px 10px', fontSize: '0.85rem', background: '#2a5a2a', color: '#abffab', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                      ▶ Escuchar disco completo (Deezer)
+                    </button>
+                  </div>
                 </div>
-                <ul className="modal-temas-list" style={{ marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
-                  {temas.map((t, i) => (
-                    <li
-                      key={i}
-                      className="modal-tema-row"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginBottom: '0.25rem',
-                        color: '#e0e0e0',
-                      }}
-                    >
-                      <span style={{ minWidth: '1.5rem' }}>{t.numero}</span>
-                      <span style={{ flex: 1 }}>{t.titulo || '—'}</span>
-                      {t.duracion && <span style={{ color: '#e0e0e0' }}>{t.duracion}</span>}
-                      <button
-                        type="button"
-                        className="modal-tema-play"
-                        onClick={() => openDeezerTema((t.titulo || '').trim())}
-                        disabled={!t.titulo?.trim()}
-                        title="Abrir tema en Deezer"
-                      >
-                        ▶
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                {temas.length === 0 ? (
+                  <p style={{ color: '#999', fontSize: '0.9rem', margin: 0 }}>Aún no hay pistas. Usa «+ Añadir pista» para añadirlas.</p>
+                ) : (
+                  <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #555', borderRadius: 6, padding: 8, background: '#1a1a1a' }}>
+                    {temas.map((t, i) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                        <input
+                          type="number"
+                          min={1}
+                          value={t.numero ?? ''}
+                          onChange={(e) => updateTema(i, 'numero', e.target.value)}
+                          style={{ width: 40, padding: 4 }}
+                        />
+                        <input
+                          type="text"
+                          value={t.titulo ?? ''}
+                          onChange={(e) => updateTema(i, 'titulo', e.target.value)}
+                          placeholder="Título del tema"
+                          style={{ padding: 4 }}
+                        />
+                        <input
+                          type="text"
+                          value={t.duracion ?? ''}
+                          onChange={(e) => updateTema(i, 'duracion', e.target.value)}
+                          placeholder="3:45"
+                          style={{ padding: 4 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => openDeezerTema((t.titulo || '').trim())}
+                          disabled={!t.titulo?.trim()}
+                          title="Abrir tema en Deezer"
+                          style={{ padding: 4, background: '#2a5a2a', color: '#abffab', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                        >
+                          ▶
+                        </button>
+                        <button type="button" onClick={() => removeTema(i)} style={{ padding: 4, background: '#5a2a2a', color: '#ffabab', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

@@ -149,7 +149,8 @@ export const QUERIES = {
       e.descriEditorial as editorial,
       u.descriUbicacion as ubicacionDesc,
       s.descriEstante as estanteDesc,
-      sop.descriSoporte as soporteDesc
+      sop.descriSoporte as soporteDesc,
+      sop.codiTipoSoporte_id
     FROM core_titulos t
     LEFT JOIN core_autores a ON t.codiAutor_id = a.id
     LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id

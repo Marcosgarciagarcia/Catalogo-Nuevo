@@ -35,3 +35,6 @@ public/images/
 
 #Carpeta que no debe subirse a Github
 docs/
+
+# Configuración local de Cursor (no subir)
+.cursor/

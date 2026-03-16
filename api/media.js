@@ -525,6 +525,19 @@ export default async function handler(req, res) {
         publisherId,
         bookId,
       ]);
+      // Temas (pistas): reemplazar todos los del título por los enviados en body.temas
+      const temas = Array.isArray(body.temas) ? body.temas : [];
+      await executeQuery("DELETE FROM core_temas WHERE codiTitulo_id = ?", [
+        bookId,
+      ]);
+      for (const t of temas) {
+        const num = t.numero != null ? Number(t.numero) : 0;
+        const tit = (t.titulo || "").trim() || "";
+        const dur = (t.duracion || "").trim() || null;
+        if (num > 0 && tit) {
+          await executeQuery(QUERIES.INSERT_TEMA, [bookId, num, tit, dur]);
+        }
+      }
       const updated = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
       return res.status(200).json(sanitizeBook(updated[0]));
     }
