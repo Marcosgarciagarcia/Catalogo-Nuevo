@@ -65,6 +65,31 @@ export async function getDeezerPreview(q) {
 }
 
 /**
+ * Resuelve el enlace directo de un tema en Deezer (artista + álbum + tema).
+ * Útil cuando la lista viene de MusicBrainz y no hay enlace guardado.
+ * @param {string} artist - Nombre del artista
+ * @param {string} album - Título del disco
+ * @param {string} track - Título del tema
+ * @returns {Promise<string|null>} URL del tema en Deezer o null si no se encuentra
+ */
+export async function resolveDeezerTrackLink(artist, album, track) {
+  const t = (track || '').trim();
+  if (!t) return null;
+  try {
+    const json = await apiGet('/api/external', {
+      route: 'deezer-resolve',
+      artist: (artist || '').trim(),
+      album: (album || '').trim(),
+      track: t,
+    });
+    const link = json?.link;
+    return link && (link.startsWith('http://') || link.startsWith('https://')) ? link : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Tipos de colección para el selector inicial (menú dinámico).
  */
 export async function getCollectionTypes() {

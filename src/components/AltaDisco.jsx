@@ -7,6 +7,7 @@ import {
   createBook,
   fetchAlbumMetadataByEan,
   fetchAlbumMetadataByQuery,
+  resolveDeezerTrackLink,
 } from '../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
 import './AltaLibro.css';
@@ -196,6 +197,24 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     const q = [artist, album].filter(Boolean).join(' ').trim().slice(0, 120);
     if (!q) return;
     window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handlePlayTema = async (t) => {
+    const enlace = (t.enlace || '').trim();
+    if (enlace && (enlace.startsWith('http://') || enlace.startsWith('https://'))) {
+      window.open(enlace, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    const tituloTema = (t.titulo || '').trim();
+    if (!tituloTema) return;
+    const artist = addNewAuthor ? authorName : (authors.find((a) => String(a.id) === String(codiAutor_id))?.nombreAutor || authorName || '');
+    const album = (titulo || '').trim();
+    const link = await resolveDeezerTrackLink(artist, album, tituloTema);
+    if (link) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    } else {
+      openDeezerTema(tituloTema);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -560,7 +579,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
                     />
                     <button
                       type="button"
-                      onClick={() => (t.enlace?.trim() ? window.open(t.enlace.trim(), '_blank') : openDeezerTema((t.titulo || '').trim()))}
+                      onClick={() => handlePlayTema(t)}
                       disabled={!t.titulo?.trim() && !t.enlace?.trim()}
                       title={t.enlace?.trim() ? 'Abrir enlace' : 'Abrir tema en Deezer'}
                       style={{ padding: 4, background: '#2a5a2a', color: '#abffab', border: 'none', borderRadius: 4, cursor: 'pointer' }}

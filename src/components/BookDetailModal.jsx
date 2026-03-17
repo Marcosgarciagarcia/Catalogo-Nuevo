@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { resolveDeezerTrackLink } from '../services/tursoService';
 import './BookDetailModal.css';
 
 function DetailRow({ label, value }) {
@@ -28,10 +29,27 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
     if (!tituloTema?.trim()) return;
     const artist = (libro.nombreAutor || '').trim();
     const album = (libro.titulo || '').trim();
-    // Incluir título del disco para que Deezer priorice la versión de este álbum
     const q = [artist, album, tituloTema].filter(Boolean).join(' ').trim().slice(0, 120);
     if (!q) return;
     window.open(`https://www.deezer.com/search/${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handlePlayTema = async (t) => {
+    const enlace = (t.enlace || '').trim();
+    if (enlace && (enlace.startsWith('http://') || enlace.startsWith('https://'))) {
+      window.open(enlace, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    const tituloTema = (t.titulo || '').trim();
+    if (!tituloTema) return;
+    const artist = (libro.nombreAutor || '').trim();
+    const album = (libro.titulo || '').trim();
+    const link = await resolveDeezerTrackLink(artist, album, tituloTema);
+    if (link) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    } else {
+      openDeezerTema(tituloTema);
+    }
   };
 
   const openDeezerAlbum = () => {
@@ -147,7 +165,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                         <button
                           type="button"
                           className="modal-tema-play"
-                          onClick={() => (t.enlace?.trim() ? window.open(t.enlace.trim(), '_blank') : openDeezerTema((t.titulo || '').trim()))}
+                          onClick={() => handlePlayTema(t)}
                           disabled={!t.titulo?.trim() && !t.enlace?.trim()}
                           title={t.enlace?.trim() ? 'Abrir enlace' : 'Abrir tema en Deezer'}
                         >

@@ -336,6 +336,47 @@ async function handleDeezerPreview(req, res) {
   }
 }
 
+/**
+ * Resuelve el enlace directo de un tema en Deezer (para Play cuando no hay enlace guardado).
+ * Parámetros: artist, album, track. Devuelve { link } con la URL del tema o { link: null }.
+ */
+async function handleDeezerResolve(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    return res.status(200).end();
+  }
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const artist = (req.query.artist || '').trim().slice(0, 100);
+  const album = (req.query.album || '').trim().slice(0, 120);
+  const track = (req.query.track || '').trim().slice(0, 120);
+  if (!track) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(200).json({ link: null });
+  }
+  try {
+    const q = [artist, album, track].filter(Boolean).join(' ');
+    if (!q) {
+      return res.status(200).json({ link: null });
+    }
+    const url = `${DEEZER_SEARCH}?q=${encodeURIComponent(q)}&limit=1`;
+    const deezerRes = await fetch(url, { method: 'GET' });
+    if (!deezerRes.ok) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(200).json({ link: null });
+    }
+    const data = await deezerRes.json().catch(() => null);
+    const link = data?.data?.[0]?.link ?? null;
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.status(200).json({ link: link || null });
+  } catch (err) {
+    console.error('deezer-resolve:', err);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(200).json({ link: null });
+  }
+}
+
 // ---------- router ----------
 export default async function handler(req, res) {
   const route = (req.query.route || '').toLowerCase();
@@ -343,5 +384,6 @@ export default async function handler(req, res) {
   if (route === 'lookup-disc') return handleLookupDisc(req, res);
   if (route === 'upload-cover') return handleUploadCover(req, res);
   if (route === 'deezer-preview') return handleDeezerPreview(req, res);
-  return res.status(404).json({ error: 'Ruta no encontrada. Use ?route=lookup-isbn|lookup-disc|upload-cover|deezer-preview' });
+  if (route === 'deezer-resolve') return handleDeezerResolve(req, res);
+  return res.status(404).json({ error: 'Ruta no encontrada. Use ?route=lookup-isbn|lookup-disc|upload-cover|deezer-preview|deezer-resolve' });
 }
