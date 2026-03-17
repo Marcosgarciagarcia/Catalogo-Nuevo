@@ -4,6 +4,8 @@ import {
   getAuthors,
   getPublishers,
   getSoportes,
+  getUbicaciones,
+  getEstantes,
   createBook,
   fetchAlbumMetadataByEan,
   fetchAlbumMetadataByQuery,
@@ -34,6 +36,11 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [addNewPublisher, setAddNewPublisher] = useState(false);
   const [anyoEdicion, setAnyoEdicion] = useState('');
   const [codiSoporte_id, setCodiSoporte_id] = useState('');
+  const [codiUbicacion_id, setCodiUbicacion_id] = useState('');
+  const [codiEstante_id, setCodiEstante_id] = useState('');
+  const [ubicaciones, setUbicaciones] = useState([]);
+  const [estantes, setEstantes] = useState([]);
+  const [observaciones, setObservaciones] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -42,12 +49,20 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const loadCombos = useCallback(async () => {
     try {
       setLoadingCombos(true);
-      const [a, p, sop] = await Promise.all([getAuthors(), getPublishers(), getSoportes()]);
+      const [a, p, sop, u, e] = await Promise.all([
+        getAuthors(),
+        getPublishers(),
+        getSoportes(),
+        getUbicaciones(),
+        getEstantes(),
+      ]);
       setAuthors(a);
       setPublishers(p);
       setSoportes(sop);
+      setUbicaciones(u);
+      setEstantes(e);
     } catch (err) {
-      setError(err?.message ?? 'Error al cargar autores, editoriales y soportes');
+      setError(err?.message ?? 'Error al cargar autores, editoriales, soportes y ubicaciones');
     } finally {
       setLoadingCombos(false);
     }
@@ -247,7 +262,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         numeroPaginas: 0,
         numeroEjemplares: 1,
         sinopsis: null,
-        observaciones: null,
+        observaciones: observaciones.trim() || null,
         coleccion: null,
         serie: null,
         hastag: null,
@@ -266,6 +281,11 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
       } else {
         body.codiSoporte_id = null;
       }
+      if (codiUbicacion_id !== '') body.codiUbicacion_id = Number(codiUbicacion_id);
+      else body.codiUbicacion_id = null;
+      // codiEstante_id puede ser texto en BD (ej. "0106"). Enviar tal cual para no romper FK.
+      if (codiEstante_id !== '') body.codiEstante_id = codiEstante_id;
+      else body.codiEstante_id = null;
       if (addNewAuthor && authorName.trim()) {
         body.authorName = authorName.trim();
         body.addNewAuthor = true;
@@ -485,6 +505,51 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="alta-libro-row-2">
+            <div className="alta-libro-field">
+              <label htmlFor="alta-ubicacion">Ubicación</label>
+              <select
+                id="alta-ubicacion"
+                value={codiUbicacion_id}
+                onChange={(e) => setCodiUbicacion_id(e.target.value)}
+                disabled={loadingCombos}
+              >
+                <option value="">— Sin ubicación —</option>
+                {ubicaciones.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.descriUbicacion || u.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="alta-libro-field">
+              <label htmlFor="alta-estante">Estante</label>
+              <select
+                id="alta-estante"
+                value={codiEstante_id}
+                onChange={(e) => setCodiEstante_id(e.target.value)}
+                disabled={loadingCombos}
+              >
+                <option value="">— Sin estante —</option>
+                {estantes.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.descriEstante || s.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="alta-libro-field">
+            <label htmlFor="alta-observaciones">Observaciones</label>
+            <textarea
+              id="alta-observaciones"
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              rows={2}
+            />
           </div>
 
           <div className="alta-libro-field">
