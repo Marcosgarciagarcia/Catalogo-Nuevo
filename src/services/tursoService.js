@@ -431,6 +431,18 @@ function msToDuracion(ms) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/**
+ * Extrae el MBID de release (UUID) desde texto plano o URL de musicbrainz.org/release/...
+ */
+export function parseMusicBrainzReleaseMbidFromInput(str) {
+  const s = (str == null ? '' : String(str)).trim();
+  if (!s) return null;
+  const m = s.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+  );
+  return m ? m[0].toLowerCase() : null;
+}
+
 /** Extrae el nombre del artista desde artist-credit (puede ser uno o varios; join phrases). */
 function artistCreditToName(artistCredit) {
   if (!Array.isArray(artistCredit) || artistCredit.length === 0) return null;
@@ -471,6 +483,74 @@ export async function fetchMusicBrainzReleaseByBarcode(ean) {
     releaseId: r.id,
     title: r.title ?? null,
     artist,
+    date: r.date ?? null,
+    year,
+    barcode: r.barcode ?? null,
+  };
+}
+
+/**
+ * Obtiene metadatos básicos de un release por su MBID (UUID).
+ * Misma forma que fetchMusicBrainzReleaseByBarcode.
+ */
+export async function fetchMusicBrainzReleaseByMbid(mbid) {
+  const id = parseMusicBrainzReleaseMbidFromInput(mbid);
+  if (!id) return null;
+  const url = `${MUSICBRAINZ_BASE}/release/${encodeURIComponent(id)}?inc=labels&fmt=json`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
+  });
+  if (!response.ok) return null;
+  const r = await response.json().catch(() => null);
+  if (!r || !r.id) return null;
+  const artist = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  let year = null;
+  if (r.date) {
+    const match = r.date.match(/\d{4}/);
+    if (match) year = parseInt(match[0], 10);
+  }
+  return {
+    releaseId: r.id,
+    title: r.title ?? null,
+    artist,
+    date: r.date ?? null,
+    year,
+    barcode: r.barcode ?? null,
+  };
+}
+
+/**
+ * Busca un release por número de catálogo del sello y/o nombre del sello (p. ej. Deutsche Grammophon).
+ * Misma forma que fetchMusicBrainzReleaseByBarcode.
+ */
+export async function fetchMusicBrainzReleaseByCatalog(catno, label) {
+  const c = (catno || '').trim();
+  const l = (label || '').trim();
+  if (!c && !l) return null;
+  const parts = [];
+  if (c) parts.push(`catno:${c}`);
+  if (l) parts.push(`label:${l}`);
+  const query = parts.join(' AND ');
+  const url = `${MUSICBRAINZ_BASE}/release?query=${encodeURIComponent(query)}&fmt=json&limit=5`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
+  });
+  if (!response.ok) return null;
+  const data = await response.json().catch(() => null);
+  if (!data?.releases?.length) return null;
+  const r = data.releases[0];
+  const artistName = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+  let year = null;
+  if (r.date) {
+    const match = r.date.match(/\d{4}/);
+    if (match) year = parseInt(match[0], 10);
+  }
+  return {
+    releaseId: r.id,
+    title: r.title ?? null,
+    artist: artistName,
     date: r.date ?? null,
     year,
     barcode: r.barcode ?? null,
@@ -595,6 +675,7 @@ export async function fetchAlbumMetadataByEan(ean) {
       editorial: null,
       portadaUrl: null,
       temas: [],
+      musicbrainzReleaseMbid: first.releaseId,
     };
   }
   let portadaUrl = null;
@@ -609,6 +690,79 @@ export async function fetchAlbumMetadataByEan(ean) {
     editorial: detail.editorial ?? null,
     portadaUrl: portadaUrl ?? null,
     temas: detail.temas ?? [],
+    musicbrainzReleaseMbid: first.releaseId,
+  };
+}
+
+/**
+ * Busca datos de un disco por MBID de release (UUID o URL de musicbrainz.org/release/...).
+ * Misma forma de respuesta que fetchAlbumMetadataByEan.
+ */
+export async function fetchAlbumMetadataByReleaseMbid(mbidOrUrl) {
+  const first = await fetchMusicBrainzReleaseByMbid(mbidOrUrl);
+  if (!first) return null;
+  await new Promise((r) => setTimeout(r, 1200));
+  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
+  if (!detail) {
+    return {
+      titulo: first.title,
+      autor: first.artist,
+      anyoEdicion: first.year,
+      editorial: null,
+      portadaUrl: null,
+      temas: [],
+      musicbrainzReleaseMbid: first.releaseId,
+    };
+  }
+  let portadaUrl = null;
+  try {
+    await new Promise((r) => setTimeout(r, 1200));
+    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
+  } catch (_) {}
+  return {
+    titulo: detail.title ?? first.title,
+    autor: detail.artist ?? first.artist,
+    anyoEdicion: detail.year ?? first.year,
+    editorial: detail.editorial ?? null,
+    portadaUrl: portadaUrl ?? null,
+    temas: detail.temas ?? [],
+    musicbrainzReleaseMbid: first.releaseId,
+  };
+}
+
+/**
+ * Busca datos de un disco por catálogo de sello + nombre de sello (sin código de barras).
+ * Misma forma de respuesta que fetchAlbumMetadataByEan.
+ */
+export async function fetchAlbumMetadataByCatalog(catno, label) {
+  const first = await fetchMusicBrainzReleaseByCatalog(catno, label);
+  if (!first) return null;
+  await new Promise((r) => setTimeout(r, 1200));
+  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
+  if (!detail) {
+    return {
+      titulo: first.title,
+      autor: first.artist,
+      anyoEdicion: first.year,
+      editorial: null,
+      portadaUrl: null,
+      temas: [],
+      musicbrainzReleaseMbid: first.releaseId,
+    };
+  }
+  let portadaUrl = null;
+  try {
+    await new Promise((r) => setTimeout(r, 1200));
+    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
+  } catch (_) {}
+  return {
+    titulo: detail.title ?? first.title,
+    autor: detail.artist ?? first.artist,
+    anyoEdicion: detail.year ?? first.year,
+    editorial: detail.editorial ?? null,
+    portadaUrl: portadaUrl ?? null,
+    temas: detail.temas ?? [],
+    musicbrainzReleaseMbid: first.releaseId,
   };
 }
 
@@ -629,6 +783,7 @@ export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
       editorial: null,
       portadaUrl: null,
       temas: [],
+      musicbrainzReleaseMbid: first.releaseId,
     };
   }
   let portadaUrl = null;
@@ -643,5 +798,6 @@ export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
     editorial: detail.editorial ?? null,
     portadaUrl: portadaUrl ?? null,
     temas: detail.temas ?? [],
+    musicbrainzReleaseMbid: first.releaseId,
   };
 }

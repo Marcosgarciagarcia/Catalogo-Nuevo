@@ -62,6 +62,16 @@ function normalizarHastag(texto) {
     .join(" ");
 }
 
+/** Normaliza MBID de release (UUID) desde texto o URL de musicbrainz.org */
+function normalizeMusicbrainzReleaseMbid(v) {
+  const s = (v == null ? "" : String(v)).trim();
+  if (!s) return null;
+  const m = s.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+  );
+  return m ? m[0].toLowerCase() : null;
+}
+
 function sanitizeBook(book) {
   return {
     ...book,
@@ -77,6 +87,8 @@ function sanitizeBook(book) {
     ubicacionDesc: book.ubicacionDesc ?? null,
     estanteDesc: book.estanteDesc ?? null,
     soporteDesc: book.soporteDesc ?? null,
+    musicbrainz_release_mbid: book.musicbrainz_release_mbid ?? null,
+    numero_catalogo_sello: book.numero_catalogo_sello ?? null,
   };
 }
 
@@ -243,6 +255,11 @@ export default async function handler(req, res) {
         const coleccion = (body.coleccion || "").trim() || null;
         const serie = (body.serie || "").trim() || null;
         const hastag = normalizarHastag(body.hastag);
+        const musicbrainz_release_mbid = normalizeMusicbrainzReleaseMbid(
+          body.musicbrainz_release_mbid ?? body.musicbrainzReleaseMbid,
+        );
+        const numero_catalogo_sello =
+          (body.numero_catalogo_sello || "").trim() || null;
         const codiSoporte_id =
           body.codiSoporte_id != null && body.codiSoporte_id !== ""
             ? Number(body.codiSoporte_id)
@@ -262,6 +279,8 @@ export default async function handler(req, res) {
           coleccion,
           serie,
           hastag,
+          musicbrainz_release_mbid,
+          numero_catalogo_sello,
           codiSoporte_id,
           authorNameForBook,
           publisherNameForBook,
@@ -450,6 +469,11 @@ export default async function handler(req, res) {
       const coleccion = (body.coleccion || "").trim() || null;
       const serie = (body.serie || "").trim() || null;
       const hastag = normalizarHastag(body.hastag);
+      const musicbrainz_release_mbid = normalizeMusicbrainzReleaseMbid(
+        body.musicbrainz_release_mbid ?? body.musicbrainzReleaseMbid,
+      );
+      const numero_catalogo_sello =
+        (body.numero_catalogo_sello || "").trim() || null;
       const codiUbicacion_id =
         body.codiUbicacion_id != null && body.codiUbicacion_id !== ""
           ? Number(body.codiUbicacion_id)
@@ -519,6 +543,8 @@ export default async function handler(req, res) {
         coleccion,
         serie,
         hastag,
+        musicbrainz_release_mbid,
+        numero_catalogo_sello,
         codiUbicacion_id,
         codiEstante_id,
         codiSoporte_id,

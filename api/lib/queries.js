@@ -168,6 +168,7 @@ export const QUERIES = {
     UPDATE core_titulos SET
       EAN = ?, titulo = ?, tituloOriginal = ?, anyoEdicion = ?, numeroEdicion = ?, numeroPaginas = ?, numeroEjemplares = ?,
       portada_cloudinary = ?, sinopsis = ?, observaciones = ?, coleccion = ?, serie = ?, hastag = ?,
+      musicbrainz_release_mbid = ?, numero_catalogo_sello = ?,
       codiUbicacion_id = ?, codiEstante_id = ?, codiSoporte_id = ?,
       codiAutor_id = ?, codiEditorial_id = ?, updated = datetime('now')
     WHERE id = ?
@@ -504,10 +505,11 @@ export const QUERIES = {
     INSERT INTO core_titulos (
       EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
       portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
+      musicbrainz_release_mbid, numero_catalogo_sello,
       codiSoporte_id,
       codiAutor_id, codiEditorial_id, created, updated
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
       ?,
       (SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1),
       (SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1),

@@ -9,6 +9,9 @@ import {
   createBook,
   fetchAlbumMetadataByEan,
   fetchAlbumMetadataByQuery,
+  fetchAlbumMetadataByReleaseMbid,
+  fetchAlbumMetadataByCatalog,
+  parseMusicBrainzReleaseMbidFromInput,
   resolveDeezerTrackLink,
 } from '../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
@@ -45,6 +48,11 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [temas, setTemas] = useState([]);
+  const [musicbrainzReleaseMbid, setMusicbrainzReleaseMbid] = useState('');
+  const [numeroCatalogoSello, setNumeroCatalogoSello] = useState('');
+  const [mbidSearchInput, setMbidSearchInput] = useState('');
+  const [catalogSearchInput, setCatalogSearchInput] = useState('');
+  const [labelSearchInput, setLabelSearchInput] = useState('');
 
   const loadCombos = useCallback(async () => {
     try {
@@ -72,6 +80,25 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     loadCombos();
   }, [loadCombos]);
 
+  const applyMusicBrainzMetadata = (data) => {
+    if (!data) return;
+    setTitulo(data.titulo ?? '');
+    setArtistQuery(data.autor ?? '');
+    setReleaseQuery(data.titulo ?? '');
+    setAuthorName(data.autor ?? '');
+    setAddNewAuthor(true);
+    setCodiAutor_id('');
+    setPublisherName(data.editorial ?? '');
+    setAddNewPublisher(true);
+    setCodiEditorial_id('');
+    setAnyoEdicion(data.anyoEdicion != null ? String(data.anyoEdicion) : '');
+    setPortadaPreviewUrl(data.portadaUrl ?? '');
+    setTemas(Array.isArray(data.temas) ? data.temas : []);
+    if (data.musicbrainzReleaseMbid) {
+      setMusicbrainzReleaseMbid(data.musicbrainzReleaseMbid);
+    }
+  };
+
   const handleBuscarPorEan = async () => {
     const ean = String(eanDisplay).replace(/\D/g, '').trim();
     if (!ean) {
@@ -86,18 +113,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setError('No se encontraron datos para este EAN (MusicBrainz).');
         return;
       }
-      setTitulo(data.titulo ?? '');
-      setArtistQuery(data.autor ?? '');
-      setReleaseQuery(data.titulo ?? '');
-      setAuthorName(data.autor ?? '');
-      setAddNewAuthor(true);
-      setCodiAutor_id('');
-      setPublisherName(data.editorial ?? '');
-      setAddNewPublisher(true);
-      setCodiEditorial_id('');
-      setAnyoEdicion(data.anyoEdicion != null ? String(data.anyoEdicion) : '');
-      setPortadaPreviewUrl(data.portadaUrl ?? '');
-      setTemas(Array.isArray(data.temas) ? data.temas : []);
+      applyMusicBrainzMetadata(data);
     } catch (err) {
       setError(err?.message ?? 'Error al buscar por EAN');
     } finally {
@@ -120,20 +136,54 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setError('No se encontraron datos (MusicBrainz).');
         return;
       }
-      setTitulo(data.titulo ?? '');
-      setArtistQuery(data.autor ?? '');
-      setReleaseQuery(data.titulo ?? '');
-      setAuthorName(data.autor ?? '');
-      setAddNewAuthor(true);
-      setCodiAutor_id('');
-      setPublisherName(data.editorial ?? '');
-      setAddNewPublisher(true);
-      setCodiEditorial_id('');
-      setAnyoEdicion(data.anyoEdicion != null ? String(data.anyoEdicion) : '');
-      setPortadaPreviewUrl(data.portadaUrl ?? '');
-      setTemas(Array.isArray(data.temas) ? data.temas : []);
+      applyMusicBrainzMetadata(data);
     } catch (err) {
       setError(err?.message ?? 'Error al buscar');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleBuscarPorMbid = async () => {
+    if (!parseMusicBrainzReleaseMbidFromInput(mbidSearchInput)) {
+      setError('Introduce un MBID de release (UUID) o la URL de la página del disco en MusicBrainz.');
+      return;
+    }
+    setError('');
+    setSearching(true);
+    try {
+      const data = await fetchAlbumMetadataByReleaseMbid(mbidSearchInput);
+      if (!data) {
+        setError('No se encontró ese release en MusicBrainz.');
+        return;
+      }
+      applyMusicBrainzMetadata(data);
+    } catch (err) {
+      setError(err?.message ?? 'Error al buscar por MBID');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleBuscarPorCatalogo = async () => {
+    const cat = catalogSearchInput.trim();
+    const lab = labelSearchInput.trim();
+    if (!cat && !lab) {
+      setError('Introduce al menos el número de catálogo o el nombre del sello.');
+      return;
+    }
+    setError('');
+    setSearching(true);
+    try {
+      const data = await fetchAlbumMetadataByCatalog(cat, lab);
+      if (!data) {
+        setError('No se encontró ningún release con ese catálogo/sello en MusicBrainz.');
+        return;
+      }
+      applyMusicBrainzMetadata(data);
+      if (cat) setNumeroCatalogoSello(cat);
+    } catch (err) {
+      setError(err?.message ?? 'Error al buscar por catálogo');
     } finally {
       setSearching(false);
     }
@@ -236,9 +286,9 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
-    const ean = String(eanDisplay).replace(/\D/g, '').trim();
+    const ean = String(eanDisplay).replace(/-/g, '').trim();
     if (!ean) {
-      setError('EAN es obligatorio.');
+      setError('EAN / identificador del disco es obligatorio.');
       return;
     }
     if (!titulo.trim()) {
@@ -267,6 +317,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         serie: null,
         hastag: null,
         portada_cloudinary: (portada_cloudinary || '').trim() || null,
+        musicbrainz_release_mbid: parseMusicBrainzReleaseMbidFromInput(musicbrainzReleaseMbid) || null,
+        numero_catalogo_sello: numeroCatalogoSello.trim() || null,
         temas: temas
           .filter((t) => t && (t.titulo || '').trim())
           .map((t) => ({
@@ -323,6 +375,11 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setPortada_cloudinary('');
         setPortadaPreviewUrl('');
         setTemas([]);
+        setMusicbrainzReleaseMbid('');
+        setNumeroCatalogoSello('');
+        setMbidSearchInput('');
+        setCatalogSearchInput('');
+        setLabelSearchInput('');
         setSuccessMsg('');
       }, 2500);
     } catch (err) {
@@ -351,8 +408,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             type="text"
             value={eanDisplay}
             onChange={(e) => setEanDisplay(e.target.value)}
-            placeholder="Código de barras"
-            inputMode="numeric"
+            placeholder="EAN o código propio (letras y números)"
             autoComplete="off"
           />
           <button
@@ -363,6 +419,56 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
           >
             {searching ? 'Buscando…' : 'Buscar por EAN'}
           </button>
+        </div>
+
+        <div className="alta-libro-field" style={{ marginTop: 8 }}>
+          <label htmlFor="alta-mbid-search">MusicBrainz: URL o MBID del release</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input
+              id="alta-mbid-search"
+              type="text"
+              value={mbidSearchInput}
+              onChange={(e) => setMbidSearchInput(e.target.value)}
+              placeholder="https://musicbrainz.org/release/… o UUID"
+              style={{ flex: '1', minWidth: 200 }}
+            />
+            <button
+              type="button"
+              className="alta-libro-btn-buscar"
+              onClick={handleBuscarPorMbid}
+              disabled={searching}
+            >
+              {searching ? '…' : 'Cargar desde MBID'}
+            </button>
+          </div>
+        </div>
+
+        <div className="alta-libro-field" style={{ marginTop: 4 }}>
+          <label>Catálogo de sello + sello (sin código de barras)</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={catalogSearchInput}
+              onChange={(e) => setCatalogSearchInput(e.target.value)}
+              placeholder="Nº catálogo (ej. 2530 123)"
+              style={{ flex: '1', minWidth: 100 }}
+            />
+            <input
+              type="text"
+              value={labelSearchInput}
+              onChange={(e) => setLabelSearchInput(e.target.value)}
+              placeholder="Sello (ej. Deutsche Grammophon)"
+              style={{ flex: '1', minWidth: 120 }}
+            />
+            <button
+              type="button"
+              className="alta-libro-btn-buscar"
+              onClick={handleBuscarPorCatalogo}
+              disabled={searching}
+            >
+              {searching ? '…' : 'Buscar'}
+            </button>
+          </div>
         </div>
 
         <div className="alta-libro-isbn-row" style={{ marginTop: 8 }}>
@@ -392,6 +498,31 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         </div>
 
         <form onSubmit={handleSubmit} className="alta-libro-form">
+          <div className="alta-libro-row-2">
+            <div className="alta-libro-field">
+              <label htmlFor="alta-mbid-guardado">MBID release (guardado)</label>
+              <input
+                id="alta-mbid-guardado"
+                type="text"
+                value={musicbrainzReleaseMbid}
+                onChange={(e) => setMusicbrainzReleaseMbid(e.target.value)}
+                placeholder="UUID (se rellena al cargar desde MusicBrainz)"
+                autoComplete="off"
+              />
+            </div>
+            <div className="alta-libro-field">
+              <label htmlFor="alta-catalogo">Nº catálogo sello</label>
+              <input
+                id="alta-catalogo"
+                type="text"
+                value={numeroCatalogoSello}
+                onChange={(e) => setNumeroCatalogoSello(e.target.value)}
+                placeholder="Ej. catálogo DG"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
           <div className="alta-libro-field">
             <label htmlFor="alta-titulo">Título del disco</label>
             <input

@@ -10,6 +10,7 @@ import {
   getBookById,
   updateBook,
   resolveDeezerTrackLink,
+  parseMusicBrainzReleaseMbidFromInput,
 } from '../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
 import './AltaLibro.css';
@@ -49,6 +50,8 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [temas, setTemas] = useState([]);
   const [tiposColeccion, setTiposColeccion] = useState([]);
   const [bookCodiTipoSoporte_id, setBookCodiTipoSoporte_id] = useState(null);
+  const [musicbrainzReleaseMbid, setMusicbrainzReleaseMbid] = useState('');
+  const [numeroCatalogoSello, setNumeroCatalogoSello] = useState('');
 
   const loadCombos = useCallback(async () => {
     try {
@@ -100,6 +103,8 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setPortada_cloudinary(full.portada_cloudinary || '');
         setTemas(Array.isArray(full.temas) ? full.temas : []);
         setBookCodiTipoSoporte_id(full.codiTipoSoporte_id != null ? full.codiTipoSoporte_id : null);
+        setMusicbrainzReleaseMbid(full.musicbrainz_release_mbid || full.musicbrainzReleaseMbid || '');
+        setNumeroCatalogoSello(full.numero_catalogo_sello || full.numeroCatalogoSello || '');
         if (full.codiAutor_id != null) {
           setCodiAutor_id(String(full.codiAutor_id));
           setAuthorName('');
@@ -155,9 +160,9 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
-    const ean = String(eanDisplay).replace(/\D/g, '').trim();
+    const ean = String(eanDisplay).replace(/-/g, '').trim();
     if (!ean) {
-      setError('EAN es obligatorio.');
+      setError('ISBN/EAN es obligatorio.');
       return;
     }
     const token = getToken?.();
@@ -177,6 +182,8 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         observaciones: observaciones.trim() || null,
         hastag: hastag.trim() || null,
         portada_cloudinary: portada_cloudinary.trim() || null,
+        musicbrainz_release_mbid: parseMusicBrainzReleaseMbidFromInput(musicbrainzReleaseMbid) || null,
+        numero_catalogo_sello: numeroCatalogoSello.trim() || null,
       };
       if (addNewAuthor && authorName.trim()) {
         body.authorName = authorName.trim();
@@ -302,10 +309,34 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 type="text"
                 value={eanDisplay}
                 onChange={(e) => setEanDisplay(e.target.value)}
-                placeholder="9788484831234"
-                inputMode="numeric"
+                placeholder="9788484831234 o código con letras"
                 autoComplete="off"
               />
+            </div>
+
+            <div className="alta-libro-row-2">
+              <div className="alta-libro-field">
+                <label htmlFor="editar-mbid">MBID release (MusicBrainz)</label>
+                <input
+                  id="editar-mbid"
+                  type="text"
+                  value={musicbrainzReleaseMbid}
+                  onChange={(e) => setMusicbrainzReleaseMbid(e.target.value)}
+                  placeholder="UUID del release"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="alta-libro-field">
+                <label htmlFor="editar-catalogo">Nº catálogo sello</label>
+                <input
+                  id="editar-catalogo"
+                  type="text"
+                  value={numeroCatalogoSello}
+                  onChange={(e) => setNumeroCatalogoSello(e.target.value)}
+                  placeholder="Catálogo del sello"
+                  autoComplete="off"
+                />
+              </div>
             </div>
 
             <div className="alta-libro-field">

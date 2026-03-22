@@ -38,7 +38,9 @@ export const SYNC_TABLE_CONFIG = {
       'tituloOriginal', 'portada', 'numeroEjemplares', 'codiAutor_id',
       'codiGenero_id', 'codiSoporte_id', 'codiUbicacion_id', 'coleccion',
       'contraportada', 'codiEstante_id', 'serie', 'codiEditorial_id',
-      'sinopsis', 'observaciones', 'portada_cloudinary', 'hastag', 'created', 'updated',
+      'sinopsis', 'observaciones', 'portada_cloudinary', 'hastag',
+      'musicbrainz_release_mbid', 'numero_catalogo_sello',
+      'created', 'updated',
     ],
   },
   core_temas: {
