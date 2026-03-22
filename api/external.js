@@ -164,6 +164,53 @@ async function fetchMBReleaseByQuery(artist, releaseTitle) {
   }
 }
 
+function parseMusicBrainzReleaseMbidFromInput(str) {
+  const s = String(str == null ? '' : str).trim();
+  if (!s) return null;
+  const m = s.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  return m ? m[0].toLowerCase() : null;
+}
+
+async function fetchMBReleaseByMbid(mbidOrUrl) {
+  try {
+    const id = parseMusicBrainzReleaseMbidFromInput(mbidOrUrl);
+    if (!id) return null;
+    const res = await fetch(`${MUSICBRAINZ_BASE}/release/${encodeURIComponent(id)}?inc=labels&fmt=json`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+    if (!res.ok) return null;
+    const r = await res.json().catch(() => null);
+    if (!r || !r.id) return null;
+    const artist = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    let year = null;
+    if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
+    return { releaseId: r.id, title: r.title ?? null, artist, date: r.date ?? null, year, barcode: r.barcode ?? null };
+  } catch (_) {
+    return null;
+  }
+}
+
+async function fetchMBReleaseByCatalog(catno, labelName) {
+  try {
+    const c = (catno || '').trim();
+    const l = (labelName || '').trim();
+    if (!c && !l) return null;
+    const parts = [];
+    if (c) parts.push(`catno:${c}`);
+    if (l) parts.push(`label:${l}`);
+    const query = parts.join(' AND ');
+    const res = await fetch(`${MUSICBRAINZ_BASE}/release?query=${encodeURIComponent(query)}&fmt=json&limit=5`, { headers: { 'User-Agent': MUSICBRAINZ_UA } });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    if (!data?.releases?.length) return null;
+    const r = data.releases[0];
+    const artistName = artistCreditToName(r['artist-credit']) ?? r['artist-credit']?.[0]?.name ?? r['artist-credit']?.[0]?.artist?.name ?? null;
+    let year = null;
+    if (r.date) { const match = r.date.match(/\d{4}/); if (match) year = parseInt(match[0], 10); }
+    return { releaseId: r.id, title: r.title ?? null, artist: artistName, date: r.date ?? null, year, barcode: r.barcode ?? null };
+  } catch (_) {
+    return null;
+  }
+}
+
 async function fetchMBReleaseWithTracks(releaseId) {
   try {
     if (!releaseId) return null;
@@ -222,8 +269,13 @@ async function handleLookupDisc(req, res) {
     const ean = (req.query.ean || '').replace(/\D/g, '').trim();
     const artist = (req.query.artist || '').trim();
     const release = (req.query.release || req.query.title || '').trim();
+    const mbidRaw = (req.query.mbid || '').trim();
+    const catalog = (req.query.catalog || '').trim();
+    const label = (req.query.label || '').trim();
     let first = null;
     if (ean) first = await fetchMBReleaseByBarcode(ean);
+    else if (mbidRaw) first = await fetchMBReleaseByMbid(mbidRaw);
+    else if (catalog || label) first = await fetchMBReleaseByCatalog(catalog, label);
     else if (artist || release) first = await fetchMBReleaseByQuery(artist, release);
     if (!first) {
       setCors(res);
@@ -233,7 +285,15 @@ async function handleLookupDisc(req, res) {
     const detail = await fetchMBReleaseWithTracks(first.releaseId);
     if (!detail) {
       setCors(res);
-      return res.status(200).json({ titulo: first.title, autor: first.artist, anyoEdicion: first.year, editorial: null, portadaUrl: null, temas: [] });
+      return res.status(200).json({
+        titulo: first.title,
+        autor: first.artist,
+        anyoEdicion: first.year,
+        editorial: null,
+        portadaUrl: null,
+        temas: [],
+        musicbrainzReleaseMbid: first.releaseId,
+      });
     }
     let portadaUrl = null;
     try {
@@ -248,6 +308,7 @@ async function handleLookupDisc(req, res) {
       editorial: detail.editorial ?? null,
       portadaUrl: portadaUrl ?? null,
       temas: detail.temas ?? [],
+      musicbrainzReleaseMbid: first.releaseId,
     });
   } catch (err) {
     console.error('lookup-disc:', err);
