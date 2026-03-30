@@ -38,6 +38,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [addNewPublisher, setAddNewPublisher] = useState(false);
   const [anyoEdicion, setAnyoEdicion] = useState('');
   const [numeroPaginas, setNumeroPaginas] = useState('');
+  const [numeroEjemplares, setNumeroEjemplares] = useState('1');
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [hastag, setHastag] = useState('');
@@ -94,6 +95,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setTituloOriginal(full.tituloOriginal || '');
         setAnyoEdicion(full.anyoEdicion != null ? String(full.anyoEdicion) : '');
         setNumeroPaginas(full.numeroPaginas != null ? String(full.numeroPaginas) : '');
+        setNumeroEjemplares(full.numeroEjemplares != null ? String(full.numeroEjemplares) : '1');
         setSinopsis(full.sinopsis || '');
         setObservaciones(full.observaciones || '');
         setHastag(full.hastag || '');
@@ -178,6 +180,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         tituloOriginal: tituloOriginal.trim() || null,
         anyoEdicion: anyoEdicion === '' ? null : Number(anyoEdicion),
         numeroPaginas: numeroPaginas === '' ? null : Number(numeroPaginas),
+        numeroEjemplares: Number(numeroEjemplares) > 0 ? Number(numeroEjemplares) : 1,
         sinopsis: sinopsis.trim() || null,
         observaciones: observaciones.trim() || null,
         hastag: hastag.trim() || null,
@@ -456,6 +459,17 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                   onChange={(e) => setNumeroPaginas(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="alta-libro-field">
+              <label htmlFor="editar-ejemplares">Nº ejemplares</label>
+              <input
+                id="editar-ejemplares"
+                type="number"
+                min="1"
+                value={numeroEjemplares}
+                onChange={(e) => setNumeroEjemplares(e.target.value)}
+              />
             </div>
 
             <div className="alta-libro-field">

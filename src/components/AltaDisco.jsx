@@ -38,12 +38,14 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [publisherName, setPublisherName] = useState('');
   const [addNewPublisher, setAddNewPublisher] = useState(false);
   const [anyoEdicion, setAnyoEdicion] = useState('');
+  const [numeroEjemplares, setNumeroEjemplares] = useState('1');
   const [codiSoporte_id, setCodiSoporte_id] = useState('');
   const [codiUbicacion_id, setCodiUbicacion_id] = useState('');
   const [codiEstante_id, setCodiEstante_id] = useState('');
   const [ubicaciones, setUbicaciones] = useState([]);
   const [estantes, setEstantes] = useState([]);
   const [observaciones, setObservaciones] = useState('');
+  const [hastag, setHastag] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -97,6 +99,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     if (data.musicbrainzReleaseMbid) {
       setMusicbrainzReleaseMbid(data.musicbrainzReleaseMbid);
     }
+    setHastag(typeof data.hastag === 'string' ? data.hastag : '');
   };
 
   const handleBuscarPorEan = async () => {
@@ -310,12 +313,12 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         anyoEdicion: yearVal != null && !Number.isNaN(yearVal) ? yearVal : null,
         numeroEdicion: 1,
         numeroPaginas: 0,
-        numeroEjemplares: 1,
+        numeroEjemplares: numeroEjemplares === '' ? 1 : Math.max(1, parseInt(numeroEjemplares, 10) || 1),
         sinopsis: null,
         observaciones: observaciones.trim() || null,
         coleccion: null,
         serie: null,
-        hastag: null,
+        hastag: hastag.trim() || null,
         portada_cloudinary: (portada_cloudinary || '').trim() || null,
         musicbrainz_release_mbid: parseMusicBrainzReleaseMbidFromInput(musicbrainzReleaseMbid) || null,
         numero_catalogo_sello: numeroCatalogoSello.trim() || null,
@@ -377,6 +380,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setTemas([]);
         setMusicbrainzReleaseMbid('');
         setNumeroCatalogoSello('');
+        setNumeroEjemplares('1');
+        setHastag('');
         setMbidSearchInput('');
         setCatalogSearchInput('');
         setLabelSearchInput('');
@@ -636,6 +641,17 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="alta-libro-field">
+            <label htmlFor="alta-num-ejemplares">Nº ejemplares</label>
+            <input
+              id="alta-num-ejemplares"
+              type="number"
+              min="1"
+              value={numeroEjemplares}
+              onChange={(e) => setNumeroEjemplares(e.target.value)}
+            />
           </div>
 
           <div className="alta-libro-row-2">

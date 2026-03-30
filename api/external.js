@@ -126,6 +126,64 @@ function artistCreditToName(artistCredit) {
   return parts.length ? parts.join(' ') : null;
 }
 
+function stripAccents(s) {
+  return String(s || '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+}
+
+/**
+ * Devuelve [genreToken, subgenreToken] desde un nombre de género.
+ * Ejemplo: "hard rock" => ["rock", "hard"]
+ */
+function genreSubgenreTokens(genreName) {
+  const g = stripAccents(genreName).toLowerCase().trim();
+  const norm = g.replace(/[^a-z0-9]+/g, ' ').trim();
+  const words = norm ? norm.split(/\s+/).filter(Boolean) : [];
+  if (words.length === 0) return [null, null];
+  if (words.length === 1) return [words[0], words[0]];
+  return [words[words.length - 1], words[0]];
+}
+
+async function fetchHastagFromReleaseId(releaseId) {
+  try {
+    if (!releaseId) return null;
+    // Espera para respetar el rate limit de MusicBrainz entre requests.
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const rgRes = await fetch(
+      `${MUSICBRAINZ_BASE}/release/${encodeURIComponent(
+        releaseId,
+      )}?inc=release-groups&fmt=json`,
+      { headers: { 'User-Agent': MUSICBRAINZ_UA } },
+    );
+    if (!rgRes.ok) return null;
+    const rgData = await rgRes.json().catch(() => null);
+    const rgid = rgData?.['release-group']?.id;
+    if (!rgid) return null;
+
+    // Espera antes de la request de genres.
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const genresRes = await fetch(
+      `${MUSICBRAINZ_BASE}/release-group/${encodeURIComponent(
+        rgid,
+      )}?inc=genres&fmt=json`,
+      { headers: { 'User-Agent': MUSICBRAINZ_UA } },
+    );
+    if (!genresRes.ok) return null;
+    const genresData = await genresRes.json().catch(() => null);
+    const genres = Array.isArray(genresData?.genres) ? genresData.genres : [];
+    if (!genres?.length || !genres[0]?.name) return null;
+
+    const [genreToken, subToken] = genreSubgenreTokens(genres[0].name);
+    if (!genreToken || !subToken) return null;
+    return `#${genreToken} #${subToken}`;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function fetchMBReleaseByBarcode(ean) {
   try {
     const clean = String(ean).replace(/\D/g, '').trim();
@@ -283,6 +341,7 @@ async function handleLookupDisc(req, res) {
     }
     await new Promise((r) => setTimeout(r, 1200));
     const detail = await fetchMBReleaseWithTracks(first.releaseId);
+    const hastag = await fetchHastagFromReleaseId(first.releaseId);
     if (!detail) {
       setCors(res);
       return res.status(200).json({
@@ -293,6 +352,7 @@ async function handleLookupDisc(req, res) {
         portadaUrl: null,
         temas: [],
         musicbrainzReleaseMbid: first.releaseId,
+        hastag,
       });
     }
     let portadaUrl = null;
@@ -309,6 +369,7 @@ async function handleLookupDisc(req, res) {
       portadaUrl: portadaUrl ?? null,
       temas: detail.temas ?? [],
       musicbrainzReleaseMbid: first.releaseId,
+      hastag,
     });
   } catch (err) {
     console.error('lookup-disc:', err);

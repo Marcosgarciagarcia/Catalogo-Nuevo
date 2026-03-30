@@ -663,34 +663,17 @@ export async function fetchCoverArtArchiveRelease(mbid) {
  * MusicBrainz limita a 1 petición/segundo; se hace search + delay + lookup + opcional cover.
  */
 export async function fetchAlbumMetadataByEan(ean) {
-  const first = await fetchMusicBrainzReleaseByBarcode(ean);
-  if (!first) return null;
-  await new Promise((r) => setTimeout(r, 1200));
-  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
-  if (!detail) {
-    return {
-      titulo: first.title,
-      autor: first.artist,
-      anyoEdicion: first.year,
-      editorial: null,
-      portadaUrl: null,
-      temas: [],
-      musicbrainzReleaseMbid: first.releaseId,
-    };
-  }
-  let portadaUrl = null;
-  try {
-    await new Promise((r) => setTimeout(r, 1200));
-    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
-  } catch (_) {}
+  const data = await apiGet('/api/lookup-disc', { ean });
+  if (!data) return null;
   return {
-    titulo: detail.title ?? first.title,
-    autor: detail.artist ?? first.artist,
-    anyoEdicion: detail.year ?? first.year,
-    editorial: detail.editorial ?? null,
-    portadaUrl: portadaUrl ?? null,
-    temas: detail.temas ?? [],
-    musicbrainzReleaseMbid: first.releaseId,
+    titulo: data.titulo ?? null,
+    autor: data.autor ?? null,
+    anyoEdicion: data.anyoEdicion ?? null,
+    editorial: data.editorial ?? null,
+    portadaUrl: data.portadaUrl ?? null,
+    temas: Array.isArray(data.temas) ? data.temas : [],
+    musicbrainzReleaseMbid: data.musicbrainzReleaseMbid ?? null,
+    hastag: data.hastag ?? null,
   };
 }
 
@@ -699,34 +682,17 @@ export async function fetchAlbumMetadataByEan(ean) {
  * Misma forma de respuesta que fetchAlbumMetadataByEan.
  */
 export async function fetchAlbumMetadataByReleaseMbid(mbidOrUrl) {
-  const first = await fetchMusicBrainzReleaseByMbid(mbidOrUrl);
-  if (!first) return null;
-  await new Promise((r) => setTimeout(r, 1200));
-  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
-  if (!detail) {
-    return {
-      titulo: first.title,
-      autor: first.artist,
-      anyoEdicion: first.year,
-      editorial: null,
-      portadaUrl: null,
-      temas: [],
-      musicbrainzReleaseMbid: first.releaseId,
-    };
-  }
-  let portadaUrl = null;
-  try {
-    await new Promise((r) => setTimeout(r, 1200));
-    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
-  } catch (_) {}
+  const data = await apiGet('/api/lookup-disc', { mbid: mbidOrUrl });
+  if (!data) return null;
   return {
-    titulo: detail.title ?? first.title,
-    autor: detail.artist ?? first.artist,
-    anyoEdicion: detail.year ?? first.year,
-    editorial: detail.editorial ?? null,
-    portadaUrl: portadaUrl ?? null,
-    temas: detail.temas ?? [],
-    musicbrainzReleaseMbid: first.releaseId,
+    titulo: data.titulo ?? null,
+    autor: data.autor ?? null,
+    anyoEdicion: data.anyoEdicion ?? null,
+    editorial: data.editorial ?? null,
+    portadaUrl: data.portadaUrl ?? null,
+    temas: Array.isArray(data.temas) ? data.temas : [],
+    musicbrainzReleaseMbid: data.musicbrainzReleaseMbid ?? null,
+    hastag: data.hastag ?? null,
   };
 }
 
@@ -735,34 +701,17 @@ export async function fetchAlbumMetadataByReleaseMbid(mbidOrUrl) {
  * Misma forma de respuesta que fetchAlbumMetadataByEan.
  */
 export async function fetchAlbumMetadataByCatalog(catno, label) {
-  const first = await fetchMusicBrainzReleaseByCatalog(catno, label);
-  if (!first) return null;
-  await new Promise((r) => setTimeout(r, 1200));
-  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
-  if (!detail) {
-    return {
-      titulo: first.title,
-      autor: first.artist,
-      anyoEdicion: first.year,
-      editorial: null,
-      portadaUrl: null,
-      temas: [],
-      musicbrainzReleaseMbid: first.releaseId,
-    };
-  }
-  let portadaUrl = null;
-  try {
-    await new Promise((r) => setTimeout(r, 1200));
-    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
-  } catch (_) {}
+  const data = await apiGet('/api/lookup-disc', { catalog: catno, label });
+  if (!data) return null;
   return {
-    titulo: detail.title ?? first.title,
-    autor: detail.artist ?? first.artist,
-    anyoEdicion: detail.year ?? first.year,
-    editorial: detail.editorial ?? null,
-    portadaUrl: portadaUrl ?? null,
-    temas: detail.temas ?? [],
-    musicbrainzReleaseMbid: first.releaseId,
+    titulo: data.titulo ?? null,
+    autor: data.autor ?? null,
+    anyoEdicion: data.anyoEdicion ?? null,
+    editorial: data.editorial ?? null,
+    portadaUrl: data.portadaUrl ?? null,
+    temas: Array.isArray(data.temas) ? data.temas : [],
+    musicbrainzReleaseMbid: data.musicbrainzReleaseMbid ?? null,
+    hastag: data.hastag ?? null,
   };
 }
 
@@ -771,33 +720,16 @@ export async function fetchAlbumMetadataByCatalog(catno, label) {
  * Misma forma de respuesta que fetchAlbumMetadataByEan.
  */
 export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
-  const first = await fetchMusicBrainzReleaseByQuery(artist, releaseTitle);
-  if (!first) return null;
-  await new Promise((r) => setTimeout(r, 1200));
-  const detail = await fetchMusicBrainzReleaseWithTracks(first.releaseId);
-  if (!detail) {
-    return {
-      titulo: first.title,
-      autor: first.artist,
-      anyoEdicion: first.year,
-      editorial: null,
-      portadaUrl: null,
-      temas: [],
-      musicbrainzReleaseMbid: first.releaseId,
-    };
-  }
-  let portadaUrl = null;
-  try {
-    await new Promise((r) => setTimeout(r, 1200));
-    portadaUrl = await fetchCoverArtArchiveRelease(first.releaseId);
-  } catch (_) {}
+  const data = await apiGet('/api/lookup-disc', { artist, release: releaseTitle });
+  if (!data) return null;
   return {
-    titulo: detail.title ?? first.title,
-    autor: detail.artist ?? first.artist,
-    anyoEdicion: detail.year ?? first.year,
-    editorial: detail.editorial ?? null,
-    portadaUrl: portadaUrl ?? null,
-    temas: detail.temas ?? [],
-    musicbrainzReleaseMbid: first.releaseId,
+    titulo: data.titulo ?? null,
+    autor: data.autor ?? null,
+    anyoEdicion: data.anyoEdicion ?? null,
+    editorial: data.editorial ?? null,
+    portadaUrl: data.portadaUrl ?? null,
+    temas: Array.isArray(data.temas) ? data.temas : [],
+    musicbrainzReleaseMbid: data.musicbrainzReleaseMbid ?? null,
+    hastag: data.hastag ?? null,
   };
 }
