@@ -700,6 +700,17 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
           </div>
 
           <div className="alta-libro-field">
+            <label htmlFor="alta-hastag">Hastags</label>
+            <input
+              id="alta-hastag"
+              type="text"
+              value={hastag}
+              onChange={(e) => setHastag(e.target.value)}
+              placeholder="palabra1 palabra2 (se añadirá # si no empieza por #)"
+            />
+          </div>
+
+          <div className="alta-libro-field">
             <label>Portada (Cloudinary)</label>
             <div className="alta-libro-portada-upload">
               <label className="alta-libro-file-label">
