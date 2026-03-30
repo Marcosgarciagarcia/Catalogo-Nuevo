@@ -133,16 +133,34 @@ function stripAccents(s) {
 }
 
 /**
- * Devuelve [genreToken, subgenreToken] desde un nombre de género.
- * Ejemplo: "hard rock" => ["rock", "hard"]
+ * Género musical → hastag(s): una palabra → un solo #token; varias → #última #primera
+ * (evita #jazz #jazz cuando el género es solo "jazz").
  */
-function genreSubgenreTokens(genreName) {
+function hastagTokensFromGenreName(genreName) {
   const g = stripAccents(genreName).toLowerCase().trim();
   const norm = g.replace(/[^a-z0-9]+/g, ' ').trim();
   const words = norm ? norm.split(/\s+/).filter(Boolean) : [];
-  if (words.length === 0) return [null, null];
-  if (words.length === 1) return [words[0], words[0]];
-  return [words[words.length - 1], words[0]];
+  if (words.length === 0) return [];
+  if (words.length === 1) return [`#${words[0]}`];
+  const first = words[0];
+  const last = words[words.length - 1];
+  if (first === last) return [`#${last}`];
+  return [`#${last}`, `#${first}`];
+}
+
+/** Quita #tokens repetidos (misma cadena ignorando mayúsculas). */
+function uniqueHastagString(tokens) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of tokens) {
+    const t = String(raw || '').trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t.startsWith('#') ? t : `#${t}`);
+  }
+  return out.length ? out.join(' ') : null;
 }
 
 async function fetchHastagFromReleaseId(releaseId) {
@@ -176,9 +194,14 @@ async function fetchHastagFromReleaseId(releaseId) {
     const genres = Array.isArray(genresData?.genres) ? genresData.genres : [];
     if (!genres?.length || !genres[0]?.name) return null;
 
-    const [genreToken, subToken] = genreSubgenreTokens(genres[0].name);
-    if (!genreToken || !subToken) return null;
-    return `#${genreToken} #${subToken}`;
+    const primary = hastagTokensFromGenreName(genres[0].name);
+    const extra =
+      primary.length === 1 && genres.length > 1 && genres[1]?.name
+        ? hastagTokensFromGenreName(genres[1].name).filter(
+            (tok) => !primary.some((p) => p.toLowerCase() === tok.toLowerCase()),
+          )
+        : [];
+    return uniqueHastagString([...primary, ...extra].slice(0, 4));
   } catch (_) {
     return null;
   }
