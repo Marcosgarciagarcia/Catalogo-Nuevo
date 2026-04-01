@@ -137,9 +137,9 @@ export default function LibrosCatalog() {
     }
   }, [hastagFromUrl, busqueda, filtrarPor, filtroLetra, tipoSlugActive]);
 
-  const setModoBusqueda = (modo) => {
-    if (modo !== 'titulo' && modo !== 'autor') return;
-    setFiltrarPor(modo);
+  /** Un solo control: alterna entre búsqueda por obra (título en BD) y por autor, sin borrar el texto. */
+  const alternarCriterioBusqueda = () => {
+    setFiltrarPor((prev) => (prev === 'titulo' ? 'autor' : 'titulo'));
     setFiltroLetra(null);
     setPaginaActual(1);
   };
@@ -181,24 +181,15 @@ export default function LibrosCatalog() {
     );
   })();
 
-  const esCineVideo = (() => {
-    const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
-    const slugLower = (tipoSlugActive || '').toLowerCase();
-    const nombreLower = (tipo?.nombre || '').toLowerCase();
-    return ['video', 'cine', 'película', 'pelicula'].some(
-      (k) => slugLower.includes(k) || nombreLower.includes(k),
-    );
-  })();
+  const placeholderBusqueda =
+    filtrarPor === 'titulo'
+      ? 'Buscar por título…'
+      : esDiscoteca
+        ? 'Buscar por artista…'
+        : 'Buscar por autor…';
 
-  const placeholderObra = !tipoSlugActive
-    ? 'Obra: título (libro, disco, vídeo…)'
-    : esDiscoteca
-      ? 'Obra: título del álbum o disco…'
-      : esCineVideo
-        ? 'Obra: título de la película o vídeo…'
-        : 'Obra: título del libro u obra…';
-
-  const placeholderAutor = esDiscoteca ? 'Autor o artista…' : 'Autor…';
+  const etiquetaCriterioBusqueda =
+    filtrarPor === 'titulo' ? 'Buscar por: Título' : 'Buscar por: Autor';
 
   const tituloPagina = (() => {
     const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
@@ -267,53 +258,45 @@ export default function LibrosCatalog() {
 
       <div className="filtro-container">
         <div className="opciones-busqueda">
-          <span className="busqueda-modo-label" id="busqueda-modo-label">
-            Buscar por
-          </span>
-          <div
-            className="busqueda-modo"
-            role="group"
-            aria-labelledby="busqueda-modo-label"
+          <button
+            type="button"
+            className="busqueda-criterio-toggle"
+            onClick={alternarCriterioBusqueda}
+            title={
+              filtrarPor === 'titulo'
+                ? 'Buscando por título de la obra. Clic para buscar por autor.'
+                : 'Buscando por autor. Clic para buscar por título.'
+            }
+            aria-label={
+              filtrarPor === 'titulo'
+                ? 'Criterio: título. Activar búsqueda por autor'
+                : 'Criterio: autor. Activar búsqueda por título'
+            }
           >
-            <button
-              type="button"
-              className={filtrarPor === 'titulo' ? 'activo' : ''}
-              onClick={() => setModoBusqueda('titulo')}
-              aria-pressed={filtrarPor === 'titulo'}
-              title="Buscar por título de la obra (libro, disco, vídeo…)"
-            >
-              Obra
-            </button>
-            <button
-              type="button"
-              className={filtrarPor === 'autor' ? 'activo' : ''}
-              onClick={() => setModoBusqueda('autor')}
-              aria-pressed={filtrarPor === 'autor'}
-              title="Buscar por autor o artista"
-            >
-              Autor
-            </button>
-          </div>
+            {etiquetaCriterioBusqueda}
+          </button>
           <input
             type="search"
             enterKeyHint="search"
             autoComplete="off"
-            placeholder={filtrarPor === 'titulo' ? placeholderObra : placeholderAutor}
+            className="busqueda-input"
+            placeholder={placeholderBusqueda}
             value={busqueda}
             onChange={(e) => {
               setBusqueda(e.target.value);
               setPaginaActual(1);
             }}
-            aria-label={filtrarPor === 'titulo' ? 'Texto a buscar en obra' : 'Texto a buscar en autor'}
+            aria-label={filtrarPor === 'titulo' ? 'Texto a buscar por título' : 'Texto a buscar por autor'}
           />
           {(busqueda || filtroLetra || hastagFromUrl || tipoSlugActive) && (
             <button
+              type="button"
+              className="busqueda-clear-btn"
               onClick={() => {
                 limpiarFiltros();
                 setTipoSlug(null);
                 navigate('/');
               }}
-              type="button"
               aria-label="Limpiar filtros"
             >
               ✖
