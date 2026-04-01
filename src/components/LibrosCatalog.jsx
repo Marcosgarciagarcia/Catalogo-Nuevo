@@ -137,6 +137,13 @@ export default function LibrosCatalog() {
     }
   }, [hastagFromUrl, busqueda, filtrarPor, filtroLetra, tipoSlugActive]);
 
+  const setModoBusqueda = (modo) => {
+    if (modo !== 'titulo' && modo !== 'autor') return;
+    setFiltrarPor(modo);
+    setFiltroLetra(null);
+    setPaginaActual(1);
+  };
+
   const handleDeleteBook = async (libro) => {
     if (!libro?.id) return;
     // eslint-disable-next-line no-alert
@@ -152,13 +159,6 @@ export default function LibrosCatalog() {
       // eslint-disable-next-line no-alert
       alert(err?.message || 'Error al eliminar el libro');
     }
-  };
-
-  const cambiarTipoDeFiltro = () => {
-    setFiltrarPor(filtrarPor === 'titulo' ? 'autor' : 'titulo');
-    setFiltroLetra(null);
-    setBusqueda('');
-    setPaginaActual(1);
   };
 
   const limpiarFiltros = () => {
@@ -180,6 +180,25 @@ export default function LibrosCatalog() {
       (k) => slugLower.includes(k) || nombreLower.includes(k),
     );
   })();
+
+  const esCineVideo = (() => {
+    const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
+    const slugLower = (tipoSlugActive || '').toLowerCase();
+    const nombreLower = (tipo?.nombre || '').toLowerCase();
+    return ['video', 'cine', 'película', 'pelicula'].some(
+      (k) => slugLower.includes(k) || nombreLower.includes(k),
+    );
+  })();
+
+  const placeholderObra = !tipoSlugActive
+    ? 'Obra: título (libro, disco, vídeo…)'
+    : esDiscoteca
+      ? 'Obra: título del álbum o disco…'
+      : esCineVideo
+        ? 'Obra: título de la película o vídeo…'
+        : 'Obra: título del libro u obra…';
+
+  const placeholderAutor = esDiscoteca ? 'Autor o artista…' : 'Autor…';
 
   const tituloPagina = (() => {
     const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
@@ -248,21 +267,44 @@ export default function LibrosCatalog() {
 
       <div className="filtro-container">
         <div className="opciones-busqueda">
-          <button
-            onClick={cambiarTipoDeFiltro}
-            type="button"
-            aria-label={`Cambiar búsqueda por ${filtrarPor === 'titulo' ? (esDiscoteca ? 'artista' : 'autor') : 'título'}`}
+          <span className="busqueda-modo-label" id="busqueda-modo-label">
+            Buscar por
+          </span>
+          <div
+            className="busqueda-modo"
+            role="group"
+            aria-labelledby="busqueda-modo-label"
           >
-            🔍
-          </button>
+            <button
+              type="button"
+              className={filtrarPor === 'titulo' ? 'activo' : ''}
+              onClick={() => setModoBusqueda('titulo')}
+              aria-pressed={filtrarPor === 'titulo'}
+              title="Buscar por título de la obra (libro, disco, vídeo…)"
+            >
+              Obra
+            </button>
+            <button
+              type="button"
+              className={filtrarPor === 'autor' ? 'activo' : ''}
+              onClick={() => setModoBusqueda('autor')}
+              aria-pressed={filtrarPor === 'autor'}
+              title="Buscar por autor o artista"
+            >
+              Autor
+            </button>
+          </div>
           <input
-            type="text"
-            placeholder={`Buscar por ${filtrarPor === 'titulo' ? 'título' : esDiscoteca ? 'artista' : 'autor'}...`}
+            type="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            placeholder={filtrarPor === 'titulo' ? placeholderObra : placeholderAutor}
             value={busqueda}
             onChange={(e) => {
               setBusqueda(e.target.value);
               setPaginaActual(1);
             }}
+            aria-label={filtrarPor === 'titulo' ? 'Texto a buscar en obra' : 'Texto a buscar en autor'}
           />
           {(busqueda || filtroLetra || hastagFromUrl || tipoSlugActive) && (
             <button
@@ -334,8 +376,16 @@ export default function LibrosCatalog() {
                 ? ` en ${tiposColeccion.find((tc) => tc.slug === tipoSlugActive || Number(tc.id) === Number(filterApplied?.tipoId))?.nombre ?? tipoSlugActive ?? ''}`
                 : ''}
               {hastagFromUrl ? ` con hastag #${hastagFromUrl.replace(/^#+/, '')}` : ''}
-              {filtroLetra ? ` que comienzan con ${filtroLetra}` : ''}
-              {busqueda ? ` que contienen "${busqueda}"` : ''}
+              {filtroLetra
+                ? (filtrarPor === 'titulo'
+                  ? ` con obra (título) que empieza por ${filtroLetra}`
+                  : ` con autor que empieza por ${filtroLetra}`)
+                : ''}
+              {busqueda
+                ? (filtrarPor === 'titulo'
+                  ? ` en obra/título que contiene "${busqueda}"`
+                  : ` en autor que contiene "${busqueda}"`)
+                : ''}
             </p>
             {/* Detalle técnico del filtro (solo para depuración, oculto en producción) */}
           </div>
