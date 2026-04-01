@@ -3,6 +3,9 @@
  * Organizadas por tipo de media (libros, música, video)
  */
 
+/** Instantáneo UTC como TEXT ISO-8601 terminado en Z (mismo criterio que catalogo_manager/datetime_utils). */
+const SQLITE_UTC_NOW_ISO = "(strftime('%Y-%m-%dT%H:%M:%S', 'now') || 'Z')";
+
 export const QUERIES = {
   // ==================== TIPOS DE COLECCIÓN (menú dinámico) ====================
 
@@ -163,14 +166,14 @@ export const QUERIES = {
   /** Para validar EAN duplicado antes de crear/autor/editorial en altas; en edición excluir el propio id */
   GET_BOOK_ID_BY_EAN: `SELECT id FROM core_titulos WHERE EAN = ? LIMIT 1`,
 
-  /** Actualizar libro por id (updated = datetime('now') para sincronización LWW) */
+  /** Actualizar libro por id (updated en UTC ISO-8601 para sincronización LWW) */
   UPDATE_BOOK: `
     UPDATE core_titulos SET
       EAN = ?, titulo = ?, tituloOriginal = ?, anyoEdicion = ?, numeroEdicion = ?, numeroPaginas = ?, numeroEjemplares = ?,
       portada_cloudinary = ?, sinopsis = ?, observaciones = ?, coleccion = ?, serie = ?, hastag = ?,
       musicbrainz_release_mbid = ?, numero_catalogo_sello = ?,
       codiUbicacion_id = ?, codiEstante_id = ?, codiSoporte_id = ?,
-      codiAutor_id = ?, codiEditorial_id = ?, updated = datetime('now')
+      codiAutor_id = ?, codiEditorial_id = ?, updated = ${SQLITE_UTC_NOW_ISO}
     WHERE id = ?
   `,
 
@@ -480,16 +483,16 @@ export const QUERIES = {
   `,
 
   // ==================== INSERTS (altas) ====================
-  // created/updated con datetime('now') para cumplir NOT NULL en SQLite/Turso
+  // created/updated en UTC ISO-8601 (TEXT) para cumplir NOT NULL en SQLite/Turso
 
   INSERT_AUTHOR: `
     INSERT INTO core_autores (nombreAutor, enlaceWiki, enlaceWiki2, created, updated)
-    VALUES (?, ?, ?, datetime('now'), datetime('now')) RETURNING id
+    VALUES (?, ?, ?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO}) RETURNING id
   `,
 
   INSERT_PUBLISHER: `
     INSERT INTO core_editoriales (descriEditorial, created, updated)
-    VALUES (?, datetime('now'), datetime('now')) RETURNING id
+    VALUES (?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO}) RETURNING id
   `,
 
   INSERT_BOOK: `
@@ -497,7 +500,7 @@ export const QUERIES = {
       EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
       portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
       codiAutor_id, codiEditorial_id, created, updated
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO}) RETURNING id
   `,
 
   /** Para uso en transacción: codiAutor_id y codiEditorial_id por subconsulta por nombre (evita pasar ids entre sentencias) */
@@ -513,7 +516,7 @@ export const QUERIES = {
       ?,
       (SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1),
       (SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1),
-      datetime('now'), datetime('now')
+      ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO}
     ) RETURNING id
   `,
 
@@ -525,7 +528,7 @@ export const QUERIES = {
   /** Inserción de un tema (pista) de un disco. enlace = URL opcional (Deezer, Spotify, etc.). */
   INSERT_TEMA: `
     INSERT INTO core_temas (codiTitulo_id, numero, nombreTema, duracion, enlace, created, updated)
-    VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    VALUES (?, ?, ?, ?, ?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO})
   `,
 
   // ==================== ESTADÍSTICAS ====================
