@@ -35,9 +35,9 @@ export const SYNC_TABLE_CONFIG = {
     id_field: 'id',
     fields: [
       'EAN', 'titulo', 'numeroEdicion', 'anyoEdicion', 'numeroPaginas',
-      'tituloOriginal', 'portada', 'numeroEjemplares', 'codiAutor_id',
+      'tituloOriginal', 'numeroEjemplares', 'codiAutor_id',
       'codiGenero_id', 'codiSoporte_id', 'codiUbicacion_id', 'coleccion',
-      'contraportada', 'codiEstante_id', 'serie', 'codiEditorial_id',
+      'codiEstante_id', 'serie', 'codiEditorial_id',
       'sinopsis', 'observaciones', 'portada_cloudinary', 'hastag',
       'musicbrainz_release_mbid', 'numero_catalogo_sello',
       'created', 'updated',

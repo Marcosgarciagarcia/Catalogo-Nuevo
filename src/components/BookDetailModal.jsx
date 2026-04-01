@@ -183,9 +183,8 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                 </Block>
               )}
 
-              <Block title="Otros datos" twoCols>
-                <DetailRow label="Contraportada" value={libro.contraportada} />
-                {(libro.autorWiki || libro.autorWiki2) && (
+              {(libro.autorWiki || libro.autorWiki2) && (
+                <Block title="Otros datos" twoCols>
                   <div className="detail-row">
                     <span className="detail-label">Enlaces autor</span>
                     <span className="detail-value">
@@ -205,8 +204,8 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                         ))}
                     </span>
                   </div>
-                )}
-              </Block>
+                </Block>
+              )}
 
               <div className="modal-actions">
                 {canEdit && (onEdit || onDelete) ? (
@@ -259,7 +258,6 @@ BookDetailModal.propTypes = {
     coleccion: PropTypes.string,
     serie: PropTypes.string,
     hastag: PropTypes.string,
-    contraportada: PropTypes.string,
     codiEstante_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     codiUbicacion_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     ubicacionDesc: PropTypes.string,

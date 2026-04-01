@@ -94,12 +94,12 @@ BookList.propTypes = {
       EAN: PropTypes.string.isRequired,
       nombreAutor: PropTypes.string.isRequired,
       titulo: PropTypes.string.isRequired,
-      portada: PropTypes.oneOfType([
+      portada_cloudinary: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.shape({
           url: PropTypes.string.isRequired
         })
-      ]).isRequired
+      ])
     })
   ),
   onBookClick: PropTypes.func
