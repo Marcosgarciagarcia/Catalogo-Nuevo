@@ -57,18 +57,56 @@ BookImage.propTypes = {
   alt: PropTypes.string.isRequired
 };
 
-function BookList({ libros = [], onBookClick }) {
+function BookList({ libros = [], onBookClick, discotecaMode = false, onAuthorClick }) {
+  const authorLabel = discotecaMode ? 'Artista' : 'Autor';
+  const unknownAuthor = discotecaMode ? 'Artista desconocido' : 'Autor desconocido';
+
   return (
     <div className="card-container">
-      {libros.map((libro) => (
+      {libros.map((libro) => {
+        const nombre = (libro.nombreAutor || '').trim();
+        const canFilterAuthor = Boolean(onAuthorClick && nombre && nombre !== unknownAuthor);
+
+        const authorBlock = (
+          <div className="author-container">
+            {canFilterAuthor ? (
+              <button
+                type="button"
+                className="author author--clickable"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAuthorClick(nombre);
+                }}
+                title={`Buscar por ${authorLabel.toLowerCase()}: ${nombre}`}
+              >
+                {nombre}
+              </button>
+            ) : (
+              <p className="author">{nombre || unknownAuthor}</p>
+            )}
+          </div>
+        );
+
+        const titleBlock = (
+          <div className="title-container">
+            <p className="title">{libro.titulo}</p>
+          </div>
+        );
+
+        return (
         <div key={libro.EAN || libro.id} className='card'>
           <div className='text-container'>
-            <div className='author-container'>
-              <p className='author'>{libro.nombreAutor || 'Autor desconocido'}</p>
-            </div>
-            <div className='title-container'>
-              <p className='title'>{libro.titulo}</p>
-            </div>
+            {discotecaMode ? (
+              <>
+                {titleBlock}
+                {authorBlock}
+              </>
+            ) : (
+              <>
+                {authorBlock}
+                {titleBlock}
+              </>
+            )}
           </div>
           <div 
             className='image-container'
@@ -83,7 +121,8 @@ function BookList({ libros = [], onBookClick }) {
           </div>
           <div className='isbn'>{libro.EAN}</div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -102,7 +141,9 @@ BookList.propTypes = {
       ])
     })
   ),
-  onBookClick: PropTypes.func
+  onBookClick: PropTypes.func,
+  onAuthorClick: PropTypes.func,
+  discotecaMode: PropTypes.bool,
 };
 
 BookList.defaultProps = {

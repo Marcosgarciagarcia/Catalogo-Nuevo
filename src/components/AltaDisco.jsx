@@ -400,11 +400,19 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
 
   return (
     <div className="alta-libro-backdrop" onClick={handleBackdropClick}>
-      <div className="alta-libro-modal" style={{ maxWidth: '560px' }}>
+      <div className="alta-libro-modal" style={{ maxWidth: '640px' }}>
         <button type="button" className="alta-libro-close" onClick={onClose}>
           ✕
         </button>
         <h2>Alta de disco</h2>
+
+        <section className="alta-disco-panel alta-disco-panel--import" aria-labelledby="alta-disco-import-title">
+          <h3 id="alta-disco-import-title" className="alta-disco-panel-title">
+            Buscar e importar (MusicBrainz)
+          </h3>
+          <p className="alta-disco-panel-hint">
+            Estos campos solo sirven para buscar en MusicBrainz y rellenar la ficha. No se guardan hasta que pulses «Guardar disco».
+          </p>
 
         <div className="alta-libro-isbn-row">
           <label htmlFor="alta-ean">EAN</label>
@@ -501,8 +509,16 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             Buscar
           </button>
         </div>
+        </section>
 
         <form onSubmit={handleSubmit} className="alta-libro-form">
+          <section className="alta-disco-panel alta-disco-panel--ficha" aria-labelledby="alta-disco-ficha-title">
+            <h3 id="alta-disco-ficha-title" className="alta-disco-panel-title">
+              Ficha del disco (se guarda en el catálogo)
+            </h3>
+            <p className="alta-disco-panel-hint">
+              Aquí editas lo que se almacena: título, artista, sello, pistas, etc. Algunos valores se duplican respecto al bloque anterior para que puedas corregirlos antes de guardar.
+            </p>
           <div className="alta-libro-row-2">
             <div className="alta-libro-field">
               <label htmlFor="alta-mbid-guardado">MBID release (guardado)</label>
@@ -539,7 +555,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
           </div>
 
           <div className="alta-libro-field">
-            <label>Autor / Artista</label>
+            <label>Artista (en catálogo)</label>
             <div className="alta-libro-combo-row">
               <label className="alta-libro-check">
                 <input
@@ -829,6 +845,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
               {saving ? 'Guardando…' : 'Guardar disco'}
             </button>
           </div>
+          </section>
         </form>
       </div>
     </div>

@@ -172,17 +172,36 @@ export default function LibrosCatalog() {
     }, { replace: true });
   };
 
-  const tituloPagina = (() => {
+  const esDiscoteca = (() => {
     const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
     const slugLower = (tipoSlugActive || '').toLowerCase();
     const nombreLower = (tipo?.nombre || '').toLowerCase();
-    const esDiscoteca = ['discoteca', 'música', 'musica'].some(
+    return ['discoteca', 'música', 'musica'].some(
       (k) => slugLower.includes(k) || nombreLower.includes(k),
     );
+  })();
+
+  const tituloPagina = (() => {
+    const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
+    const nombreLower = (tipo?.nombre || '').toLowerCase();
     if (esDiscoteca) return 'Catálogo de discoteca de casa';
     if (tipo) return `Catálogo de ${nombreLower || tipo.slug} de casa`;
     return 'Catálogo de libros de casa';
   })();
+
+  const filtrarPorAutor = (nombreAutor) => {
+    const q = (nombreAutor || '').trim();
+    if (!q) return;
+    setFiltrarPor('autor');
+    setBusqueda(q);
+    setFiltroLetra(null);
+    setPaginaActual(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('hastag');
+      return next;
+    }, { replace: true });
+  };
 
   return (
     <div className="app-container">
@@ -232,13 +251,13 @@ export default function LibrosCatalog() {
           <button
             onClick={cambiarTipoDeFiltro}
             type="button"
-            aria-label={`Cambiar búsqueda por ${filtrarPor === 'titulo' ? 'autor' : 'título'}`}
+            aria-label={`Cambiar búsqueda por ${filtrarPor === 'titulo' ? (esDiscoteca ? 'artista' : 'autor') : 'título'}`}
           >
             🔍
           </button>
           <input
             type="text"
-            placeholder={`Buscar por ${filtrarPor === 'titulo' ? 'título' : 'autor'}...`}
+            placeholder={`Buscar por ${filtrarPor === 'titulo' ? 'título' : esDiscoteca ? 'artista' : 'autor'}...`}
             value={busqueda}
             onChange={(e) => {
               setBusqueda(e.target.value);
@@ -326,6 +345,8 @@ export default function LibrosCatalog() {
               paginaActual * librosPorPagina
             )}
             onBookClick={(libro) => setSelectedBook(libro)}
+            discotecaMode={esDiscoteca}
+            onAuthorClick={filtrarPorAutor}
           />
           <Pagination
             totalLibros={libros.length}
@@ -360,6 +381,7 @@ export default function LibrosCatalog() {
             setBookToEdit(libro);
           }}
           onDelete={handleDeleteBook}
+          isDiscoteca={esDiscoteca}
         />
       )}
       {bookToEdit && (

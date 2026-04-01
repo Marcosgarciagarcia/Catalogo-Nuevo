@@ -287,3 +287,37 @@
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+/* Alta de disco: separar bloque de búsqueda (MusicBrainz) vs ficha guardada */
+.alta-disco-panel {
+  border-radius: 8px;
+  padding: 14px 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.alta-disco-panel--import {
+  background: rgba(30, 80, 120, 0.25);
+  border-color: rgba(100, 180, 255, 0.35);
+}
+
+.alta-disco-panel--ficha {
+  background: rgba(40, 55, 40, 0.35);
+  border-color: rgba(120, 200, 120, 0.25);
+  margin-top: 4px;
+}
+
+.alta-disco-panel-title {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.alta-disco-panel-hint {
+  margin: 0 0 14px 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #b0b0b0;
+}

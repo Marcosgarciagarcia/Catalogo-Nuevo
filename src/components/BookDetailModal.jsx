@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { resolveDeezerTrackLink } from '../services/tursoService';
 import './BookDetailModal.css';
@@ -22,8 +22,12 @@ function Block({ title, children, twoCols }) {
   );
 }
 
-function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
+function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscoteca = false }) {
+  const location = useLocation();
   if (!libro) return null;
+
+  const hastagBasePath = location.pathname && location.pathname !== '/' ? location.pathname : '/';
+  const autorRowLabel = isDiscoteca ? 'Artista' : 'Autor';
 
   const openDeezerTema = (tituloTema) => {
     if (!tituloTema?.trim()) return;
@@ -83,6 +87,11 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
 
             <div className="modal-info-section">
               <h2 className="modal-title">{libro.titulo}</h2>
+              {(libro.nombreAutor || '').trim() ? (
+                <p className="modal-artist-subtitle" title={autorRowLabel}>
+                  {libro.nombreAutor}
+                </p>
+              ) : null}
 
               <Block title="Identificación" twoCols>
                 <DetailRow label="Título original" value={libro.tituloOriginal} />
@@ -94,7 +103,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
                       {(libro.hastag || '').trim().split(/\s+/).filter(Boolean).map((token) => (
                         <Link
                           key={token}
-                          to={`/libros?hastag=${encodeURIComponent(token.replace(/^#+/, ''))}`}
+                          to={`${hastagBasePath}?hastag=${encodeURIComponent(token.replace(/^#+/, ''))}`}
                           className="detail-hastag-link"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -107,7 +116,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
               </Block>
 
               <Block title="Autoría y edición" twoCols>
-                <DetailRow label="Autor" value={libro.nombreAutor || '—'} />
+                <DetailRow label={autorRowLabel} value={libro.nombreAutor || '—'} />
                 <DetailRow label="Editorial" value={libro.editorial} />
                 <DetailRow label="Año de edición" value={libro.anyoEdicion} />
                 <DetailRow label="N.º edición" value={libro.numeroEdicion} />
@@ -186,7 +195,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete }) {
               {(libro.autorWiki || libro.autorWiki2) && (
                 <Block title="Otros datos" twoCols>
                   <div className="detail-row">
-                    <span className="detail-label">Enlaces autor</span>
+                    <span className="detail-label">{isDiscoteca ? 'Enlaces artista' : 'Enlaces autor'}</span>
                     <span className="detail-value">
                       {[libro.autorWiki, libro.autorWiki2]
                         .filter(Boolean)
@@ -276,6 +285,7 @@ BookDetailModal.propTypes = {
   canEdit: PropTypes.bool,
   onEdit: PropTypes.func,
   onDelete: PropTypes.func,
+  isDiscoteca: PropTypes.bool,
 };
 
 export default BookDetailModal;

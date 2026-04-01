@@ -140,6 +140,26 @@
   word-wrap: break-word;
 }
 
+button.author.author--clickable {
+  display: inline;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: #1565c0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: inherit;
+  word-wrap: break-word;
+}
+
+button.author.author--clickable:hover {
+  color: #0d47a1;
+}
+
 .title {
   margin: 0;
   font-size: 1em;
