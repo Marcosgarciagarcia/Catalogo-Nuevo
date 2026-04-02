@@ -37,6 +37,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [publisherName, setPublisherName] = useState('');
   const [addNewPublisher, setAddNewPublisher] = useState(false);
   const [anyoEdicion, setAnyoEdicion] = useState('');
+  /** En BD se guarda en `numeroPaginas`; para discos representa cuántos discos componen el álbum. */
+  const [numeroPaginas, setNumeroPaginas] = useState('');
   const [numeroEjemplares, setNumeroEjemplares] = useState('1');
   const [coleccion, setColeccion] = useState('');
   const [codiSoporte_id, setCodiSoporte_id] = useState('');
@@ -308,7 +310,10 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         tituloOriginal: null,
         anyoEdicion: yearVal != null && !Number.isNaN(yearVal) ? yearVal : null,
         numeroEdicion: 1,
-        numeroPaginas: 0,
+        numeroPaginas:
+          numeroPaginas === ''
+            ? 0
+            : Math.max(0, parseInt(numeroPaginas, 10) || 0),
         numeroEjemplares: numeroEjemplares === '' ? 1 : Math.max(1, parseInt(numeroEjemplares, 10) || 1),
         sinopsis: null,
         observaciones: observaciones.trim() || null,
@@ -375,6 +380,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setMusicbrainzReleaseMbid('');
         setNumeroCatalogoSello('');
         setNumeroEjemplares('1');
+        setNumeroPaginas('');
         setColeccion('');
         setHastag('');
         setMbidSearchInput('');
@@ -623,6 +629,18 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
                 </select>
               )}
             </div>
+          </div>
+
+          <div className="alta-libro-field">
+            <label htmlFor="alta-num-discos-album">N.º de discos (álbum)</label>
+            <input
+              id="alta-num-discos-album"
+              type="number"
+              min="0"
+              value={numeroPaginas}
+              onChange={(e) => setNumeroPaginas(e.target.value)}
+              placeholder="Ej. 1 (un solo disco), 2 (doble…)"
+            />
           </div>
 
           <div className="alta-libro-row-3">

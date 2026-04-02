@@ -120,7 +120,10 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscotec
                 <DetailRow label="Editorial" value={libro.editorial} />
                 <DetailRow label="Año de edición" value={libro.anyoEdicion} />
                 <DetailRow label="N.º edición" value={libro.numeroEdicion} />
-                <DetailRow label="N.º páginas" value={libro.numeroPaginas} />
+                <DetailRow
+                  label={isDiscoteca ? 'N.º de discos (álbum)' : 'N.º páginas'}
+                  value={libro.numeroPaginas}
+                />
                 <DetailRow label="N.º ejemplares" value={libro.numeroEjemplares} />
               </Block>
 

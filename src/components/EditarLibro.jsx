@@ -440,18 +440,19 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               </div>
             </div>
 
-            {!isDisco && (
             <div className="alta-libro-field">
-              <label htmlFor="editar-paginas">Nº páginas</label>
+              <label htmlFor="editar-paginas">
+                {isDisco ? 'N.º de discos (álbum)' : 'Nº páginas'}
+              </label>
               <input
                 id="editar-paginas"
                 type="number"
                 min="0"
                 value={numeroPaginas}
                 onChange={(e) => setNumeroPaginas(e.target.value)}
+                placeholder={isDisco ? 'Discos físicos que componen el álbum' : undefined}
               />
             </div>
-            )}
 
             <div className="alta-libro-row-3">
               <div className="alta-libro-field">
