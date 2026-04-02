@@ -39,6 +39,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [anyoEdicion, setAnyoEdicion] = useState('');
   const [numeroPaginas, setNumeroPaginas] = useState('');
   const [numeroEjemplares, setNumeroEjemplares] = useState('1');
+  const [coleccion, setColeccion] = useState('');
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [hastag, setHastag] = useState('');
@@ -96,6 +97,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setAnyoEdicion(full.anyoEdicion != null ? String(full.anyoEdicion) : '');
         setNumeroPaginas(full.numeroPaginas != null ? String(full.numeroPaginas) : '');
         setNumeroEjemplares(full.numeroEjemplares != null ? String(full.numeroEjemplares) : '1');
+        setColeccion(full.coleccion || '');
         setSinopsis(full.sinopsis || '');
         setObservaciones(full.observaciones || '');
         setHastag(full.hastag || '');
@@ -181,6 +183,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         anyoEdicion: anyoEdicion === '' ? null : Number(anyoEdicion),
         numeroPaginas: numeroPaginas === '' ? null : Number(numeroPaginas),
         numeroEjemplares: Number(numeroEjemplares) > 0 ? Number(numeroEjemplares) : 1,
+        coleccion: coleccion.trim() || null,
         sinopsis: sinopsis.trim() || null,
         observaciones: observaciones.trim() || null,
         hastag: hastag.trim() || null,
@@ -437,7 +440,18 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               </div>
             </div>
 
-            <div className="alta-libro-row-2">
+            <div className="alta-libro-field">
+              <label htmlFor="editar-paginas">Nº páginas</label>
+              <input
+                id="editar-paginas"
+                type="number"
+                min="0"
+                value={numeroPaginas}
+                onChange={(e) => setNumeroPaginas(e.target.value)}
+              />
+            </div>
+
+            <div className="alta-libro-row-3">
               <div className="alta-libro-field">
                 <label htmlFor="editar-anyo">Año edición</label>
                 <input
@@ -449,26 +463,44 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                   onChange={(e) => setAnyoEdicion(e.target.value)}
                 />
               </div>
+
               <div className="alta-libro-field">
-                <label htmlFor="editar-paginas">Nº páginas</label>
+                <label htmlFor="editar-soporte">Soporte</label>
+                <select
+                  id="editar-soporte"
+                  value={codiSoporte_id}
+                  onChange={(e) => setCodiSoporte_id(e.target.value)}
+                  disabled={loadingCombos}
+                >
+                  <option value="">— Seleccionar soporte —</option>
+                  {soportes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.descriSoporte || s.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="alta-libro-field">
+                <label htmlFor="editar-ejemplares">Nº ejemplares</label>
                 <input
-                  id="editar-paginas"
+                  id="editar-ejemplares"
                   type="number"
-                  min="0"
-                  value={numeroPaginas}
-                  onChange={(e) => setNumeroPaginas(e.target.value)}
+                  min="1"
+                  value={numeroEjemplares}
+                  onChange={(e) => setNumeroEjemplares(e.target.value)}
                 />
               </div>
             </div>
 
             <div className="alta-libro-field">
-              <label htmlFor="editar-ejemplares">Nº ejemplares</label>
+              <label htmlFor="editar-coleccion">Colección</label>
               <input
-                id="editar-ejemplares"
-                type="number"
-                min="1"
-                value={numeroEjemplares}
-                onChange={(e) => setNumeroEjemplares(e.target.value)}
+                id="editar-coleccion"
+                type="text"
+                value={coleccion}
+                onChange={(e) => setColeccion(e.target.value)}
+                placeholder="Colección (opcional)"
               />
             </div>
 
@@ -499,23 +531,6 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 onChange={(e) => setHastag(e.target.value)}
                 placeholder="palabra1 palabra2 (se añadirá # si no empieza por #)"
               />
-            </div>
-
-            <div className="alta-libro-field">
-              <label htmlFor="editar-soporte">Soporte</label>
-              <select
-                id="editar-soporte"
-                value={codiSoporte_id}
-                onChange={(e) => setCodiSoporte_id(e.target.value)}
-                disabled={loadingCombos}
-              >
-                <option value="">— Seleccionar soporte —</option>
-                {soportes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.descriSoporte || s.id}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="alta-libro-row-2">

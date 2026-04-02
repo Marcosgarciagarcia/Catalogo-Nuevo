@@ -39,6 +39,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [addNewPublisher, setAddNewPublisher] = useState(false);
   const [anyoEdicion, setAnyoEdicion] = useState('');
   const [numeroEjemplares, setNumeroEjemplares] = useState('1');
+  const [coleccion, setColeccion] = useState('');
   const [codiSoporte_id, setCodiSoporte_id] = useState('');
   const [codiUbicacion_id, setCodiUbicacion_id] = useState('');
   const [codiEstante_id, setCodiEstante_id] = useState('');
@@ -316,7 +317,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         numeroEjemplares: numeroEjemplares === '' ? 1 : Math.max(1, parseInt(numeroEjemplares, 10) || 1),
         sinopsis: null,
         observaciones: observaciones.trim() || null,
-        coleccion: null,
+        coleccion: coleccion.trim() || null,
         serie: null,
         hastag: hastag.trim() || null,
         portada_cloudinary: (portada_cloudinary || '').trim() || null,
@@ -381,6 +382,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setMusicbrainzReleaseMbid('');
         setNumeroCatalogoSello('');
         setNumeroEjemplares('1');
+        setColeccion('');
         setHastag('');
         setMbidSearchInput('');
         setCatalogSearchInput('');
@@ -434,7 +436,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
           </button>
         </div>
 
-        <div className="alta-libro-field" style={{ marginTop: 8 }}>
+        <div className="alta-libro-field">
           <label htmlFor="alta-mbid-search">MusicBrainz: URL o MBID del release</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <input
@@ -456,7 +458,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
           </div>
         </div>
 
-        <div className="alta-libro-field" style={{ marginTop: 4 }}>
+        <div className="alta-libro-field">
           <label>Catálogo de sello + sello (sin código de barras)</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <input
@@ -484,7 +486,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
           </div>
         </div>
 
-        <div className="alta-libro-isbn-row" style={{ marginTop: 8 }}>
+        <div className="alta-libro-isbn-row">
           <label>Artista / Álbum</label>
           <input
             type="text"
@@ -630,7 +632,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             </div>
           </div>
 
-          <div className="alta-libro-row-2">
+          <div className="alta-libro-row-3">
             <div className="alta-libro-field">
               <label htmlFor="alta-anyo">Año</label>
               <input
@@ -657,16 +659,26 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
                 ))}
               </select>
             </div>
+            <div className="alta-libro-field">
+              <label htmlFor="alta-num-ejemplares">Nº ejemplares</label>
+              <input
+                id="alta-num-ejemplares"
+                type="number"
+                min="1"
+                value={numeroEjemplares}
+                onChange={(e) => setNumeroEjemplares(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="alta-libro-field">
-            <label htmlFor="alta-num-ejemplares">Nº ejemplares</label>
+            <label htmlFor="alta-coleccion">Colección</label>
             <input
-              id="alta-num-ejemplares"
-              type="number"
-              min="1"
-              value={numeroEjemplares}
-              onChange={(e) => setNumeroEjemplares(e.target.value)}
+              id="alta-coleccion"
+              type="text"
+              value={coleccion}
+              onChange={(e) => setColeccion(e.target.value)}
+              placeholder="Colección (opcional)"
             />
           </div>
 

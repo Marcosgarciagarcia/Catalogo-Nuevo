@@ -169,6 +169,22 @@
   gap: 12px;
 }
 
+.alta-libro-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  /* En móvil, apilar para que los campos no queden demasiado estrechos */
+  .alta-libro-row-2 {
+    grid-template-columns: 1fr;
+  }
+  .alta-libro-row-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .alta-libro-portada-upload {
   display: flex;
   flex-wrap: wrap;

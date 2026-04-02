@@ -183,13 +183,13 @@ export default function LibrosCatalog() {
 
   const placeholderBusqueda =
     filtrarPor === 'titulo'
-      ? 'Buscar por título…'
+      ? 'Buscar por obra…'
       : esDiscoteca
         ? 'Buscar por artista…'
         : 'Buscar por autor…';
 
   const etiquetaCriterioBusqueda =
-    filtrarPor === 'titulo' ? 'Buscar por: Título' : 'Buscar por: Autor';
+    filtrarPor === 'titulo' ? 'Buscar por: Obra' : 'Buscar por: Autor';
 
   const tituloPagina = (() => {
     const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
