@@ -440,6 +440,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               </div>
             </div>
 
+            {!isDisco && (
             <div className="alta-libro-field">
               <label htmlFor="editar-paginas">Nº páginas</label>
               <input
@@ -450,6 +451,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 onChange={(e) => setNumeroPaginas(e.target.value)}
               />
             </div>
+            )}
 
             <div className="alta-libro-row-3">
               <div className="alta-libro-field">
@@ -504,6 +506,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               />
             </div>
 
+            {!isDisco && (
             <div className="alta-libro-field">
               <label htmlFor="editar-sinopsis">Sinopsis</label>
               <textarea
@@ -513,6 +516,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 rows={3}
               />
             </div>
+            )}
             <div className="alta-libro-field">
               <label htmlFor="editar-observaciones">Observaciones</label>
               <textarea
@@ -533,7 +537,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               />
             </div>
 
-            <div className="alta-libro-row-2">
+            {isDisco ? (
               <div className="alta-libro-field">
                 <label htmlFor="editar-ubicacion">Ubicación</label>
                 <select
@@ -549,22 +553,40 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                   ))}
                 </select>
               </div>
-              <div className="alta-libro-field">
-                <label htmlFor="editar-estante">Estante</label>
-                <select
-                  id="editar-estante"
-                  value={codiEstante_id}
-                  onChange={(e) => setCodiEstante_id(e.target.value)}
-                >
-                  <option value="">— Sin estante —</option>
-                  {estantes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.descriEstante || s.id}
-                    </option>
-                  ))}
-                </select>
+            ) : (
+              <div className="alta-libro-row-2">
+                <div className="alta-libro-field">
+                  <label htmlFor="editar-ubicacion">Ubicación</label>
+                  <select
+                    id="editar-ubicacion"
+                    value={codiUbicacion_id}
+                    onChange={(e) => setCodiUbicacion_id(e.target.value)}
+                  >
+                    <option value="">— Sin ubicación —</option>
+                    {ubicaciones.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.descriUbicacion || u.id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="alta-libro-field">
+                  <label htmlFor="editar-estante">Estante</label>
+                  <select
+                    id="editar-estante"
+                    value={codiEstante_id}
+                    onChange={(e) => setCodiEstante_id(e.target.value)}
+                  >
+                    <option value="">— Sin estante —</option>
+                    {estantes.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.descriEstante || s.id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="alta-libro-field">
               <label htmlFor="editar-portada">Portada (Cloudinary)</label>
