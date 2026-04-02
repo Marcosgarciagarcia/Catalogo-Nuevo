@@ -183,7 +183,7 @@ export default function LibrosCatalog() {
 
   const placeholderBusqueda =
     filtrarPor === 'titulo'
-      ? 'Buscar por obra…'
+      ? 'EAN, título, hastag, catálogo, MBID…'
       : esDiscoteca
         ? 'Buscar por artista…'
         : 'Buscar por autor…';
@@ -264,8 +264,8 @@ export default function LibrosCatalog() {
             onClick={alternarCriterioBusqueda}
             title={
               filtrarPor === 'titulo'
-                ? 'Buscando por título de la obra. Clic para buscar por autor.'
-                : 'Buscando por autor. Clic para buscar por título.'
+                ? 'Búsqueda por obra (EAN, título, hastag, etc.). Clic para buscar por autor.'
+                : 'Buscando por autor. Clic para buscar por obra.'
             }
             aria-label={
               filtrarPor === 'titulo'
@@ -286,7 +286,11 @@ export default function LibrosCatalog() {
               setBusqueda(e.target.value);
               setPaginaActual(1);
             }}
-            aria-label={filtrarPor === 'titulo' ? 'Texto a buscar por título' : 'Texto a buscar por autor'}
+            aria-label={
+              filtrarPor === 'titulo'
+                ? 'Texto a buscar: EAN, título, hastag u otros datos de la obra'
+                : 'Texto a buscar por autor'
+            }
           />
           {(busqueda || filtroLetra || hastagFromUrl || tipoSlugActive) && (
             <button

@@ -72,6 +72,20 @@ function normalizeMusicbrainzReleaseMbid(v) {
   return m ? m[0].toLowerCase() : null;
 }
 
+/** Seis placeholders LIKE idénticos para SEARCH_BOOKS_SMART_OBRA* (EAN, títulos, hastag, MBID, nº sello). */
+function buildSmartObraLikeParams(search) {
+  const raw = search == null ? "" : String(search).trim();
+  const searchPattern = `%${raw}%`;
+  return [
+    searchPattern,
+    searchPattern,
+    searchPattern,
+    searchPattern,
+    searchPattern,
+    searchPattern,
+  ];
+}
+
 function sanitizeBook(book) {
   return {
     ...book,
@@ -662,24 +676,31 @@ export default async function handler(req, res) {
         }
       } else if (search) {
         const searchPattern = `%${search}%`;
+        const smartP = buildSmartObraLikeParams(search);
         if (tipoId != null) {
           query =
             searchBy === "autor"
               ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO_ID
-              : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO_ID;
-          params = [tipoId, searchPattern];
+              : QUERIES.SEARCH_BOOKS_SMART_OBRA_BY_TIPO_ID;
+          params =
+            searchBy === "autor"
+              ? [tipoId, searchPattern]
+              : [tipoId, ...smartP];
         } else if (tipoSlug) {
           query =
             searchBy === "autor"
               ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO
-              : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO;
-          params = [tipoSlug, searchPattern];
+              : QUERIES.SEARCH_BOOKS_SMART_OBRA_BY_TIPO;
+          params =
+            searchBy === "autor"
+              ? [tipoSlug, searchPattern]
+              : [tipoSlug, ...smartP];
         } else {
           query =
             searchBy === "autor"
               ? QUERIES.SEARCH_BOOKS_BY_AUTHOR
-              : QUERIES.SEARCH_BOOKS_BY_TITLE;
-          params = [searchPattern];
+              : QUERIES.SEARCH_BOOKS_SMART_OBRA;
+          params = searchBy === "autor" ? [searchPattern] : smartP;
         }
       } else if (letter) {
         const letterPattern = `${letter}%`;
@@ -860,24 +881,31 @@ export default async function handler(req, res) {
         }
       } else if (search) {
         const searchPattern = `%${search}%`;
+        const smartP = buildSmartObraLikeParams(search);
         if (tipoId != null) {
           query =
             searchBy === "autor"
               ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO_ID
-              : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO_ID;
-          params = [tipoId, searchPattern];
+              : QUERIES.SEARCH_BOOKS_SMART_OBRA_BY_TIPO_ID;
+          params =
+            searchBy === "autor"
+              ? [tipoId, searchPattern]
+              : [tipoId, ...smartP];
         } else if (tipoSlug) {
           query =
             searchBy === "autor"
               ? QUERIES.SEARCH_BOOKS_BY_AUTHOR_BY_TIPO
-              : QUERIES.SEARCH_BOOKS_BY_TITLE_BY_TIPO;
-          params = [tipoSlug, searchPattern];
+              : QUERIES.SEARCH_BOOKS_SMART_OBRA_BY_TIPO;
+          params =
+            searchBy === "autor"
+              ? [tipoSlug, searchPattern]
+              : [tipoSlug, ...smartP];
         } else {
           query =
             searchBy === "autor"
               ? QUERIES.SEARCH_BOOKS_BY_AUTHOR
-              : QUERIES.SEARCH_BOOKS_BY_TITLE;
-          params = [searchPattern];
+              : QUERIES.SEARCH_BOOKS_SMART_OBRA;
+          params = searchBy === "autor" ? [searchPattern] : smartP;
         }
       } else if (letter) {
         const letterPattern = `${letter}%`;

@@ -243,6 +243,83 @@ export const QUERIES = {
     WHERE tc.id = ? AND t.titulo LIKE ?
     ORDER BY t.titulo
   `,
+
+  /**
+   * Búsqueda "obra" (un término): EAN (parcial), título, título original, hastag (subcadena),
+   * MusicBrainz release MBID, nº catálogo de sello. Params: 6× el mismo patrón LIKE %…%.
+   */
+  SEARCH_BOOKS_SMART_OBRA: `
+    SELECT
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE (
+      UPPER(COALESCE(t.EAN, '')) LIKE UPPER(?)
+      OR UPPER(COALESCE(t.titulo, '')) LIKE UPPER(?)
+      OR UPPER(COALESCE(t.tituloOriginal, '')) LIKE UPPER(?)
+      OR COALESCE(t.hastag, '') LIKE ?
+      OR LOWER(COALESCE(t.musicbrainz_release_mbid, '')) LIKE LOWER(?)
+      OR UPPER(COALESCE(t.numero_catalogo_sello, '')) LIKE UPPER(?)
+    )
+    ORDER BY t.titulo
+  `,
+
+  SEARCH_BOOKS_SMART_OBRA_BY_TIPO: `
+    SELECT
+      t.id,
+      t.EAN,
+      t.titulo,
+      t.tituloOriginal,
+      t.anyoEdicion,
+      t.numeroPaginas,
+      t.portada_cloudinary,
+      t.sinopsis,
+      a.nombreAutor,
+      e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.slug = ? AND (
+      UPPER(COALESCE(t.EAN, '')) LIKE UPPER(?)
+      OR UPPER(COALESCE(t.titulo, '')) LIKE UPPER(?)
+      OR UPPER(COALESCE(t.tituloOriginal, '')) LIKE UPPER(?)
+      OR COALESCE(t.hastag, '') LIKE ?
+      OR LOWER(COALESCE(t.musicbrainz_release_mbid, '')) LIKE LOWER(?)
+      OR UPPER(COALESCE(t.numero_catalogo_sello, '')) LIKE UPPER(?)
+    )
+    ORDER BY t.titulo
+  `,
+
+  SEARCH_BOOKS_SMART_OBRA_BY_TIPO_ID: `
+    SELECT t.id, t.EAN, t.titulo, t.tituloOriginal, t.anyoEdicion, t.numeroPaginas,
+      t.portada_cloudinary, t.sinopsis, a.nombreAutor, e.descriEditorial as editorial
+    FROM core_titulos t
+    INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
+    INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
+    LEFT JOIN core_autores a ON t.codiAutor_id = a.id
+    LEFT JOIN core_editoriales e ON t.codiEditorial_id = e.id
+    WHERE tc.id = ? AND (
+      UPPER(COALESCE(t.EAN, '')) LIKE UPPER(?)
+      OR UPPER(COALESCE(t.titulo, '')) LIKE UPPER(?)
+      OR UPPER(COALESCE(t.tituloOriginal, '')) LIKE UPPER(?)
+      OR COALESCE(t.hastag, '') LIKE ?
+      OR LOWER(COALESCE(t.musicbrainz_release_mbid, '')) LIKE LOWER(?)
+      OR UPPER(COALESCE(t.numero_catalogo_sello, '')) LIKE UPPER(?)
+    )
+    ORDER BY t.titulo
+  `,
   
   SEARCH_BOOKS_BY_AUTHOR: `
     SELECT 
