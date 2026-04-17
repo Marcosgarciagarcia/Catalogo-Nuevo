@@ -66,6 +66,8 @@ function BookList({ libros = [], onBookClick, discotecaMode = false, onAuthorCli
       {libros.map((libro) => {
         const nombre = (libro.nombreAutor || '').trim();
         const canFilterAuthor = Boolean(onAuthorClick && nombre && nombre !== unknownAuthor);
+        const numeroEjemplares = Number(libro.numeroEjemplares ?? 1);
+        const hasMultipleCopies = Number.isFinite(numeroEjemplares) && numeroEjemplares > 1;
 
         const authorBlock = (
           <div className="author-container">
@@ -95,6 +97,15 @@ function BookList({ libros = [], onBookClick, discotecaMode = false, onAuthorCli
 
         return (
         <div key={libro.EAN || libro.id} className='card'>
+          {hasMultipleCopies && (
+            <span
+              className="multiple-copy-badge"
+              title={`${numeroEjemplares} ejemplares`}
+              aria-label={`${numeroEjemplares} ejemplares`}
+            >
+              ★
+            </span>
+          )}
           <div className='text-container'>
             {discotecaMode ? (
               <>

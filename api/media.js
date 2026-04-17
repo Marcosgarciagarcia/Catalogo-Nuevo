@@ -106,6 +106,32 @@ function sanitizeBook(book) {
   };
 }
 
+async function enrichBooksWithCopies(books) {
+  if (!Array.isArray(books) || books.length === 0) return books;
+  const ids = books
+    .map((book) => Number(book?.id))
+    .filter((id) => Number.isInteger(id));
+  if (ids.length === 0) return books;
+
+  const placeholders = ids.map(() => "?").join(", ");
+  const rows = await executeQuery(
+    `SELECT id, numeroEjemplares FROM core_titulos WHERE id IN (${placeholders})`,
+    ids,
+  );
+  const ejemplaresPorId = new Map(
+    (rows || []).map((row) => [Number(row.id), Number(row.numeroEjemplares ?? 1)]),
+  );
+
+  return books.map((book) => {
+    const id = Number(book?.id);
+    if (!Number.isInteger(id)) return book;
+    return {
+      ...book,
+      numeroEjemplares: ejemplaresPorId.get(id) ?? Number(book.numeroEjemplares ?? 1),
+    };
+  });
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method === "OPTIONS") return cors(res);
@@ -759,7 +785,8 @@ export default async function handler(req, res) {
           books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, [slugAlt]);
         }
       }
-      const sanitized = books.map(sanitizeBook);
+      const booksWithCopies = await enrichBooksWithCopies(books);
+      const sanitized = booksWithCopies.map(sanitizeBook);
       res.setHeader(
         "Cache-Control",
         "no-store, no-cache, must-revalidate, max-age=0",
@@ -964,7 +991,8 @@ export default async function handler(req, res) {
           books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, [slugAlt]);
         }
       }
-      const sanitized = books.map(sanitizeBook);
+      const booksWithCopies = await enrichBooksWithCopies(books);
+      const sanitized = booksWithCopies.map(sanitizeBook);
       res.setHeader(
         "Cache-Control",
         "no-store, no-cache, must-revalidate, max-age=0",

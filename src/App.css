@@ -103,6 +103,7 @@
 }
 
 .card {
+  position: relative;
   width: 300px;
   height: 450px;
   /*  border: 2px solid #ddd; */
@@ -117,6 +118,17 @@
   /* background-color: rgb(192, 192, 92); */
   background-color: rgb(188, 216, 253);
   box-sizing: border-box;
+}
+
+.multiple-copy-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: #c28b00;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
 }
 
 .text-container {
