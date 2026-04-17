@@ -124,10 +124,10 @@
   position: absolute;
   top: 8px;
   right: 10px;
-  font-size: 0.85rem;
+  font-size: 1.15rem;
   line-height: 1;
-  color: #c28b00;
-  text-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
+  color: #d60000;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
 
