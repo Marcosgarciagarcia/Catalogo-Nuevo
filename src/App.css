@@ -195,7 +195,7 @@ button.author.author--clickable:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f0f0f0;
+  background-color: transparent;
   transition: background-color 0.3s ease;
 }
 
