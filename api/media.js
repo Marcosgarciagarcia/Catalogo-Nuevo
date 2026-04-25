@@ -300,6 +300,16 @@ export default async function handler(req, res) {
         );
         const numero_catalogo_sello =
           (body.numero_catalogo_sello || "").trim() || null;
+        const codiUbicacion_id =
+          body.codiUbicacion_id != null && body.codiUbicacion_id !== ""
+            ? Number(body.codiUbicacion_id)
+            : null;
+        const codiEstante_id =
+          body.codiEstante_id != null && body.codiEstante_id !== ""
+            ? typeof body.codiEstante_id === "string"
+              ? body.codiEstante_id.trim()
+              : body.codiEstante_id
+            : null;
         const codiSoporte_id =
           body.codiSoporte_id != null && body.codiSoporte_id !== ""
             ? Number(body.codiSoporte_id)
@@ -321,6 +331,8 @@ export default async function handler(req, res) {
           hastag,
           musicbrainz_release_mbid,
           numero_catalogo_sello,
+          codiUbicacion_id,
+          codiEstante_id,
           codiSoporte_id,
           authorNameForBook,
           publisherNameForBook,

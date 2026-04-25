@@ -576,8 +576,9 @@ export const QUERIES = {
     INSERT INTO core_titulos (
       EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
       portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
+      codiUbicacion_id, codiEstante_id, codiSoporte_id,
       codiAutor_id, codiEditorial_id, created, updated
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO}) RETURNING id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO}) RETURNING id
   `,
 
   /** Para uso en transacción: codiAutor_id y codiEditorial_id por subconsulta por nombre (evita pasar ids entre sentencias) */
@@ -586,11 +587,11 @@ export const QUERIES = {
       EAN, titulo, tituloOriginal, anyoEdicion, numeroEdicion, numeroPaginas, numeroEjemplares,
       portada_cloudinary, sinopsis, observaciones, coleccion, serie, hastag,
       musicbrainz_release_mbid, numero_catalogo_sello,
-      codiSoporte_id,
+      codiUbicacion_id, codiEstante_id, codiSoporte_id,
       codiAutor_id, codiEditorial_id, created, updated
     ) VALUES (
       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-      ?,
+      ?, ?, ?,
       (SELECT id FROM core_autores WHERE nombreAutor = ? LIMIT 1),
       (SELECT id FROM core_editoriales WHERE descriEditorial = ? LIMIT 1),
       ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO}
