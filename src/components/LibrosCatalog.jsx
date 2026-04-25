@@ -10,7 +10,7 @@ import EditarLibro from './EditarLibro';
 import { useAuth } from '../contexts/AuthContext';
 
 const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
-const librosPorPagina = 10;
+const librosPorPagina = 15;
 
 export default function LibrosCatalog() {
   const [tiposColeccion, setTiposColeccion] = useState([]);
