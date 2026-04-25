@@ -144,7 +144,7 @@
 
 @media (min-width: 600px) {
   .layout-main {
-    padding: 24px;
+    padding: 24px 16px;
     width: 100%;
     max-width: none;
     margin: 0;
