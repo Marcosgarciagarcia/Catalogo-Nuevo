@@ -94,10 +94,10 @@
 
 .card-container {
   display: grid;
-  grid-template-columns: repeat(5, minmax(170px, 1fr));
+  grid-template-columns: repeat(5, 220px);
   gap: 15px;
   padding: 20px;
-  max-width: 1320px;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
@@ -106,11 +106,11 @@
 
 .card {
   position: relative;
-  width: 100%;
-  max-width: 230px;
+  width: 220px;
+  max-width: 220px;
   height: auto;
-  min-height: 360px;
-  margin: 0 auto;
+  min-height: 0;
+  margin: 0;
   /*  border: 2px solid #ddd; */
   border: 2px solid blue;
   border-radius: 7px;
@@ -137,7 +137,7 @@
 }
 
 .text-container {
-  min-height: 84px;
+  min-height: 72px;
   height: auto;
   display: flex;
   flex-direction: column;
@@ -188,8 +188,8 @@ button.author.author--clickable:hover {
 
 .image-container {
   position: relative;
-  width: 100%;
-  max-width: 160px;
+  width: 72%;
+  max-width: 150px;
   aspect-ratio: 2 / 3;
   height: auto;
   margin: 0 auto;
@@ -200,13 +200,20 @@ button.author.author--clickable:hover {
   transition: background-color 0.3s ease;
 }
 
+@media (max-width: 1199px) and (min-width: 981px) {
+  .card-container {
+    grid-template-columns: repeat(4, 220px);
+  }
+}
+
 @media (max-width: 980px) and (min-width: 769px) {
   .card-container {
-    grid-template-columns: repeat(4, minmax(170px, 1fr));
+    grid-template-columns: repeat(3, 210px);
   }
 
   .card {
-    max-width: 220px;
+    width: 210px;
+    max-width: 210px;
   }
 }
 
