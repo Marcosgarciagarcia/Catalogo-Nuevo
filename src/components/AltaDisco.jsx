@@ -306,10 +306,6 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     setError('');
     setSuccessMsg('');
     const ean = String(eanDisplay).replace(/-/g, '').trim();
-    if (!ean) {
-      setError('EAN / identificador del disco es obligatorio.');
-      return;
-    }
     if (!titulo.trim()) {
       setError('El título del disco es obligatorio.');
       return;
@@ -323,7 +319,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     try {
       const yearVal = anyoEdicion === '' ? null : Number(anyoEdicion);
       const body = {
-        EAN: ean,
+        discoMode: true,
+        EAN: ean || undefined,
         titulo: titulo.trim(),
         tituloOriginal: null,
         anyoEdicion: yearVal != null && !Number.isNaN(yearVal) ? yearVal : null,
@@ -447,7 +444,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             type="text"
             value={eanDisplay}
             onChange={(e) => setEanDisplay(e.target.value)}
-            placeholder="EAN o código propio (letras y números)"
+            placeholder="Opcional; si vacío se asigna automáticamente"
             autoComplete="off"
           />
           <button

@@ -59,6 +59,17 @@ function generateLibroEan() {
   return `L${Date.now().toString(36).toUpperCase()}`.slice(0, 13);
 }
 
+/** Identificador interno para discoteca cuando no hay EAN físico (máx. 13 caracteres). */
+function generateDiscoEan(body) {
+  const mbid = normalizeMusicbrainzReleaseMbid(
+    body.musicbrainz_release_mbid ?? body.musicbrainzReleaseMbid,
+  );
+  if (mbid) {
+    return `D${mbid.replace(/-/g, "").slice(0, 12)}`.slice(0, 13);
+  }
+  return `D${Date.now().toString(36).toUpperCase()}`.slice(0, 13);
+}
+
 /**
  * Resuelve slug de tipo → id cargando todos los tipos y emparejando en JS (normalizado).
  * Así siempre filtramos por id y evitamos desajustes por encoding o slug distinto en BD.
@@ -333,12 +344,15 @@ export default async function handler(req, res) {
       if (segment === "books") {
         const isVideo = Boolean(body.videoMode);
         const isDisco =
-          !isVideo && Array.isArray(body.temas) && body.temas.length > 0;
+          Boolean(body.discoMode) ||
+          (!isVideo && Array.isArray(body.temas) && body.temas.length > 0);
         let EAN = (body.EAN || "").replace(/-/g, "").trim();
         if (!EAN && isVideo) {
           EAN = generateVideoEan(body);
-        } else if (!EAN && !isDisco) {
-          // Libros sin ISBN/EAN físico: identificador interno (como videoteca)
+        } else if (!EAN && isDisco) {
+          EAN = generateDiscoEan(body);
+        } else if (!EAN) {
+          // Libros sin ISBN/EAN físico: identificador interno
           EAN = generateLibroEan();
         }
         if (!EAN) return res.status(400).json({ error: "EAN es obligatorio" });
