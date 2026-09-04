@@ -123,6 +123,16 @@
   line-height: 1.35;
 }
 
+.modal-artist-subtitle a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.modal-artist-subtitle a:hover {
+  color: #1a5fb4;
+}
+
 .modal-block {
   margin-top: 4px;
 }

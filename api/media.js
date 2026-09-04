@@ -34,6 +34,31 @@ function slugSinAcentos(slug) {
     .replace(/ñ/gi, "n");
 }
 
+/** Identificador interno para videoteca cuando no hay EAN físico (máx. 13 caracteres). */
+function generateVideoEan(body) {
+  const tmdbId = body.tmdbId ?? body.tmdb_id;
+  const tipo = (body.tmdbType ?? body.tmdb_type ?? "").toLowerCase();
+  const season = body.seasonNumber ?? body.season_number;
+  if (tmdbId != null && tipo === "movie") {
+    return `M${String(tmdbId).padStart(12, "0")}`.slice(0, 13);
+  }
+  if (tmdbId != null && tipo === "tv" && season != null) {
+    const sid = String(tmdbId).padStart(7, "0");
+    const ss = String(season).padStart(2, "0");
+    return `T${sid}S${ss}`.slice(0, 13);
+  }
+  const tvmazeId = body.tvmazeId ?? body.tvmaze_id;
+  if (tvmazeId != null && season != null) {
+    return `Z${String(tvmazeId).padStart(6, "0")}S${String(season).padStart(2, "0")}`.slice(0, 13);
+  }
+  return `V${Date.now().toString(36).toUpperCase()}`.slice(0, 13);
+}
+
+/** Identificador interno para libros cuando no hay ISBN/EAN físico (máx. 13 caracteres). */
+function generateLibroEan() {
+  return `L${Date.now().toString(36).toUpperCase()}`.slice(0, 13);
+}
+
 /**
  * Resuelve slug de tipo → id cargando todos los tipos y emparejando en JS (normalizado).
  * Así siempre filtramos por id y evitamos desajustes por encoding o slug distinto en BD.
@@ -42,10 +67,10 @@ async function resolveTipoSlugToId(tipoSlug) {
   if (!tipoSlug || typeof tipoSlug !== "string") return null;
   const tipos = await executeQuery(QUERIES.GET_TIPOS_COLECCION);
   if (!Array.isArray(tipos) || tipos.length === 0) return null;
-  const slugNorm = tipoSlug.normalize("NFC").trim();
-  const slugAlt = slugSinAcentos(tipoSlug);
+  const slugNorm = tipoSlug.normalize("NFC").replace(/[\t\r\n]+/g, "").trim();
+  const slugAlt = slugSinAcentos(slugNorm);
   const found = tipos.find((tc) => {
-    const s = (tc.slug ?? "").normalize("NFC").trim();
+    const s = (tc.slug ?? "").normalize("NFC").replace(/[\t\r\n]+/g, "").trim();
     return s === slugNorm || slugSinAcentos(s) === slugAlt;
   });
   return found?.id != null ? found.id : null;
@@ -104,6 +129,119 @@ function sanitizeBook(book) {
     musicbrainz_release_mbid: book.musicbrainz_release_mbid ?? null,
     numero_catalogo_sello: book.numero_catalogo_sello ?? null,
   };
+}
+
+/** Listado: sin sinopsis (reduce mucho el JSON; la ficha la pide por id). */
+function sanitizeBookListItem(book) {
+  const { sinopsis, observaciones, ...rest } = sanitizeBook(book);
+  return rest;
+}
+
+function normTemaText(v) {
+  return v == null || v === "" ? null : String(v).trim() || null;
+}
+
+function parseTemaVolumen(v) {
+  if (v == null || v === "") return 1;
+  return Math.max(1, parseInt(v, 10) || 1);
+}
+
+/** Compara campos de negocio de un título (ignora created/updated/id). */
+function bookFieldsEqual(existing, next) {
+  const n = (v) => (v == null || v === "" ? null : String(v).trim());
+  const ni = (v) => {
+    if (v == null || v === "") return null;
+    const x = Number(v);
+    return Number.isFinite(x) ? x : null;
+  };
+  return (
+    n(existing.EAN) === n(next.EAN) &&
+    n(existing.titulo) === n(next.titulo) &&
+    n(existing.tituloOriginal) === n(next.tituloOriginal) &&
+    ni(existing.anyoEdicion) === ni(next.anyoEdicion) &&
+    ni(existing.numeroEdicion) === ni(next.numeroEdicion) &&
+    ni(existing.numeroPaginas) === ni(next.numeroPaginas) &&
+    ni(existing.numeroEjemplares) === ni(next.numeroEjemplares) &&
+    n(existing.portada_cloudinary) === n(next.portada_cloudinary) &&
+    n(existing.sinopsis) === n(next.sinopsis) &&
+    n(existing.observaciones) === n(next.observaciones) &&
+    n(existing.coleccion) === n(next.coleccion) &&
+    n(existing.serie) === n(next.serie) &&
+    n(existing.hastag) === n(next.hastag) &&
+    n(existing.musicbrainz_release_mbid) === n(next.musicbrainz_release_mbid) &&
+    n(existing.numero_catalogo_sello) === n(next.numero_catalogo_sello) &&
+    ni(existing.codiUbicacion_id) === ni(next.codiUbicacion_id) &&
+    n(existing.codiEstante_id) === n(next.codiEstante_id) &&
+    ni(existing.codiSoporte_id) === ni(next.codiSoporte_id) &&
+    ni(existing.codiAutor_id) === ni(next.codiAutor_id) &&
+    ni(existing.codiEditorial_id) === ni(next.codiEditorial_id)
+  );
+}
+
+/**
+ * Sincroniza core_temas de un título sin regenerar created.
+ * - INSERT solo filas nuevas (created = updated = ahora)
+ * - UPDATE solo si el contenido cambia (updated = ahora; created intacto)
+ * - DELETE solo las que ya no vienen en el payload
+ */
+async function syncTemasForTitulo(tituloId, temasIncoming) {
+  const existing = await executeQuery(QUERIES.GET_TEMAS_BY_TITULO_ID, [tituloId]);
+  const byNumero = new Map();
+  for (const row of existing || []) {
+    byNumero.set(Number(row.numero), row);
+  }
+
+  const incomingNumeros = new Set();
+  const list = Array.isArray(temasIncoming) ? temasIncoming : [];
+
+  for (const t of list) {
+    const num = t.numero != null ? Number(t.numero) : 0;
+    const tit = (t.titulo || "").trim() || "";
+    const dur = normTemaText(t.duracion);
+    const enlace = normTemaText(t.enlace);
+    const vol = parseTemaVolumen(t.numeroVolumen);
+    if (!(num > 0 && tit)) continue;
+
+    incomingNumeros.add(num);
+    const prev = byNumero.get(num);
+    if (prev) {
+      const prevDur = normTemaText(prev.duracion);
+      const prevEnlace = normTemaText(prev.enlace);
+      const prevVol = parseTemaVolumen(prev.numeroVolumen);
+      const prevTit = String(prev.nombreTema ?? "").trim();
+      const same =
+        prevTit === tit &&
+        prevDur === dur &&
+        prevEnlace === enlace &&
+        prevVol === vol &&
+        Number(prev.numero) === num;
+      if (!same) {
+        await executeQuery(QUERIES.UPDATE_TEMA, [
+          num,
+          tit,
+          dur,
+          enlace,
+          vol,
+          prev.id,
+        ]);
+      }
+    } else {
+      await executeQuery(QUERIES.INSERT_TEMA, [
+        tituloId,
+        num,
+        tit,
+        dur,
+        enlace,
+        vol,
+      ]);
+    }
+  }
+
+  for (const row of existing || []) {
+    if (!incomingNumeros.has(Number(row.numero))) {
+      await executeQuery(QUERIES.DELETE_TEMA_BY_ID, [row.id]);
+    }
+  }
 }
 
 async function enrichBooksWithCopies(books) {
@@ -193,7 +331,16 @@ export default async function handler(req, res) {
       }
 
       if (segment === "books") {
-        const EAN = (body.EAN || "").replace(/-/g, "").trim();
+        const isVideo = Boolean(body.videoMode);
+        const isDisco =
+          !isVideo && Array.isArray(body.temas) && body.temas.length > 0;
+        let EAN = (body.EAN || "").replace(/-/g, "").trim();
+        if (!EAN && isVideo) {
+          EAN = generateVideoEan(body);
+        } else if (!EAN && !isDisco) {
+          // Libros sin ISBN/EAN físico: identificador interno (como videoteca)
+          EAN = generateLibroEan();
+        }
         if (!EAN) return res.status(400).json({ error: "EAN es obligatorio" });
         const existingBook = await executeQuery(QUERIES.GET_BOOK_ID_BY_EAN, [
           EAN,
@@ -212,6 +359,10 @@ export default async function handler(req, res) {
           body.codiEditorial_id != null ? Number(body.codiEditorial_id) : null;
         const addNewAuthor = Boolean(body.addNewAuthor);
         const addNewPublisher = Boolean(body.addNewPublisher);
+        const enlaceWikiAuthor =
+          (body.enlaceWiki || body.autorEnlaceWiki || "").trim() || null;
+        const enlaceWiki2Author =
+          (body.enlaceWiki2 || body.autorEnlaceWiki2 || "").trim() || null;
 
         let authorNameForBook = "";
         let publisherNameForBook = "";
@@ -261,13 +412,12 @@ export default async function handler(req, res) {
             needCreatePublisher = true;
           }
         }
-        // Para discoteca (con temas) la editorial/sello puede ser opcional; se usa "— Sin editorial —" si no se envía
-        const isDisco = Array.isArray(body.temas) && body.temas.length > 0;
-        if (!publisherNameForBook && !isDisco)
+        // Para discoteca/videoteca la editorial puede ser opcional
+        if (!publisherNameForBook && !isDisco && !isVideo)
           return res
             .status(400)
             .json({ error: "Se requiere codiEditorial_id o publisherName" });
-        if (isDisco && !publisherNameForBook)
+        if ((isDisco || isVideo) && !publisherNameForBook)
           publisherNameForBook = "— Sin editorial —";
 
         const titulo = (body.titulo || "").trim() || "";
@@ -342,7 +492,7 @@ export default async function handler(req, res) {
         if (needCreateAuthor) {
           pipelineStatements.push({
             sql: QUERIES.INSERT_AUTHOR,
-            params: [authorNameForBook, null, null],
+            params: [authorNameForBook, enlaceWikiAuthor, enlaceWiki2Author],
           });
         }
         if (needCreatePublisher) {
@@ -364,15 +514,16 @@ export default async function handler(req, res) {
         if (newId == null)
           return res.status(500).json({ error: "Error al crear libro" });
 
-        // Si se envían temas (disco), insertar en core_temas
+        // Si se envían temas (pistas/capítulos), insertar en core_temas (alta: solo INSERT)
         const temas = Array.isArray(body.temas) ? body.temas : [];
         for (const t of temas) {
           const num = t.numero != null ? Number(t.numero) : 0;
           const tit = (t.titulo || "").trim() || "";
-          const dur = (t.duracion || "").trim() || null;
-          const enlace = (t.enlace || "").trim() || null;
+          const dur = normTemaText(t.duracion);
+          const enlace = normTemaText(t.enlace);
+          const vol = parseTemaVolumen(t.numeroVolumen);
           if (num > 0 && tit) {
-            await executeQuery(QUERIES.INSERT_TEMA, [newId, num, tit, dur, enlace]);
+            await executeQuery(QUERIES.INSERT_TEMA, [newId, num, tit, dur, enlace, vol]);
           }
         }
         return res.status(201).json({ id: newId });
@@ -581,7 +732,7 @@ export default async function handler(req, res) {
             });
       }
 
-      await executeQuery(QUERIES.UPDATE_BOOK, [
+      const nextBook = {
         EAN,
         titulo,
         tituloOriginal,
@@ -600,23 +751,38 @@ export default async function handler(req, res) {
         codiUbicacion_id,
         codiEstante_id,
         codiSoporte_id,
-        authorId,
-        publisherId,
-        bookId,
-      ]);
-      // Temas (pistas): reemplazar todos los del título por los enviados en body.temas
-      const temas = Array.isArray(body.temas) ? body.temas : [];
-      await executeQuery("DELETE FROM core_temas WHERE codiTitulo_id = ?", [
-        bookId,
-      ]);
-      for (const t of temas) {
-        const num = t.numero != null ? Number(t.numero) : 0;
-        const tit = (t.titulo || "").trim() || "";
-        const dur = (t.duracion || "").trim() || null;
-        const enlace = (t.enlace || "").trim() || null;
-        if (num > 0 && tit) {
-          await executeQuery(QUERIES.INSERT_TEMA, [bookId, num, tit, dur, enlace]);
-        }
+        codiAutor_id: authorId,
+        codiEditorial_id: publisherId,
+      };
+      // Solo tocar updated si hay cambio real en el título (nunca tocar created)
+      if (!bookFieldsEqual(existingBooks[0], nextBook)) {
+        await executeQuery(QUERIES.UPDATE_BOOK, [
+          EAN,
+          titulo,
+          tituloOriginal,
+          anyoEdicion,
+          numeroEdicion,
+          numeroPaginas,
+          numeroEjemplares,
+          portada_cloudinary,
+          sinopsis,
+          observaciones,
+          coleccion,
+          serie,
+          hastag,
+          musicbrainz_release_mbid,
+          numero_catalogo_sello,
+          codiUbicacion_id,
+          codiEstante_id,
+          codiSoporte_id,
+          authorId,
+          publisherId,
+          bookId,
+        ]);
+      }
+      // Temas: upsert (preserva created; updated solo si hay cambio real)
+      if (Array.isArray(body.temas)) {
+        await syncTemasForTitulo(bookId, body.temas);
       }
       const updated = await executeQuery(QUERIES.GET_BOOK_BY_ID, [bookId]);
       return res.status(200).json(sanitizeBook(updated[0]));
@@ -640,10 +806,18 @@ export default async function handler(req, res) {
       if (!existingBooks?.length)
         return res.status(404).json({ error: "Book not found" });
 
-      // Borrar primero los temas asociados para no violar la FK core_temas.codiTitulo_id → core_titulos.id
+      // Cascada explícita (hijos antes que padre) + FK ON DELETE CASCADE en BD
       await executeQuery("DELETE FROM core_temas WHERE codiTitulo_id = ?", [
         bookId,
       ]);
+      try {
+        await executeQuery(
+          "DELETE FROM core_titulosleidos WHERE codiTitulo_id = ?",
+          [bookId],
+        );
+      } catch (_) {
+        // Tabla puede no existir en algún entorno
+      }
       await executeQuery("DELETE FROM core_titulos WHERE id = ?", [bookId]);
       return res.status(204).end();
     }
@@ -673,10 +847,17 @@ export default async function handler(req, res) {
         ]);
         if (temasRows?.length) {
           book.temas = temasRows.map((r) => ({
+            id: r.id,
             numero: r.numero,
             titulo: r.nombreTema ?? "",
             duracion: r.duracion ?? "",
             enlace: r.enlace ?? "",
+            numeroVolumen:
+              r.numeroVolumen != null && r.numeroVolumen !== ""
+                ? Number(r.numeroVolumen)
+                : 1,
+            created: r.created ?? null,
+            updated: r.updated ?? null,
           }));
         } else {
           book.temas = [];
@@ -690,6 +871,8 @@ export default async function handler(req, res) {
         filterBy = "titulo",
         hastag: hastagParam,
         tipo: tipoParam,
+        limit: limitParam,
+        offset: offsetParam,
       } = req.query;
       let query,
         params = [];
@@ -797,8 +980,20 @@ export default async function handler(req, res) {
           books = await executeQuery(QUERIES.GET_ALL_BOOKS_BY_TIPO, [slugAlt]);
         }
       }
+
+      // Paginación en servidor para listados amplios (evita JSON de varios MB que corta el proxy).
+      const useServerPage =
+        !hastagTag && !search && !letter && limitParam != null && limitParam !== "";
+      let total = books.length;
+      if (useServerPage) {
+        const lim = Math.min(100, Math.max(1, parseInt(limitParam, 10) || 15));
+        const off = Math.max(0, parseInt(offsetParam, 10) || 0);
+        total = books.length;
+        books = books.slice(off, off + lim);
+      }
+
       const booksWithCopies = await enrichBooksWithCopies(books);
-      const sanitized = booksWithCopies.map(sanitizeBook);
+      const sanitized = booksWithCopies.map(sanitizeBookListItem);
       res.setHeader(
         "Cache-Control",
         "no-store, no-cache, must-revalidate, max-age=0",
@@ -806,7 +1001,7 @@ export default async function handler(req, res) {
       res.setHeader("Pragma", "no-cache");
       return res.status(200).json({
         data: sanitized,
-        total: sanitized.length,
+        total,
         filters: {
           search: search || null,
           searchBy,
@@ -1004,7 +1199,7 @@ export default async function handler(req, res) {
         }
       }
       const booksWithCopies = await enrichBooksWithCopies(books);
-      const sanitized = booksWithCopies.map(sanitizeBook);
+      const sanitized = booksWithCopies.map(sanitizeBookListItem);
       res.setHeader(
         "Cache-Control",
         "no-store, no-cache, must-revalidate, max-age=0",

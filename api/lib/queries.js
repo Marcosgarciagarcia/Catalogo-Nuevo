@@ -34,7 +34,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -53,7 +52,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -75,7 +73,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -97,7 +94,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -117,7 +113,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -133,7 +128,7 @@ export const QUERIES = {
   GET_BOOKS_BY_HASTAG_BY_TIPO_ID: `
     SELECT 
       t.id, t.EAN, t.titulo, t.tituloOriginal, t.anyoEdicion, t.numeroPaginas,
-      t.portada_cloudinary, t.sinopsis, a.nombreAutor, e.descriEditorial as editorial
+      t.portada_cloudinary, a.nombreAutor, e.descriEditorial as editorial
     FROM core_titulos t
     INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
     INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
@@ -201,7 +196,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -220,7 +214,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -234,7 +227,7 @@ export const QUERIES = {
 
   SEARCH_BOOKS_BY_TITLE_BY_TIPO_ID: `
     SELECT t.id, t.EAN, t.titulo, t.tituloOriginal, t.anyoEdicion, t.numeroPaginas,
-      t.portada_cloudinary, t.sinopsis, a.nombreAutor, e.descriEditorial as editorial
+      t.portada_cloudinary, a.nombreAutor, e.descriEditorial as editorial
     FROM core_titulos t
     INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
     INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
@@ -257,7 +250,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -283,7 +275,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -304,7 +295,7 @@ export const QUERIES = {
 
   SEARCH_BOOKS_SMART_OBRA_BY_TIPO_ID: `
     SELECT t.id, t.EAN, t.titulo, t.tituloOriginal, t.anyoEdicion, t.numeroPaginas,
-      t.portada_cloudinary, t.sinopsis, a.nombreAutor, e.descriEditorial as editorial
+      t.portada_cloudinary, a.nombreAutor, e.descriEditorial as editorial
     FROM core_titulos t
     INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
     INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
@@ -330,7 +321,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -349,7 +339,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -363,7 +352,7 @@ export const QUERIES = {
 
   SEARCH_BOOKS_BY_AUTHOR_BY_TIPO_ID: `
     SELECT t.id, t.EAN, t.titulo, t.tituloOriginal, t.anyoEdicion, t.numeroPaginas,
-      t.portada_cloudinary, t.sinopsis, a.nombreAutor, e.descriEditorial as editorial
+      t.portada_cloudinary, a.nombreAutor, e.descriEditorial as editorial
     FROM core_titulos t
     INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
     INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
@@ -382,7 +371,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -401,7 +389,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -415,7 +402,7 @@ export const QUERIES = {
 
   FILTER_BOOKS_BY_LETTER_TITLE_BY_TIPO_ID: `
     SELECT t.id, t.EAN, t.titulo, t.tituloOriginal, t.anyoEdicion, t.numeroPaginas,
-      t.portada_cloudinary, t.sinopsis, a.nombreAutor, e.descriEditorial as editorial
+      t.portada_cloudinary, a.nombreAutor, e.descriEditorial as editorial
     FROM core_titulos t
     INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
     INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
@@ -434,7 +421,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -453,7 +439,6 @@ export const QUERIES = {
       t.anyoEdicion,
       t.numeroPaginas,
       t.portada_cloudinary,
-      t.sinopsis,
       a.nombreAutor,
       e.descriEditorial as editorial
     FROM core_titulos t
@@ -467,7 +452,7 @@ export const QUERIES = {
 
   FILTER_BOOKS_BY_LETTER_AUTHOR_BY_TIPO_ID: `
     SELECT t.id, t.EAN, t.titulo, t.tituloOriginal, t.anyoEdicion, t.numeroPaginas,
-      t.portada_cloudinary, t.sinopsis, a.nombreAutor, e.descriEditorial as editorial
+      t.portada_cloudinary, a.nombreAutor, e.descriEditorial as editorial
     FROM core_titulos t
     INNER JOIN core_soportes s ON t.codiSoporte_id = s.id
     INNER JOIN core_tipos_coleccion tc ON s.codiTipoSoporte_id = tc.id
@@ -598,16 +583,29 @@ export const QUERIES = {
     ) RETURNING id
   `,
 
-  /** Temas (pistas) de un título/disco por codiTitulo_id. Para GET book by id. */
+  /** Temas (pistas/capítulos) de un título por codiTitulo_id. Para GET book by id. */
   GET_TEMAS_BY_TITULO_ID: `
-    SELECT numero, nombreTema, duracion, enlace FROM core_temas WHERE codiTitulo_id = ? ORDER BY numero
+    SELECT id, numero, nombreTema, duracion, enlace, numeroVolumen, created, updated
+    FROM core_temas
+    WHERE codiTitulo_id = ?
+    ORDER BY numeroVolumen ASC, numero ASC
   `,
 
-  /** Inserción de un tema (pista) de un disco. enlace = URL opcional (Deezer, Spotify, etc.). */
+  /** Inserción de un tema (pista/capítulo). enlace opcional; duracion opcional; numeroVolumen default 1. */
   INSERT_TEMA: `
-    INSERT INTO core_temas (codiTitulo_id, numero, nombreTema, duracion, enlace, created, updated)
-    VALUES (?, ?, ?, ?, ?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO})
+    INSERT INTO core_temas (codiTitulo_id, numero, nombreTema, duracion, enlace, numeroVolumen, created, updated)
+    VALUES (?, ?, ?, ?, ?, ?, ${SQLITE_UTC_NOW_ISO}, ${SQLITE_UTC_NOW_ISO})
   `,
+
+  /** Actualiza contenido de un tema; NUNCA toca created. Solo updated. */
+  UPDATE_TEMA: `
+    UPDATE core_temas SET
+      numero = ?, nombreTema = ?, duracion = ?, enlace = ?, numeroVolumen = ?,
+      updated = ${SQLITE_UTC_NOW_ISO}
+    WHERE id = ?
+  `,
+
+  DELETE_TEMA_BY_ID: `DELETE FROM core_temas WHERE id = ?`,
 
   // ==================== ESTADÍSTICAS ====================
   

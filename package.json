@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "local": "node --use-system-ca scripts/dev-local.js",
+    "dev:api": "node --use-system-ca scripts/local-api-server.js",
+    "dev:full": "vercel dev",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -12,8 +15,7 @@
     "migrate": "node --env-file=.env.local migrate-to-turso.js",
     "setup-users": "node --env-file=.env.local scripts/setup-core-users.js",
     "init-tipos-coleccion": "node scripts/init-tipos-coleccion.js",
-    "add-hastag-column": "node scripts/add-hastag-column.js",
-    "dev:full": "vercel dev"
+    "add-hastag-column": "node scripts/add-hastag-column.js"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

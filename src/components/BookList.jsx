@@ -57,9 +57,13 @@ BookImage.propTypes = {
   alt: PropTypes.string.isRequired
 };
 
-function BookList({ libros = [], onBookClick, discotecaMode = false, onAuthorClick }) {
-  const authorLabel = discotecaMode ? 'Artista' : 'Autor';
-  const unknownAuthor = discotecaMode ? 'Artista desconocido' : 'Autor desconocido';
+function BookList({ libros = [], onBookClick, discotecaMode = false, videotecaMode = false, onAuthorClick }) {
+  const authorLabel = discotecaMode ? 'Artista' : videotecaMode ? 'Director' : 'Autor';
+  const unknownAuthor = discotecaMode
+    ? 'Artista desconocido'
+    : videotecaMode
+      ? 'Director desconocido'
+      : 'Autor desconocido';
 
   return (
     <div className="card-container">
@@ -155,6 +159,7 @@ BookList.propTypes = {
   onBookClick: PropTypes.func,
   onAuthorClick: PropTypes.func,
   discotecaMode: PropTypes.bool,
+  videotecaMode: PropTypes.bool,
 };
 
 BookList.defaultProps = {

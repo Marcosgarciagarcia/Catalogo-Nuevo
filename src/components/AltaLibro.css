@@ -175,6 +175,12 @@
   gap: 12px;
 }
 
+.alta-libro-hastag input[type="text"] {
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
 @media (max-width: 600px) {
   /* En móvil, apilar para que los campos no queden demasiado estrechos */
   .alta-libro-row-2 {

@@ -104,7 +104,19 @@ export async function getCollectionTypes() {
  */
 export async function syncFromLocal() {
   try {
-    const json = await apiGet('/api/sync-from-local');
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
+    const search = '';
+    const url = `${API_BASE}/api/sync-from-local${search}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal: controller?.signal,
+    });
+    if (timer) clearTimeout(timer);
+    if (!response.ok) return { synced: false, pushed: 0 };
+    const json = await response.json().catch(() => ({}));
     return { synced: !!json.synced, pushed: json.pushed ?? 0 };
   } catch {
     return { synced: false, pushed: 0 };
@@ -115,10 +127,17 @@ export async function syncFromLocal() {
  * Obtiene todos los títulos (o filtrados por tipo de colección).
  * @param {string|null} tipoSlug - Slug del tipo (libros, audio, video) o null para todos
  */
-export async function getAllBooks(tipoSlug = null) {
-  const params = tipoSlug ? { tipo: tipoSlug } : {};
+export async function getAllBooks(tipoSlug = null, { limit, offset } = {}) {
+  const params = {};
+  if (tipoSlug) params.tipo = tipoSlug;
+  if (limit != null) params.limit = String(limit);
+  if (offset != null) params.offset = String(offset);
   const json = await apiGet('/api/media/books', params);
-  return { data: json.data ?? [], filterApplied: json.filterApplied ?? null };
+  return {
+    data: json.data ?? [],
+    total: json.total ?? (json.data?.length ?? 0),
+    filterApplied: json.filterApplied ?? null,
+  };
 }
 
 /**
@@ -732,4 +751,84 @@ export async function fetchAlbumMetadataByQuery(artist, releaseTitle) {
     musicbrainzReleaseMbid: data.musicbrainzReleaseMbid ?? null,
     hastag: data.hastag ?? null,
   };
+}
+
+function mapVideoMetadata(data) {
+  if (!data) return null;
+  return {
+    tipo: data.tipo ?? null,
+    titulo: data.titulo ?? null,
+    tituloOriginal: data.tituloOriginal ?? null,
+    serie: data.serie ?? null,
+    autor: data.autor ?? null,
+    anyoEdicion: data.anyoEdicion ?? null,
+    editorial: data.editorial ?? null,
+    sinopsis: data.sinopsis ?? null,
+    portadaUrl: data.portadaUrl ?? null,
+    hastag: data.hastag ?? null,
+    numeroPaginas: data.numeroPaginas ?? null,
+    coleccion: data.coleccion ?? null,
+    tmdbId: data.tmdbId ?? null,
+    tmdbType: data.tmdbType ?? null,
+    tvmazeId: data.tvmazeId ?? null,
+    seasonNumber: data.seasonNumber ?? null,
+    temporadas: Array.isArray(data.temporadas) ? data.temporadas : [],
+    episodiosReferencia: Array.isArray(data.episodiosReferencia) ? data.episodiosReferencia : [],
+    temas: Array.isArray(data.temas) ? data.temas : [],
+    source: data.source ?? null,
+  };
+}
+
+/**
+ * Busca películas o series en TMDb (TVmaze como fallback en series).
+ * @returns {Promise<{ results: Array, source: string }|null>}
+ */
+export async function searchVideoMetadata(query, mediaType = 'movie', year = '') {
+  const q = (query || '').trim();
+  if (!q) return { results: [], source: 'tmdb' };
+  const params = { action: 'search', query: q, mediaType };
+  if (year) params.year = String(year);
+  const data = await apiGet('/api/lookup-video', params);
+  if (!data) return { results: [], source: 'tmdb' };
+  return {
+    results: Array.isArray(data.results) ? data.results : [],
+    source: data.source ?? 'tmdb',
+  };
+}
+
+/** Detalle de película o documental largo por id TMDb. */
+export async function fetchMovieMetadata(tmdbId) {
+  const data = await apiGet('/api/lookup-video', { action: 'movie', id: tmdbId });
+  return mapVideoMetadata(data);
+}
+
+/** Info de serie TMDb con listado de temporadas. */
+export async function fetchTvShowMetadata(tmdbId) {
+  const data = await apiGet('/api/lookup-video', { action: 'tv-show', id: tmdbId });
+  return mapVideoMetadata(data);
+}
+
+/** Detalle de temporada (caja física). TMDb principal; tvmazeId opcional como fallback. */
+export async function fetchTvSeasonMetadata(tmdbId, season, tvmazeId = null) {
+  const params = { action: 'tv-season', id: tmdbId, season };
+  if (tvmazeId != null) params.tvmazeId = tvmazeId;
+  let data = await apiGet('/api/lookup-video', params);
+  if (!data && tvmazeId != null) {
+    data = await apiGet('/api/lookup-video', {
+      action: 'tv-season-tvmaze',
+      showId: tvmazeId,
+      season,
+    });
+  }
+  return mapVideoMetadata(data);
+}
+
+/** Temporada solo vía TVmaze (búsqueda sin TMDb). */
+export async function fetchTvSeasonMetadataTvmaze(showId, season) {
+  const data = await apiGet('/api/lookup-video', {
+    action: 'tv-season-tvmaze',
+    showId,
+    season,
+  });
+  return mapVideoMetadata(data);
 }

@@ -37,19 +37,26 @@ function loadEnv() {
 
 /** Resuelve la ruta de la base local: env LOCAL_DATABASE_URL o config de catalogo_manager */
 function getLocalDbUrl() {
-  const fromEnv = process.env.LOCAL_DATABASE_URL;
-  if (fromEnv && fromEnv.startsWith('file:')) return fromEnv;
+  const fromEnv = (process.env.LOCAL_DATABASE_URL || '').trim().replace(/^["']|["']$/g, '');
+  if (fromEnv) {
+    if (fromEnv.startsWith('file:')) return fromEnv;
+    // Aceptar ruta absoluta sin prefijo (ej. C:/ProyectosDjango/casateca/db.sqlite3)
+    if (/^[a-zA-Z]:[/\\]/.test(fromEnv) || fromEnv.startsWith('/')) {
+      return `file:${fromEnv.replace(/\\/g, '/')}`;
+    }
+  }
 
   const configPath = path.join(rootDir, '..', 'catalogo_manager', 'config.py');
   if (!existsSync(configPath)) return null;
 
   const content = readFileSync(configPath, 'utf8');
-  const match = content.match(/'path':\s*r?['"]([^'"]+)['"]/);
+  const match =
+    content.match(/CATALOGO_LOCAL_DB_PATH['"]\s*,\s*['"]([^'"]+)['"]/) ||
+    content.match(/'path':\s*r?['"]([^'"]+)['"]/);
   if (!match) return null;
 
   const winPath = match[1].trim();
-  const fileUrl = 'file:' + winPath.replace(/\\/g, '/');
-  return fileUrl;
+  return `file:${winPath.replace(/\\/g, '/')}`;
 }
 
 loadEnv();
@@ -65,12 +72,31 @@ const CREATE_TABLE = `
   )
 `;
 
-const INSERT_LIBROS = `
+const INSERT_TIPO = `
   INSERT INTO core_tipos_coleccion (slug, nombre, orden, activo, descripcion)
   VALUES (?, ?, ?, 1, ?)
 `;
 
-const CHECK_LIBROS = "SELECT id FROM core_tipos_coleccion WHERE slug = 'libros' LIMIT 1";
+const TIPOS_COLECCION = [
+  { slug: 'libros', nombre: 'Libros', orden: 1, descripcion: 'Catálogo de libros de casa' },
+  { slug: 'discoteca', nombre: 'Discoteca', orden: 2, descripcion: 'Catálogo de discos de casa' },
+  { slug: 'video', nombre: 'Videoteca', orden: 3, descripcion: 'Catálogo de películas y series de casa' },
+];
+
+async function ensureTipos(executeQueryFn) {
+  for (const tipo of TIPOS_COLECCION) {
+    const existing = await executeQueryFn(
+      'SELECT id FROM core_tipos_coleccion WHERE slug = ? LIMIT 1',
+      [tipo.slug],
+    );
+    if (existing?.length > 0) {
+      console.log(`  Ya existe el tipo '${tipo.nombre}' (${tipo.slug}).`);
+      continue;
+    }
+    await executeQueryFn(INSERT_TIPO, [tipo.slug, tipo.nombre, tipo.orden, tipo.descripcion]);
+    console.log(`  Tipo '${tipo.nombre}' (${tipo.slug}) insertado.`);
+  }
+}
 
 async function runInitTurso() {
   const url = process.env.TURSO_DATABASE_URL;
@@ -82,14 +108,8 @@ async function runInitTurso() {
   await executeQuery(CREATE_TABLE);
   console.log('[Turso] Tabla creada (o ya existía).');
 
-  const existing = await executeQuery(CHECK_LIBROS);
-  if (existing?.length > 0) {
-    console.log("[Turso] Ya existe el tipo 'Libros'. No se inserta de nuevo.");
-    return true;
-  }
-
-  await executeQuery(INSERT_LIBROS, ['libros', 'Libros', 1, 'Catálogo de libros de casa']);
-  console.log("[Turso] Tipo 'Libros' insertado.");
+  console.log('[Turso] Comprobando tipos de colección...');
+  await ensureTipos(executeQuery);
   return true;
 }
 
@@ -102,14 +122,22 @@ async function runInitLocal() {
   await db.execute(CREATE_TABLE);
   console.log('[Local] Tabla creada (o ya existía).');
 
-  const existing = await db.execute(CHECK_LIBROS);
-  if (existing?.rows?.length > 0) {
-    console.log("[Local] Ya existe el tipo 'Libros'. No se inserta de nuevo.");
-    return true;
+  console.log('[Local] Comprobando tipos de colección...');
+  for (const tipo of TIPOS_COLECCION) {
+    const existing = await db.execute({
+      sql: 'SELECT id FROM core_tipos_coleccion WHERE slug = ? LIMIT 1',
+      args: [tipo.slug],
+    });
+    if (existing?.rows?.length > 0) {
+      console.log(`  Ya existe el tipo '${tipo.nombre}' (${tipo.slug}).`);
+      continue;
+    }
+    await db.execute({
+      sql: INSERT_TIPO,
+      args: [tipo.slug, tipo.nombre, tipo.orden, tipo.descripcion],
+    });
+    console.log(`  Tipo '${tipo.nombre}' (${tipo.slug}) insertado.`);
   }
-
-  await db.execute(INSERT_LIBROS, ['libros', 'Libros', 1, 'Catálogo de libros de casa']);
-  console.log("[Local] Tipo 'Libros' insertado.");
   return true;
 }
 

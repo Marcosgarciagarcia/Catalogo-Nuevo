@@ -15,7 +15,14 @@ import {
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
 import './AltaLibro.css';
 
-function EditarLibro({ libro, onClose, onSuccess, getToken }) {
+function tipoSlugLooksVideo(t) {
+  const slug = String(t.slug || '').normalize('NFC').trim().toLowerCase();
+  const nombre = String(t.nombre || '').toLowerCase();
+  return ['video', 'cine', 'videoteca'].some((k) => slug === k || slug.includes(k))
+    || nombre.includes('videoteca') || nombre.includes('cine');
+}
+
+function EditarLibro({ libro, onClose, onSuccess, getToken, isVideoteca = false }) {
   const [authors, setAuthors] = useState([]);
   const [publishers, setPublishers] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
@@ -40,6 +47,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const [numeroPaginas, setNumeroPaginas] = useState('');
   const [numeroEjemplares, setNumeroEjemplares] = useState('1');
   const [coleccion, setColeccion] = useState('');
+  const [serie, setSerie] = useState('');
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [hastag, setHastag] = useState('');
@@ -98,6 +106,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setNumeroPaginas(full.numeroPaginas != null ? String(full.numeroPaginas) : '');
         setNumeroEjemplares(full.numeroEjemplares != null ? String(full.numeroEjemplares) : '1');
         setColeccion(full.coleccion || '');
+        setSerie(full.serie || '');
         setSinopsis(full.sinopsis || '');
         setObservaciones(full.observaciones || '');
         setHastag(full.hastag || '');
@@ -105,7 +114,14 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
         setCodiEstante_id(full.codiEstante_id != null ? String(full.codiEstante_id) : '');
         setCodiSoporte_id(full.codiSoporte_id != null ? String(full.codiSoporte_id) : '');
         setPortada_cloudinary(full.portada_cloudinary || '');
-        setTemas(Array.isArray(full.temas) ? full.temas : []);
+        setTemas(
+          Array.isArray(full.temas)
+            ? full.temas.map((t) => ({
+                ...t,
+                numeroVolumen: t.numeroVolumen != null ? Number(t.numeroVolumen) || 1 : 1,
+              }))
+            : [],
+        );
         setBookCodiTipoSoporte_id(full.codiTipoSoporte_id != null ? full.codiTipoSoporte_id : null);
         setMusicbrainzReleaseMbid(full.musicbrainz_release_mbid || full.musicbrainzReleaseMbid || '');
         setNumeroCatalogoSello(full.numero_catalogo_sello || full.numeroCatalogoSello || '');
@@ -213,7 +229,10 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
       const isDisco = bookCodiTipoSoporte_id != null && tiposColeccion.some(
         (t) => Number(t.id) === Number(bookCodiTipoSoporte_id) && (t.slug === 'discoteca' || (t.nombre || '').toLowerCase().includes('discoteca'))
       );
-      if (isDisco) {
+      const isVideo = isVideoteca || (bookCodiTipoSoporte_id != null && tiposColeccion.some(
+        (t) => Number(t.id) === Number(bookCodiTipoSoporte_id) && tipoSlugLooksVideo(t),
+      ));
+      if (isDisco || isVideo) {
         body.temas = temas
           .filter((t) => t && (t.titulo || '').trim())
           .map((t) => ({
@@ -221,7 +240,11 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
             titulo: (t.titulo || '').trim(),
             duracion: (t.duracion || '').trim() || null,
             enlace: (t.enlace || '').trim() || null,
+            numeroVolumen: Math.max(1, parseInt(t.numeroVolumen, 10) || 1),
           }));
+      }
+      if (isVideo) {
+        body.serie = serie.trim() || null;
       }
       await updateBook(libro.id, body, token);
       setSuccessMsg('Libro actualizado correctamente.');
@@ -276,15 +299,23 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
   const isDisco = bookCodiTipoSoporte_id != null && tiposColeccion.some(
     (t) => Number(t.id) === Number(bookCodiTipoSoporte_id) && (t.slug === 'discoteca' || (t.nombre || '').toLowerCase().includes('discoteca'))
   );
+  const isVideo = isVideoteca || (bookCodiTipoSoporte_id != null && tiposColeccion.some(
+    (t) => Number(t.id) === Number(bookCodiTipoSoporte_id) && tipoSlugLooksVideo(t),
+  ));
 
   const addTema = () => {
-    setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '', enlace: '' }]);
+    if (isVideo) {
+      setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '', numeroVolumen: 1 }]);
+      return;
+    }
+    setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '', enlace: '', numeroVolumen: 1 }]);
   };
   const updateTema = (index, field, value) => {
     setTemas((prev) => {
       const next = [...prev];
       if (!next[index]) return next;
-      next[index] = { ...next[index], [field]: field === 'numero' ? (value === '' ? '' : Number(value)) : value };
+      const numeric = field === 'numero' || field === 'numeroVolumen';
+      next[index] = { ...next[index], [field]: numeric ? (value === '' ? '' : Number(value)) : value };
       return next;
     });
   };
@@ -320,6 +351,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               />
             </div>
 
+            {!isVideo && (
             <div className="alta-libro-row-2">
               <div className="alta-libro-field">
                 <label htmlFor="editar-mbid">MBID release (MusicBrainz)</label>
@@ -344,6 +376,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 />
               </div>
             </div>
+            )}
 
             <div className="alta-libro-field">
               <label htmlFor="editar-titulo">Título</label>
@@ -364,8 +397,20 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               />
             </div>
 
+            {isVideo && (
+              <div className="alta-libro-field">
+                <label htmlFor="editar-serie">Serie (agrupador)</label>
+                <input
+                  id="editar-serie"
+                  value={serie}
+                  onChange={(e) => setSerie(e.target.value)}
+                  placeholder="Nombre de la serie"
+                />
+              </div>
+            )}
+
             <div className="alta-libro-field">
-              <label>Autor</label>
+              <label>{isDisco ? 'Artista' : isVideo ? 'Director / creador' : 'Autor'}</label>
               <div className="alta-libro-combo-row">
                 <label className="alta-libro-check">
                   <input
@@ -383,7 +428,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                     type="text"
                     value={authorName}
                     onChange={(e) => setAuthorName(e.target.value)}
-                    placeholder="Nombre del autor"
+                    placeholder={isVideo ? 'Director o creador' : 'Nombre del autor'}
                   />
                 ) : (
                   <select
@@ -403,7 +448,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
             </div>
 
             <div className="alta-libro-field">
-              <label>Editorial</label>
+              <label>{isVideo ? 'Estudio / cadena' : 'Editorial'}</label>
               <div className="alta-libro-combo-row">
                 <label className="alta-libro-check">
                   <input
@@ -421,7 +466,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                     type="text"
                     value={publisherName}
                     onChange={(e) => setPublisherName(e.target.value)}
-                    placeholder="Nombre de la editorial"
+                    placeholder={isVideo ? 'Estudio o cadena' : 'Nombre de la editorial'}
                   />
                 ) : (
                   <select
@@ -442,7 +487,7 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
 
             <div className="alta-libro-field">
               <label htmlFor="editar-paginas">
-                {isDisco ? 'N.º de discos (álbum)' : 'Nº páginas'}
+                {isDisco ? 'N.º de discos (álbum)' : isVideo ? 'Duración (minutos)' : 'Nº páginas'}
               </label>
               <input
                 id="editar-paginas"
@@ -450,7 +495,13 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 min="0"
                 value={numeroPaginas}
                 onChange={(e) => setNumeroPaginas(e.target.value)}
-                placeholder={isDisco ? 'Discos físicos que componen el álbum' : undefined}
+                placeholder={
+                  isDisco
+                    ? 'Discos físicos que componen el álbum'
+                    : isVideo
+                      ? 'Duración total (películas/documentales)'
+                      : undefined
+                }
               />
             </div>
 
@@ -622,6 +673,68 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
               )}
             </div>
 
+            {isVideo && (
+              <div className="alta-libro-field">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <h3 className="modal-section-title" style={{ margin: 0 }}>Capítulos (volumen / DVD)</h3>
+                  <button type="button" className="alta-libro-btn-buscar" style={{ padding: '4px 10px', fontSize: '0.85rem' }} onClick={addTema}>
+                    + Añadir
+                  </button>
+                </div>
+                {temas.length === 0 ? (
+                  <p style={{ color: '#999', fontSize: '0.9rem', margin: 0 }}>
+                    No hay capítulos. Añádelos y asigna el volumen (DVD) de cada uno. Duración opcional.
+                  </p>
+                ) : (
+                  <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #555', borderRadius: 6, padding: 8, background: '#1a1a1a' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '44px 52px 1fr 70px 28px', gap: 6, marginBottom: 6, fontSize: '0.75rem', color: '#999' }}>
+                      <span>N.º</span>
+                      <span>Vol.</span>
+                      <span>Título</span>
+                      <span>Duración</span>
+                      <span />
+                    </div>
+                    {temas.map((t, i) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '44px 52px 1fr 70px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                        <input
+                          type="number"
+                          min={1}
+                          value={t.numero ?? ''}
+                          onChange={(e) => updateTema(i, 'numero', e.target.value)}
+                          style={{ width: 44, padding: 4 }}
+                        />
+                        <input
+                          type="number"
+                          min={1}
+                          value={t.numeroVolumen ?? 1}
+                          onChange={(e) => updateTema(i, 'numeroVolumen', e.target.value)}
+                          style={{ width: 52, padding: 4 }}
+                          title="Volumen / DVD"
+                        />
+                        <input
+                          type="text"
+                          value={t.titulo ?? ''}
+                          onChange={(e) => updateTema(i, 'titulo', e.target.value)}
+                          placeholder="Título del capítulo"
+                          style={{ padding: 4 }}
+                        />
+                        <input
+                          type="text"
+                          value={t.duracion ?? ''}
+                          onChange={(e) => updateTema(i, 'duracion', e.target.value)}
+                          placeholder="Opcional"
+                          style={{ padding: 4 }}
+                        />
+                        <button type="button" onClick={() => removeTema(i)} style={{ padding: 4, background: '#5a2a2a', color: '#ffabab', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {isDisco && (
               <div className="alta-libro-field">
                 <h3 className="modal-section-title">Temas (pistas)</h3>
@@ -641,13 +754,21 @@ function EditarLibro({ libro, onClose, onSuccess, getToken }) {
                 ) : (
                   <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #555', borderRadius: 6, padding: 8, background: '#1a1a1a' }}>
                     {temas.map((t, i) => (
-                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px minmax(120px, 1fr) 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 44px 1fr 70px minmax(100px, 1fr) 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                         <input
                           type="number"
                           min={1}
                           value={t.numero ?? ''}
                           onChange={(e) => updateTema(i, 'numero', e.target.value)}
                           style={{ width: 40, padding: 4 }}
+                        />
+                        <input
+                          type="number"
+                          min={1}
+                          value={t.numeroVolumen ?? 1}
+                          onChange={(e) => updateTema(i, 'numeroVolumen', e.target.value)}
+                          style={{ width: 44, padding: 4 }}
+                          title="Volumen / CD"
                         />
                         <input
                           type="text"
@@ -718,6 +839,7 @@ EditarLibro.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSuccess: PropTypes.func,
   getToken: PropTypes.func,
+  isVideoteca: PropTypes.bool,
 };
 
 export default EditarLibro;

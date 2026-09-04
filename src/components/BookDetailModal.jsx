@@ -13,6 +13,13 @@ function DetailRow({ label, value }) {
   );
 }
 
+function formatDuracionMinutos(value) {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return `${n} min`;
+}
+
 function Block({ title, children, twoCols }) {
   return (
     <div className={`modal-block ${twoCols ? 'modal-block--two-cols' : ''}`}>
@@ -22,12 +29,24 @@ function Block({ title, children, twoCols }) {
   );
 }
 
-function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscoteca = false }) {
+function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscoteca = false, isVideoteca = false, detailLoading = false }) {
   const location = useLocation();
   if (!libro) return null;
 
   const hastagBasePath = location.pathname && location.pathname !== '/' ? location.pathname : '/';
-  const autorRowLabel = isDiscoteca ? 'Artista' : 'Autor';
+  const autorRowLabel = isDiscoteca ? 'Artista' : isVideoteca ? 'Director' : 'Autor';
+  const editorialLabel = isVideoteca ? 'Estudio / cadena' : 'Editorial';
+  const numPaginasLabel = isDiscoteca
+    ? 'N.º de discos (álbum)'
+    : isVideoteca
+      ? 'Duración (min)'
+      : 'N.º páginas';
+  const temasBlockTitle = isVideoteca ? 'Capítulos' : 'Temas (pistas)';
+  const duracionTitulo = formatDuracionMinutos(libro.numeroPaginas);
+  const temas = Array.isArray(libro.temas) ? libro.temas : null;
+  const showVolumen = Boolean(
+    temas && temas.some((t) => Number(t.numeroVolumen) > 1),
+  );
 
   const openDeezerTema = (tituloTema) => {
     if (!tituloTema?.trim()) return;
@@ -89,7 +108,18 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscotec
               <h2 className="modal-title">{libro.titulo}</h2>
               {(libro.nombreAutor || '').trim() ? (
                 <p className="modal-artist-subtitle" title={autorRowLabel}>
-                  {libro.nombreAutor}
+                  {libro.autorWiki || libro.autorWiki2 ? (
+                    <a
+                      href={libro.autorWiki || libro.autorWiki2}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {libro.nombreAutor}
+                    </a>
+                  ) : (
+                    libro.nombreAutor
+                  )}
                 </p>
               ) : null}
 
@@ -117,12 +147,35 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscotec
 
               <Block title="Autoría y edición" twoCols>
                 <DetailRow label={autorRowLabel} value={libro.nombreAutor || '—'} />
-                <DetailRow label="Editorial" value={libro.editorial} />
+                {(libro.autorWiki || libro.autorWiki2) && (
+                  <div className="detail-row">
+                    <span className="detail-label">
+                      {isDiscoteca ? 'Enlaces artista' : isVideoteca ? 'Enlaces director' : 'Enlaces autor'}
+                    </span>
+                    <span className="detail-value">
+                      {[libro.autorWiki, libro.autorWiki2]
+                        .filter(Boolean)
+                        .map((url) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ marginRight: '0.5rem' }}
+                          >
+                            {url}
+                          </a>
+                        ))}
+                    </span>
+                  </div>
+                )}
+                <DetailRow label={editorialLabel} value={libro.editorial} />
                 <DetailRow label="Año de edición" value={libro.anyoEdicion} />
                 <DetailRow label="N.º edición" value={libro.numeroEdicion} />
                 <DetailRow
-                  label={isDiscoteca ? 'N.º de discos (álbum)' : 'N.º páginas'}
-                  value={libro.numeroPaginas}
+                  label={numPaginasLabel}
+                  value={isVideoteca ? duracionTitulo : libro.numeroPaginas}
                 />
                 <DetailRow label="N.º ejemplares" value={libro.numeroEjemplares} />
               </Block>
@@ -150,8 +203,9 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscotec
                 <DetailRow label="Estante" value={libro.estanteDesc} />
               </Block>
 
-              {Array.isArray(libro.temas) && libro.temas.length > 0 && (
-                <Block title="Temas (pistas)">
+              {(isVideoteca || (temas && temas.length > 0)) && (
+                <Block title={temasBlockTitle}>
+                  {isDiscoteca && temas && temas.length > 0 && (
                   <div className="modal-temas-actions">
                     <button
                       type="button"
@@ -162,10 +216,27 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscotec
                       ▶ Escuchar disco completo (Deezer)
                     </button>
                   </div>
+                  )}
+                  {detailLoading || temas === null ? (
+                    <p className="modal-temas-hint">
+                      {isVideoteca ? 'Cargando capítulos…' : 'Cargando pistas…'}
+                    </p>
+                  ) : temas.length === 0 ? (
+                    <p className="modal-temas-hint">
+                      {isVideoteca
+                        ? 'No hay capítulos registrados. Puedes añadirlos al editar la ficha.'
+                        : 'Sin pistas registradas.'}
+                    </p>
+                  ) : (
                   <ul className="modal-temas-list">
-                    {libro.temas.map((t, i) => (
+                    {temas.map((t, i) => (
                       <li key={i} className="modal-tema-row">
                         <span className="modal-tema-num">{t.numero}</span>
+                        {(isVideoteca || showVolumen) && (
+                          <span className="modal-tema-duracion" title="Volumen">
+                            Vol. {t.numeroVolumen != null ? t.numeroVolumen : 1}
+                          </span>
+                        )}
                         <span className="modal-tema-titulo">
                           {t.enlace?.trim() ? (
                             <a href={t.enlace.trim()} target="_blank" rel="noopener noreferrer" title="Abrir enlace">{t.titulo || '—'}</a>
@@ -174,6 +245,7 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscotec
                           )}
                         </span>
                         {t.duracion && <span className="modal-tema-duracion">{t.duracion}</span>}
+                        {isDiscoteca && (
                         <button
                           type="button"
                           className="modal-tema-play"
@@ -183,39 +255,26 @@ function BookDetailModal({ libro, onClose, canEdit, onEdit, onDelete, isDiscotec
                         >
                           ▶
                         </button>
+                        )}
                       </li>
                     ))}
                   </ul>
+                  )}
+                  {isDiscoteca && temas && temas.length > 0 && (
+                  <>
                   <p className="modal-temas-deezer-aviso">
                     Sin estar registrado en Deezer solo se puede escuchar una preview del tema. Para el tema completo, inicia sesión en Deezer en este navegador o guarda un enlace a YouTube/Spotify en el campo URL al editar.
                   </p>
                   <p className="modal-temas-hint">
                     Si has añadido un enlace por pista, el título es clicable y ▶ abre ese enlace. Si no, ▶ busca en Deezer.
                   </p>
-                </Block>
-              )}
-
-              {(libro.autorWiki || libro.autorWiki2) && (
-                <Block title="Otros datos" twoCols>
-                  <div className="detail-row">
-                    <span className="detail-label">{isDiscoteca ? 'Enlaces artista' : 'Enlaces autor'}</span>
-                    <span className="detail-value">
-                      {[libro.autorWiki, libro.autorWiki2]
-                        .filter(Boolean)
-                        .map((url) => (
-                          <a
-                            key={url}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ marginRight: '0.5rem' }}
-                          >
-                            {url}
-                          </a>
-                        ))}
-                    </span>
-                  </div>
+                  </>
+                  )}
+                  {isVideoteca && temas && temas.length > 0 && (
+                    <p className="modal-temas-hint">
+                      Cada fila es un capítulo. «Vol.» indica el DVD/volumen físico de la caja.
+                    </p>
+                  )}
                 </Block>
               )}
 
@@ -282,6 +341,8 @@ BookDetailModal.propTypes = {
       numero: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       titulo: PropTypes.string,
       duracion: PropTypes.string,
+      enlace: PropTypes.string,
+      numeroVolumen: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     })),
   }),
   onClose: PropTypes.func.isRequired,
@@ -289,6 +350,8 @@ BookDetailModal.propTypes = {
   onEdit: PropTypes.func,
   onDelete: PropTypes.func,
   isDiscoteca: PropTypes.bool,
+  isVideoteca: PropTypes.bool,
+  detailLoading: PropTypes.bool,
 };
 
 export default BookDetailModal;

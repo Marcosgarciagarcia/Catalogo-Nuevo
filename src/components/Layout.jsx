@@ -5,6 +5,12 @@ import { getCollectionTypes } from '../services/tursoService';
 import Login from './Login';
 import './Layout.css';
 
+function slugLooksLike(slug, nombre, keys) {
+  const s = (slug || '').toLowerCase();
+  const n = (nombre || '').toLowerCase();
+  return keys.some((k) => s.includes(k) || n.includes(k));
+}
+
 export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [catalogTypes, setCatalogTypes] = useState([]);
@@ -21,6 +27,20 @@ export default function Layout({ children }) {
   }, [location.pathname]);
 
   const closeMenu = () => setMenuOpen(false);
+
+  const pathActive = (path) => {
+    const current = decodeURIComponent(location.pathname || '/');
+    return current === path || current === decodeURIComponent(path);
+  };
+
+  const tipoLibros = catalogTypes.find((t) => slugLooksLike(t.slug, t.nombre, ['libro', 'biblio'])) 
+    || { slug: 'libros', nombre: 'Libros' };
+  const tipoDisco = catalogTypes.find((t) => slugLooksLike(t.slug, t.nombre, ['disco', 'música', 'musica', 'audio']))
+    || { slug: 'discoteca', nombre: 'Discoteca' };
+  const tipoVideo = catalogTypes.find((t) => slugLooksLike(t.slug, t.nombre, ['video', 'cine', 'videoteca']))
+    || { slug: 'cine', nombre: 'Videoteca' };
+
+  const navTipos = catalogTypes.filter((t) => t.slug !== tipoLibros.slug);
 
   return (
     <div className="layout">
@@ -51,21 +71,25 @@ export default function Layout({ children }) {
           <nav className="layout-nav" aria-label="Menú principal">
             <div className="layout-nav__section">
               <span className="layout-nav__section-title">Navegación</span>
-              <Link to="/" className={`layout-nav__item ${location.pathname === '/' ? 'layout-nav__item--active' : ''}`} onClick={closeMenu}>
+              <Link
+                to="/"
+                className={`layout-nav__item ${pathActive('/') ? 'layout-nav__item--active' : ''}`}
+                onClick={closeMenu}
+              >
                 Inicio
               </Link>
               <Link
-                to="/libros"
-                className={`layout-nav__item ${location.pathname === '/libros' ? 'layout-nav__item--active' : ''}`}
+                to={`/${tipoLibros.slug}`}
+                className={`layout-nav__item ${pathActive(`/${tipoLibros.slug}`) ? 'layout-nav__item--active' : ''}`}
                 onClick={closeMenu}
               >
-                Libros
+                {tipoLibros.nombre || 'Libros'}
               </Link>
-              {catalogTypes.filter((t) => t.slug !== 'libros').map((t) => (
+              {navTipos.map((t) => (
                 <Link
                   key={t.id}
                   to={`/${t.slug}`}
-                  className={`layout-nav__item ${location.pathname === `/${t.slug}` ? 'layout-nav__item--active' : ''}`}
+                  className={`layout-nav__item ${pathActive(`/${t.slug}`) ? 'layout-nav__item--active' : ''}`}
                   onClick={closeMenu}
                 >
                   {t.nombre}
@@ -76,18 +100,25 @@ export default function Layout({ children }) {
               <div className="layout-nav__section">
                 <span className="layout-nav__section-title">Acciones</span>
                 <Link
-                  to="/libros?openAlta=1"
+                  to={`/${tipoLibros.slug}?openAlta=1`}
                   className="layout-nav__item"
                   onClick={closeMenu}
                 >
                   Alta de libro
                 </Link>
                 <Link
-                  to="/discoteca?openAlta=1"
+                  to={`/${tipoDisco.slug}?openAlta=1`}
                   className="layout-nav__item"
                   onClick={closeMenu}
                 >
                   Alta de disco
+                </Link>
+                <Link
+                  to={`/${tipoVideo.slug}?openAlta=1`}
+                  className="layout-nav__item"
+                  onClick={closeMenu}
+                >
+                  Alta de vídeo
                 </Link>
               </div>
             )}

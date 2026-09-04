@@ -4,16 +4,21 @@ import {
   getAuthors,
   getPublishers,
   getSoportes,
+  getUbicaciones,
+  getEstantes,
   createBook,
   fetchBookMetadataByIsbn,
 } from '../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
+import { lookupWikipediaUrl } from '../utils/wikipedia';
 import './AltaLibro.css';
 
 function AltaLibro({ onClose, onSuccess, getToken }) {
   const [authors, setAuthors] = useState([]);
   const [publishers, setPublishers] = useState([]);
   const [soportes, setSoportes] = useState([]);
+  const [ubicaciones, setUbicaciones] = useState([]);
+  const [estantes, setEstantes] = useState([]);
   const [loadingCombos, setLoadingCombos] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isbnSearching, setIsbnSearching] = useState(false);
@@ -31,23 +36,38 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
   const [addNewPublisher, setAddNewPublisher] = useState(false);
   const [anyoEdicion, setAnyoEdicion] = useState('');
   const [numeroPaginas, setNumeroPaginas] = useState('');
+  const [numeroEjemplares, setNumeroEjemplares] = useState('1');
   const [sinopsis, setSinopsis] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [hastag, setHastag] = useState('');
   const [codiSoporte_id, setCodiSoporte_id] = useState('');
+  const [codiUbicacion_id, setCodiUbicacion_id] = useState('');
+  const [codiEstante_id, setCodiEstante_id] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
   const [portadaPreviewUrl, setPortadaPreviewUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
 
+  const estantesFiltrados = codiUbicacion_id
+    ? estantes.filter((s) => String(s.codiUbicacion_id) === String(codiUbicacion_id))
+    : estantes;
+
   const loadCombos = useCallback(async () => {
     try {
       setLoadingCombos(true);
-      const [a, p, sop] = await Promise.all([getAuthors(), getPublishers(), getSoportes()]);
+      const [a, p, sop, u, e] = await Promise.all([
+        getAuthors(),
+        getPublishers(),
+        getSoportes(),
+        getUbicaciones(),
+        getEstantes(),
+      ]);
       setAuthors(a);
       setPublishers(p);
       setSoportes(sop);
+      setUbicaciones(u);
+      setEstantes(e);
     } catch (err) {
-      setError(err?.message ?? 'Error al cargar autores, editoriales y soportes');
+      setError(err?.message ?? 'Error al cargar autores, editoriales, soportes y ubicaciones');
     } finally {
       setLoadingCombos(false);
     }
@@ -140,10 +160,6 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
     setError('');
     setSuccessMsg('');
     const ean = String(eanDisplay).replace(/\D/g, '').trim();
-    if (!ean) {
-      setError('EAN es obligatorio.');
-      return;
-    }
     const token = getToken?.();
     if (!token) {
       setError('Sesión expirada. Vuelve a iniciar sesión.');
@@ -152,11 +168,13 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
     setSaving(true);
     try {
       const body = {
-        EAN: ean,
+        EAN: ean || undefined,
         titulo: titulo.trim() || null,
         tituloOriginal: tituloOriginal.trim() || null,
         anyoEdicion: anyoEdicion === '' ? null : Number(anyoEdicion),
         numeroPaginas: numeroPaginas === '' ? null : Number(numeroPaginas),
+        numeroEjemplares:
+          numeroEjemplares === '' ? 1 : Math.max(1, parseInt(numeroEjemplares, 10) || 1),
         sinopsis: sinopsis.trim() || null,
         observaciones: observaciones.trim() || null,
         hastag: hastag.trim() || null,
@@ -164,9 +182,15 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
       };
       if (codiSoporte_id !== '') body.codiSoporte_id = Number(codiSoporte_id);
       else body.codiSoporte_id = null;
+      if (codiUbicacion_id !== '') body.codiUbicacion_id = Number(codiUbicacion_id);
+      else body.codiUbicacion_id = null;
+      if (codiEstante_id !== '') body.codiEstante_id = codiEstante_id;
+      else body.codiEstante_id = null;
       if (addNewAuthor && authorName.trim()) {
         body.authorName = authorName.trim();
         body.addNewAuthor = true;
+        const wiki = await lookupWikipediaUrl(authorName.trim());
+        if (wiki) body.enlaceWiki = wiki;
       } else if (codiAutor_id) {
         body.codiAutor_id = Number(codiAutor_id);
       }
@@ -191,10 +215,13 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
         setAddNewPublisher(false);
         setAnyoEdicion('');
         setNumeroPaginas('');
+        setNumeroEjemplares('1');
         setSinopsis('');
         setObservaciones('');
         setHastag('');
         setCodiSoporte_id('');
+        setCodiUbicacion_id('');
+        setCodiEstante_id('');
         setPortada_cloudinary('');
         setPortadaPreviewUrl('');
         setSuccessMsg('');
@@ -225,7 +252,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
             type="text"
             value={eanDisplay}
             onChange={(e) => setEanDisplay(e.target.value)}
-            placeholder="9788484831234"
+            placeholder="Opcional; si vacío se asigna automáticamente"
             inputMode="numeric"
             autoComplete="off"
           />
@@ -335,7 +362,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
             </div>
           </div>
 
-          <div className="alta-libro-row-2">
+          <div className="alta-libro-row-3">
             <div className="alta-libro-field">
               <label htmlFor="alta-anyo">Año edición</label>
               <input
@@ -357,6 +384,16 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
                 onChange={(e) => setNumeroPaginas(e.target.value)}
               />
             </div>
+            <div className="alta-libro-field">
+              <label htmlFor="alta-num-ejemplares">Nº ejemplares</label>
+              <input
+                id="alta-num-ejemplares"
+                type="number"
+                min="1"
+                value={numeroEjemplares}
+                onChange={(e) => setNumeroEjemplares(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="alta-libro-field">
@@ -368,6 +405,57 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
               rows={3}
             />
           </div>
+
+          <div className="alta-libro-row-2">
+            <div className="alta-libro-field">
+              <label htmlFor="alta-ubicacion">Ubicación</label>
+              <select
+                id="alta-ubicacion"
+                value={codiUbicacion_id}
+                onChange={(e) => {
+                  setCodiUbicacion_id(e.target.value);
+                  setCodiEstante_id('');
+                }}
+                disabled={loadingCombos}
+              >
+                <option value="">
+                  {loadingCombos
+                    ? 'Cargando…'
+                    : ubicaciones.length === 0
+                      ? '— Sin ubicaciones en BD —'
+                      : '— Sin ubicación —'}
+                </option>
+                {ubicaciones.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.descriUbicacion || u.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="alta-libro-field">
+              <label htmlFor="alta-estante">Estante</label>
+              <select
+                id="alta-estante"
+                value={codiEstante_id}
+                onChange={(e) => setCodiEstante_id(e.target.value)}
+                disabled={loadingCombos}
+              >
+                <option value="">
+                  {loadingCombos
+                    ? 'Cargando…'
+                    : estantesFiltrados.length === 0
+                      ? (codiUbicacion_id ? '— Sin estantes en esta ubicación —' : '— Sin estantes en BD —')
+                      : '— Sin estante —'}
+                </option>
+                {estantesFiltrados.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.descriEstante || s.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="alta-libro-field">
             <label htmlFor="alta-observaciones">Observaciones</label>
             <textarea
@@ -377,7 +465,7 @@ function AltaLibro({ onClose, onSuccess, getToken }) {
               rows={2}
             />
           </div>
-          <div className="alta-libro-field">
+          <div className="alta-libro-field alta-libro-hastag">
             <label htmlFor="alta-hastag">Hastags</label>
             <input
               id="alta-hastag"

@@ -6,6 +6,7 @@ import Pagination from './Pagination';
 import BookDetailModal from './BookDetailModal';
 import AltaLibro from './AltaLibro';
 import AltaDisco from './AltaDisco';
+import AltaVideo from './AltaVideo';
 import EditarLibro from './EditarLibro';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,15 +21,17 @@ export default function LibrosCatalog() {
   const [busqueda, setBusqueda] = useState('');
   const [paginaActual, setPaginaActual] = useState(1);
   const [libros, setLibros] = useState([]);
+  const [totalLibros, setTotalLibros] = useState(0);
   const [filterApplied, setFilterApplied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
   const [detailBook, setDetailBook] = useState(null);
+  const [detailBookLoading, setDetailBookLoading] = useState(false);
   const [showAltaLibro, setShowAltaLibro] = useState(false);
   const [showAltaDisco, setShowAltaDisco] = useState(false);
+  const [showAltaVideo, setShowAltaVideo] = useState(false);
   const [bookToEdit, setBookToEdit] = useState(null);
-  const [syncDone, setSyncDone] = useState(false);
   const { getToken, isStaff, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const { pathname } = useLocation();
@@ -54,14 +57,23 @@ export default function LibrosCatalog() {
   }, [pathname, slugFromPath]);
 
   useEffect(() => {
-    syncFromLocal().then(() => setSyncDone(true));
+    // Sync en segundo plano: no bloquear el listado (antes dejaba la UI en "Cargando..." si se colgaba).
+    syncFromLocal().catch(() => {});
   }, []);
 
   useEffect(() => {
     if (searchParams.get('openAlta') === '1') {
-      const esDiscoteca = pathname !== '/' && (slugFromPath === 'discoteca' || pathname.replace(/^\//, '').startsWith('discoteca'));
+      const slug = (slugFromPath || '').toLowerCase();
+      const esDiscoteca = pathname !== '/' && ['discoteca', 'musica', 'música', 'audio'].some(
+        (k) => slug === k || slug.includes(k),
+      );
+      const esVideoteca = pathname !== '/' && ['video', 'videoteca', 'cine'].some(
+        (k) => slug === k || slug.includes(k),
+      );
       if (esDiscoteca) {
         setShowAltaDisco(true);
+      } else if (esVideoteca) {
+        setShowAltaVideo(true);
       } else {
         setShowAltaLibro(true);
       }
@@ -74,29 +86,43 @@ export default function LibrosCatalog() {
   useEffect(() => {
     if (!selectedBook?.id) {
       setDetailBook(null);
+      setDetailBookLoading(false);
       return;
     }
     let cancelled = false;
+    setDetailBook(null);
+    setDetailBookLoading(true);
     getBookById(selectedBook.id)
       .then((full) => {
         if (!cancelled) setDetailBook(full);
       })
       .catch(() => {
         if (!cancelled) setDetailBook(selectedBook);
+      })
+      .finally(() => {
+        if (!cancelled) setDetailBookLoading(false);
       });
     return () => { cancelled = true; };
   }, [selectedBook?.id]);
 
-  // Filtro activo: slug de la URL (pathname) para que /discoteca etc. filtren desde la primera carga
+  // Filtro activo: slug de la URL (pathname)
   const tipoSlugActive = pathname === '/' ? null : slugFromPath;
 
   useEffect(() => {
-    if (!syncDone) return;
+    setPaginaActual(1);
+  }, [tipoSlugActive, busqueda, filtroLetra, hastagFromUrl, filtrarPor]);
+
+  useEffect(() => {
+    let cancelled = false;
     const fetchBooks = async () => {
       try {
         setLoading(true);
         setError(null);
         let resultado;
+        const pageOpts = {
+          limit: librosPorPagina,
+          offset: (paginaActual - 1) * librosPorPagina,
+        };
         if (hastagFromUrl) {
           resultado = await getBooksByHastag(hastagFromUrl, tipoSlugActive);
         } else if (busqueda) {
@@ -104,23 +130,33 @@ export default function LibrosCatalog() {
         } else if (filtroLetra) {
           resultado = await filterBooksByLetter(filtroLetra, filtrarPor, tipoSlugActive);
         } else {
-          resultado = await getAllBooks(tipoSlugActive);
+          // Listado general: paginación en servidor (evita JSON de ~MB que corta el proxy).
+          resultado = await getAllBooks(tipoSlugActive, pageOpts);
         }
+        if (cancelled) return;
         const data = resultado?.data ?? resultado;
         const list = Array.isArray(data) ? data : [];
+        const serverPaged = !hastagFromUrl && !busqueda && !filtroLetra;
         setLibros(list);
+        setTotalLibros(
+          serverPaged
+            ? Number(resultado?.total ?? list.length)
+            : list.length,
+        );
         setFilterApplied(resultado?.filterApplied ?? null);
       } catch (err) {
+        if (cancelled) return;
         console.error('Error cargando libros:', err);
         const msg = err?.message ?? err?.error;
         const text = typeof msg === 'string' ? msg : String(err || '');
         setError(text || 'Error al cargar los libros. Por favor, intenta de nuevo.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchBooks();
-  }, [syncDone, hastagFromUrl, filtroLetra, filtrarPor, busqueda, tipoSlugActive]);
+    return () => { cancelled = true; };
+  }, [hastagFromUrl, filtroLetra, filtrarPor, busqueda, tipoSlugActive, paginaActual]);
 
   const refreshBooks = useCallback(async () => {
     try {
@@ -181,12 +217,23 @@ export default function LibrosCatalog() {
     );
   })();
 
+  const esVideoteca = (() => {
+    const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
+    const slugLower = (tipoSlugActive || '').toLowerCase();
+    const nombreLower = (tipo?.nombre || '').toLowerCase();
+    return ['video', 'cine', 'videoteca'].some(
+      (k) => slugLower.includes(k) || nombreLower.includes(k),
+    );
+  })();
+
   const placeholderBusqueda =
     filtrarPor === 'titulo'
       ? 'EAN, título, hastag, catálogo, MBID…'
       : esDiscoteca
         ? 'Buscar por artista…'
-        : 'Buscar por autor…';
+        : esVideoteca
+          ? 'Buscar por director…'
+          : 'Buscar por autor…';
 
   const etiquetaCriterioBusqueda =
     filtrarPor === 'titulo' ? 'Buscar por: Obra' : 'Buscar por: Autor';
@@ -195,6 +242,7 @@ export default function LibrosCatalog() {
     const tipo = tiposColeccion.find((tc) => tc.slug === tipoSlugActive);
     const nombreLower = (tipo?.nombre || '').toLowerCase();
     if (esDiscoteca) return 'Catálogo de discoteca de casa';
+    if (esVideoteca) return 'Catálogo de videoteca de casa';
     if (tipo) return `Catálogo de ${nombreLower || tipo.slug} de casa`;
     return 'Catálogo de libros de casa';
   })();
@@ -222,7 +270,11 @@ export default function LibrosCatalog() {
           <span className="filtro-tipo-label">Tipo:</span>
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => {
+              setFilterApplied(null);
+              setPaginaActual(1);
+              navigate('/');
+            }}
             className={tipoSlugActive === null ? 'activo' : ''}
           >
             <span role="img" aria-label="Todos">🏠</span>
@@ -238,14 +290,23 @@ export default function LibrosCatalog() {
               (k) => slugLower.includes(k) || nombreLower.includes(k),
             );
             const icon = isDisco ? '🎵' : isVideo ? '🎬' : '📚';
-            const isActive =
-              tipoSlugActive === tc.slug ||
-              (filterApplied?.tipoId != null && Number(filterApplied.tipoId) === Number(tc.id));
+            const isActive = (() => {
+              if (!tipoSlugActive) return false;
+              const a = String(tipoSlugActive).normalize('NFC').trim().toLowerCase();
+              const b = String(tc.slug || '').normalize('NFC').trim().toLowerCase();
+              if (a === b) return true;
+              const strip = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+              return strip(a) === strip(b);
+            })();
             return (
               <button
                 key={tc.id}
                 type="button"
-                onClick={() => navigate(`/${tc.slug}`)}
+                onClick={() => {
+                  setFilterApplied(null);
+                  setPaginaActual(1);
+                  navigate(`/${tc.slug}`);
+                }}
                 className={isActive ? 'activo' : ''}
               >
                 <span role="img" aria-label={tc.nombre}>{icon}</span>
@@ -358,9 +419,13 @@ export default function LibrosCatalog() {
           )}
           <div className="resultados-info">
             <p>
-              {libros.length} título(s) encontrado(s)
-              {tipoSlugActive || filterApplied?.tipoId != null
-                ? ` en ${tiposColeccion.find((tc) => tc.slug === tipoSlugActive || Number(tc.id) === Number(filterApplied?.tipoId))?.nombre ?? tipoSlugActive ?? ''}`
+              {totalLibros} título(s) encontrado(s)
+              {tipoSlugActive
+                ? ` en ${tiposColeccion.find((tc) => {
+                  const a = String(tipoSlugActive).normalize('NFC').trim().toLowerCase();
+                  const b = String(tc.slug || '').normalize('NFC').trim().toLowerCase();
+                  return a === b;
+                })?.nombre ?? tipoSlugActive}`
                 : ''}
               {hastagFromUrl ? ` con hastag #${hastagFromUrl.replace(/^#+/, '')}` : ''}
               {filtroLetra
@@ -374,19 +439,23 @@ export default function LibrosCatalog() {
                   : ` en autor que contiene "${busqueda}"`)
                 : ''}
             </p>
-            {/* Detalle técnico del filtro (solo para depuración, oculto en producción) */}
           </div>
           <BookList
-            libros={libros.slice(
-              (paginaActual - 1) * librosPorPagina,
-              paginaActual * librosPorPagina
-            )}
+            libros={
+              hastagFromUrl || busqueda || filtroLetra
+                ? libros.slice(
+                  (paginaActual - 1) * librosPorPagina,
+                  paginaActual * librosPorPagina,
+                )
+                : libros
+            }
             onBookClick={(libro) => setSelectedBook(libro)}
             discotecaMode={esDiscoteca}
+            videotecaMode={esVideoteca}
             onAuthorClick={filtrarPorAutor}
           />
           <Pagination
-            totalLibros={libros.length}
+            totalLibros={totalLibros}
             librosPorPagina={librosPorPagina}
             paginaActual={paginaActual}
             setPaginaActual={setPaginaActual}
@@ -408,9 +477,17 @@ export default function LibrosCatalog() {
           getToken={getToken}
         />
       )}
+      {showAltaVideo && (
+        <AltaVideo
+          onClose={() => setShowAltaVideo(false)}
+          onSuccess={refreshBooks}
+          getToken={getToken}
+        />
+      )}
       {selectedBook && (
         <BookDetailModal
           libro={detailBook || selectedBook}
+          detailLoading={detailBookLoading}
           onClose={() => { setSelectedBook(null); setDetailBook(null); }}
           canEdit={isStaff || isAdmin}
           onEdit={(libro) => {
@@ -419,11 +496,13 @@ export default function LibrosCatalog() {
           }}
           onDelete={handleDeleteBook}
           isDiscoteca={esDiscoteca}
+          isVideoteca={esVideoteca}
         />
       )}
       {bookToEdit && (
         <EditarLibro
           libro={bookToEdit}
+          isVideoteca={esVideoteca}
           onClose={() => setBookToEdit(null)}
           onSuccess={refreshBooks}
           getToken={getToken}

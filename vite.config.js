@@ -4,6 +4,18 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   base: "/",
   plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      // API local (scripts/local-api-server.js en puerto 3001)
+      "/api": {
+        target: "http://127.0.0.1:3001",
+        changeOrigin: true,
+        timeout: 120000,
+        proxyTimeout: 120000,
+      },
+    },
+  },
   build: {
     assetsDir: "images",
     assetsInlineLimit: 4096,

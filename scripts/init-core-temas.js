@@ -45,9 +45,9 @@ const CREATE_TEMAS = `
     nombreTema TEXT NOT NULL DEFAULT '',
     duracion TEXT,
     enlace TEXT,
+    numeroVolumen INTEGER NOT NULL DEFAULT 1,
     created TEXT DEFAULT (datetime('now')),
-    updated TEXT DEFAULT (datetime('now')),
-    UNIQUE(codiTitulo_id, numero)
+    updated TEXT DEFAULT (datetime('now'))
   )
 `;
 
@@ -59,6 +59,7 @@ async function ensureColumns() {
     const hasNumero = Array.isArray(rows) && rows.some((r) => names(r) === 'numero');
     const hasNombreTema = Array.isArray(rows) && rows.some((r) => names(r) === 'nombretema');
     const hasEnlace = Array.isArray(rows) && rows.some((r) => names(r) === 'enlace');
+    const hasNumeroVolumen = Array.isArray(rows) && rows.some((r) => names(r) === 'numerovolumen');
     if (rows.length > 0) {
       if (!hasNumero) {
         console.log('Añadiendo columna numero a core_temas...');
@@ -74,6 +75,13 @@ async function ensureColumns() {
         console.log('Añadiendo columna enlace a core_temas...');
         await executeQuery('ALTER TABLE core_temas ADD COLUMN enlace TEXT');
         console.log('Columna enlace añadida.');
+      }
+      if (!hasNumeroVolumen) {
+        console.log('Añadiendo columna numeroVolumen a core_temas...');
+        await executeQuery(
+          'ALTER TABLE core_temas ADD COLUMN numeroVolumen INTEGER NOT NULL DEFAULT 1',
+        );
+        console.log('Columna numeroVolumen añadida.');
       }
     }
   } catch (e) {

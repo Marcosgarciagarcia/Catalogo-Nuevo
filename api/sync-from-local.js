@@ -49,6 +49,7 @@ function getLocalDbUrl() {
 const DELETE_ORDER = [
   'auth_user',
   'core_temas',
+  'core_titulosleidos',
   'core_titulos',
   'core_ubicaciones_sub',
   'core_ubicaciones',

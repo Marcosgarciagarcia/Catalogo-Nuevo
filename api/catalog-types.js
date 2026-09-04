@@ -1,10 +1,12 @@
 /**
  * GET /api/catalog-types
  * Devuelve los tipos de colección activos para el menú inicial (ordenados).
+ * Deduplica por nombre y limpia slugs (tabs, espacios).
  */
 
 import { executeQuery } from './lib/turso.js';
 import { QUERIES } from './lib/queries.js';
+import { dedupeTiposColeccion } from './lib/tipos-coleccion.js';
 
 function cors(res) {
   return res.status(200).json({});
@@ -18,13 +20,7 @@ export default async function handler(req, res) {
     }
 
     const rows = await executeQuery(QUERIES.GET_TIPOS_COLECCION);
-    const data = (rows || []).map((r) => ({
-      id: r.id,
-      slug: r.slug,
-      nombre: r.nombre,
-      orden: r.orden,
-      descripcion: r.descripcion ?? null,
-    }));
+    const data = dedupeTiposColeccion(rows);
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');

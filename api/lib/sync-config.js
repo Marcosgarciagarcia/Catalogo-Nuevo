@@ -43,9 +43,16 @@ export const SYNC_TABLE_CONFIG = {
       'created', 'updated',
     ],
   },
+  core_titulosleidos: {
+    id_field: 'id',
+    fields: ['leido', 'codiTitulo_id', 'codiUsuario_id'],
+  },
   core_temas: {
     id_field: 'id',
-    fields: ['codiTitulo_id', 'numero', 'nombreTema', 'duracion', 'enlace', 'created', 'updated'],
+    fields: [
+      'codiTitulo_id', 'numero', 'nombreTema', 'duracion', 'enlace', 'numeroVolumen',
+      'created', 'updated',
+    ],
   },
   auth_user: {
     id_field: 'id',

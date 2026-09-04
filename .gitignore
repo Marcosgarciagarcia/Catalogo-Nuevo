@@ -38,3 +38,5 @@ docs/
 
 # Configuración local de Cursor (no subir)
 .cursor/
+.vercel
+.env*

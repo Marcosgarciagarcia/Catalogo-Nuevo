@@ -106,6 +106,9 @@
 }
 
 .layout-nav__item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   padding: 12px 20px;
   color: #333;
   text-decoration: none;
@@ -115,6 +118,8 @@
   border: none;
   cursor: pointer;
   font-family: inherit;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .layout-nav__item:hover,

@@ -5,6 +5,7 @@ import {
   getPublishers,
   getSoportes,
   getUbicaciones,
+  getEstantes,
   createBook,
   fetchAlbumMetadataByEan,
   fetchAlbumMetadataByQuery,
@@ -14,6 +15,7 @@ import {
   resolveDeezerTrackLink,
 } from '../services/tursoService';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../services/cloudinaryService';
+import { lookupWikipediaUrl } from '../utils/wikipedia';
 import './AltaLibro.css';
 
 function AltaDisco({ onClose, onSuccess, getToken }) {
@@ -43,7 +45,9 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [coleccion, setColeccion] = useState('');
   const [codiSoporte_id, setCodiSoporte_id] = useState('');
   const [codiUbicacion_id, setCodiUbicacion_id] = useState('');
+  const [codiEstante_id, setCodiEstante_id] = useState('');
   const [ubicaciones, setUbicaciones] = useState([]);
+  const [estantes, setEstantes] = useState([]);
   const [observaciones, setObservaciones] = useState('');
   const [hastag, setHastag] = useState('');
   const [portada_cloudinary, setPortada_cloudinary] = useState('');
@@ -56,19 +60,25 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   const [catalogSearchInput, setCatalogSearchInput] = useState('');
   const [labelSearchInput, setLabelSearchInput] = useState('');
 
+  const estantesFiltrados = codiUbicacion_id
+    ? estantes.filter((s) => String(s.codiUbicacion_id) === String(codiUbicacion_id))
+    : estantes;
+
   const loadCombos = useCallback(async () => {
     try {
       setLoadingCombos(true);
-      const [a, p, sop, u] = await Promise.all([
+      const [a, p, sop, u, e] = await Promise.all([
         getAuthors(),
         getPublishers(),
         getSoportes(),
         getUbicaciones(),
+        getEstantes(),
       ]);
       setAuthors(a);
       setPublishers(p);
       setSoportes(sop);
       setUbicaciones(u);
+      setEstantes(e);
     } catch (err) {
       setError(err?.message ?? 'Error al cargar autores, editoriales, soportes y ubicaciones');
     } finally {
@@ -93,7 +103,14 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     setCodiEditorial_id('');
     setAnyoEdicion(data.anyoEdicion != null ? String(data.anyoEdicion) : '');
     setPortadaPreviewUrl(data.portadaUrl ?? '');
-    setTemas(Array.isArray(data.temas) ? data.temas : []);
+    setTemas(
+      Array.isArray(data.temas)
+        ? data.temas.map((t) => ({
+            ...t,
+            numeroVolumen: t.numeroVolumen != null ? Number(t.numeroVolumen) || 1 : 1,
+          }))
+        : [],
+    );
     if (data.musicbrainzReleaseMbid) {
       setMusicbrainzReleaseMbid(data.musicbrainzReleaseMbid);
     }
@@ -235,7 +252,8 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
     setTemas((prev) => {
       const next = [...prev];
       if (!next[index]) return next;
-      next[index] = { ...next[index], [field]: field === 'numero' ? (value === '' ? '' : Number(value)) : value };
+      const numeric = field === 'numero' || field === 'numeroVolumen';
+      next[index] = { ...next[index], [field]: numeric ? (value === '' ? '' : Number(value)) : value };
       return next;
     });
   };
@@ -245,7 +263,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
   };
 
   const addTema = () => {
-    setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '', enlace: '' }]);
+    setTemas((prev) => [...prev, { numero: prev.length + 1, titulo: '', duracion: '', enlace: '', numeroVolumen: 1 }]);
   };
 
   const openDeezerTema = (tituloTema) => {
@@ -330,6 +348,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             titulo: (t.titulo || '').trim(),
             duracion: (t.duracion || '').trim() || null,
             enlace: (t.enlace || '').trim() || null,
+            numeroVolumen: Math.max(1, parseInt(t.numeroVolumen, 10) || 1),
           })),
       };
       if (codiSoporte_id !== '' && codiSoporte_id != null) {
@@ -339,10 +358,13 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
       }
       if (codiUbicacion_id !== '') body.codiUbicacion_id = Number(codiUbicacion_id);
       else body.codiUbicacion_id = null;
-      body.codiEstante_id = null;
+      if (codiEstante_id !== '') body.codiEstante_id = codiEstante_id;
+      else body.codiEstante_id = null;
       if (addNewAuthor && authorName.trim()) {
         body.authorName = authorName.trim();
         body.addNewAuthor = true;
+        const wiki = await lookupWikipediaUrl(authorName.trim());
+        if (wiki) body.enlaceWiki = wiki;
       } else if (codiAutor_id) {
         body.codiAutor_id = Number(codiAutor_id);
       } else {
@@ -382,6 +404,9 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
         setNumeroEjemplares('1');
         setNumeroPaginas('');
         setColeccion('');
+        setCodiUbicacion_id('');
+        setCodiEstante_id('');
+        setObservaciones('');
         setHastag('');
         setMbidSearchInput('');
         setCatalogSearchInput('');
@@ -693,21 +718,54 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             />
           </div>
 
-          <div className="alta-libro-field">
-            <label htmlFor="alta-ubicacion">Ubicación</label>
-            <select
-              id="alta-ubicacion"
-              value={codiUbicacion_id}
-              onChange={(e) => setCodiUbicacion_id(e.target.value)}
-              disabled={loadingCombos}
-            >
-              <option value="">— Sin ubicación —</option>
-              {ubicaciones.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.descriUbicacion || u.id}
+          <div className="alta-libro-row-2">
+            <div className="alta-libro-field">
+              <label htmlFor="alta-ubicacion">Ubicación</label>
+              <select
+                id="alta-ubicacion"
+                value={codiUbicacion_id}
+                onChange={(e) => {
+                  setCodiUbicacion_id(e.target.value);
+                  setCodiEstante_id('');
+                }}
+                disabled={loadingCombos}
+              >
+                <option value="">
+                  {loadingCombos
+                    ? 'Cargando…'
+                    : ubicaciones.length === 0
+                      ? '— Sin ubicaciones en BD —'
+                      : '— Sin ubicación —'}
                 </option>
-              ))}
-            </select>
+                {ubicaciones.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.descriUbicacion || u.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="alta-libro-field">
+              <label htmlFor="alta-estante">Estante</label>
+              <select
+                id="alta-estante"
+                value={codiEstante_id}
+                onChange={(e) => setCodiEstante_id(e.target.value)}
+                disabled={loadingCombos}
+              >
+                <option value="">
+                  {loadingCombos
+                    ? 'Cargando…'
+                    : estantesFiltrados.length === 0
+                      ? (codiUbicacion_id ? '— Sin estantes en esta ubicación —' : '— Sin estantes en BD —')
+                      : '— Sin estante —'}
+                </option>
+                {estantesFiltrados.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.descriEstante || s.id}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="alta-libro-field">
@@ -720,7 +778,7 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             />
           </div>
 
-          <div className="alta-libro-field">
+          <div className="alta-libro-field alta-libro-hastag">
             <label htmlFor="alta-hastag">Hastags</label>
             <input
               id="alta-hastag"
@@ -792,13 +850,22 @@ function AltaDisco({ onClose, onSuccess, getToken }) {
             ) : (
               <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #555', borderRadius: 6, padding: 8, background: '#1a1a1a' }}>
                 {temas.map((t, i) => (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px minmax(120px, 1fr) 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 44px 1fr 70px minmax(100px, 1fr) 36px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                     <input
                       type="number"
                       min={1}
                       value={t.numero || ''}
                       onChange={(e) => updateTema(i, 'numero', e.target.value)}
                       style={{ width: 40, padding: 4 }}
+                      title="N.º pista"
+                    />
+                    <input
+                      type="number"
+                      min={1}
+                      value={t.numeroVolumen ?? 1}
+                      onChange={(e) => updateTema(i, 'numeroVolumen', e.target.value)}
+                      style={{ width: 44, padding: 4 }}
+                      title="Volumen / CD"
                     />
                     <input
                       type="text"
